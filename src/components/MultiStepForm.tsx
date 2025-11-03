@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, ArrowRight, ArrowLeft } from "lucide-react";
+import { Loader2, ArrowRight, ArrowLeft, MessageCircle } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 
 const formSchema = z.object({
@@ -322,7 +322,8 @@ export const MultiStepForm = () => {
                 className="h-14 px-8 text-lg bg-green-600 hover:bg-green-700 text-white"
                 size="lg"
               >
-                🟢 Falar no WhatsApp Agora
+                <MessageCircle className="mr-2 h-5 w-5" />
+                Falar no WhatsApp Agora
               </Button>
             </div>
           </div>
