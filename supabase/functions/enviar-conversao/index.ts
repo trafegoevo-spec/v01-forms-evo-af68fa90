@@ -44,20 +44,18 @@ serve(async (req) => {
       );
     }
 
-    // Envia dados para o webhook
+    // Envia dados para o webhook usando FormData
+    const formData = new FormData();
+    formData.append('nome', data.nome);
+    formData.append('email', data.email);
+    formData.append('telefone', data.telefone);
+    formData.append('curso', data.curso);
+    formData.append('data_cadastro', data.timestamp);
+    formData.append('origem', 'Site EAD');
+
     const webhookResponse = await fetch(webhookUrl, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        nome: data.nome,
-        email: data.email,
-        telefone: data.telefone,
-        curso: data.curso,
-        data_cadastro: data.timestamp,
-        origem: 'Site EAD',
-      }),
+      body: formData,
     });
 
     if (!webhookResponse.ok) {
