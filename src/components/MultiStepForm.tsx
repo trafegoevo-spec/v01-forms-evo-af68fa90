@@ -305,7 +305,7 @@ export const MultiStepForm = () => {
             <div className="text-6xl">🎉</div>
             <div>
               <h2 className="text-3xl font-bold text-foreground mb-3">
-                Obrigado, {submittedData.nome}!
+                Obrigado, {submittedData.nome.split(' ')[0]}!
               </h2>
               <p className="text-lg text-muted-foreground">
                 Recebemos suas informações com sucesso!
