@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, ArrowRight, ArrowLeft } from "lucide-react";
@@ -11,24 +12,47 @@ import { Progress } from "@/components/ui/progress";
 
 const formSchema = z.object({
   nome: z.string().min(3, "Nome deve ter no mínimo 3 caracteres").max(100),
+  whatsapp: z.string()
+    .regex(/^\(\d{2}\) \d{5}-\d{4}$/, "WhatsApp inválido. Use o formato (99) 99999-9999")
+    .refine((val) => {
+      const ddd = parseInt(val.substring(1, 3));
+      return ddd >= 11 && ddd <= 99 && ddd !== 20 && ddd !== 30 && ddd !== 40 && ddd !== 50 && ddd !== 60 && ddd !== 70 && ddd !== 80 && ddd !== 90;
+    }, "DDD inválido")
+    .refine((val) => {
+      const nono = val.charAt(5);
+      return nono === "9";
+    }, "WhatsApp deve começar com 9"),
   email: z.string().email("Email inválido").max(255),
-  telefone: z.string().min(10, "Telefone inválido").max(15),
-  curso: z.string().min(1, "Selecione um curso"),
-  cidade: z.string().min(2, "Cidade inválida").max(100),
+  escolaridade: z.string().min(1, "Selecione seu nível de escolaridade"),
+  modalidade: z.string().min(1, "Selecione uma modalidade"),
 });
 
 type FormData = z.infer<typeof formSchema>;
 
-const CURSOS = [
-  "EJA - Educação de Jovens e Adultos",
-  "Curso Técnico",
-  "Graduação",
-  "Pós-graduação",
+const ESCOLARIDADES = [
+  "Ensino médio incompleto",
+  "Ensino médio completo",
+  "Graduação em andamento",
+  "Graduação completa",
+  "Pós-graduação em andamento",
+  "Pós-graduação completa",
+  "Mestrado / Doutorado",
+];
+
+const MODALIDADES = [
+  "EJA EAD",
+  "Técnico EAD",
+  "Graduação EAD",
+  "Segunda Graduação EAD",
+  "Disciplinas Isoladas EAD",
+  "Pós-graduação EAD",
 ];
 
 export const MultiStepForm = () => {
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [submittedData, setSubmittedData] = useState<FormData | null>(null);
   const { toast } = useToast();
 
   const form = useForm<FormData>({
@@ -36,14 +60,21 @@ export const MultiStepForm = () => {
     defaultValues: {
       nome: "",
       email: "",
-      telefone: "",
-      curso: "",
-      cidade: "",
+      whatsapp: "",
+      escolaridade: "",
+      modalidade: "",
     },
   });
 
-  const totalSteps = 5;
+  const totalSteps = 6;
   const progress = (step / totalSteps) * 100;
+
+  const formatWhatsApp = (value: string) => {
+    const cleaned = value.replace(/\D/g, "");
+    if (cleaned.length <= 2) return cleaned;
+    if (cleaned.length <= 7) return `(${cleaned.slice(0, 2)}) ${cleaned.slice(2)}`;
+    return `(${cleaned.slice(0, 2)}) ${cleaned.slice(2, 7)}-${cleaned.slice(7, 11)}`;
+  };
 
   const nextStep = async () => {
     let isValid = false;
@@ -53,16 +84,16 @@ export const MultiStepForm = () => {
         isValid = await form.trigger("nome");
         break;
       case 2:
-        isValid = await form.trigger("email");
+        isValid = await form.trigger("whatsapp");
         break;
       case 3:
-        isValid = await form.trigger("telefone");
+        isValid = await form.trigger("email");
         break;
       case 4:
-        isValid = await form.trigger("curso");
+        isValid = await form.trigger("escolaridade");
         break;
       case 5:
-        isValid = await form.trigger("cidade");
+        isValid = await form.trigger("modalidade");
         break;
     }
 
@@ -86,22 +117,18 @@ export const MultiStepForm = () => {
         body: {
           nome: data.nome,
           email: data.email,
-          telefone: data.telefone,
-          curso: data.curso,
-          cidade: data.cidade,
+          telefone: data.whatsapp,
+          curso: data.modalidade,
+          cidade: data.escolaridade,
           timestamp: new Date().toISOString(),
         },
       });
 
       if (error) throw error;
 
-      toast({
-        title: "Cadastro realizado com sucesso!",
-        description: "Em breve entraremos em contato com você.",
-      });
-
-      form.reset();
-      setStep(1);
+      setSubmittedData(data);
+      setIsSuccess(true);
+      setStep(6);
     } catch (error: any) {
       console.error("Erro ao enviar:", error);
       toast({
@@ -147,6 +174,38 @@ export const MultiStepForm = () => {
           <div className="space-y-4">
             <div>
               <h2 className="text-2xl font-bold text-foreground mb-2">
+                Qual é o seu WhatsApp?
+              </h2>
+              <p className="text-muted-foreground">Para entrarmos em contato</p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-2">WhatsApp</label>
+              <Input
+                {...form.register("whatsapp")}
+                type="tel"
+                placeholder="(99) 99999-9999"
+                className="h-12 text-base"
+                autoComplete="off"
+                autoFocus
+                onChange={(e) => {
+                  const formatted = formatWhatsApp(e.target.value);
+                  form.setValue("whatsapp", formatted);
+                }}
+              />
+              {form.formState.errors.whatsapp && (
+                <p className="text-destructive text-sm mt-1">
+                  {form.formState.errors.whatsapp.message}
+                </p>
+              )}
+            </div>
+          </div>
+        );
+
+      case 3:
+        return (
+          <div className="space-y-4">
+            <div>
+              <h2 className="text-2xl font-bold text-foreground mb-2">
                 Qual é o seu e-mail?
               </h2>
               <p className="text-muted-foreground">Enviaremos informações para você</p>
@@ -169,60 +228,35 @@ export const MultiStepForm = () => {
           </div>
         );
 
-      case 3:
-        return (
-          <div className="space-y-4">
-            <div>
-              <h2 className="text-2xl font-bold text-foreground mb-2">
-                Qual é o seu telefone?
-              </h2>
-              <p className="text-muted-foreground">Para entrarmos em contato</p>
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-2">Telefone</label>
-              <Input
-                {...form.register("telefone")}
-                type="tel"
-                placeholder="(00) 00000-0000"
-                className="h-12 text-base"
-                autoFocus
-              />
-              {form.formState.errors.telefone && (
-                <p className="text-destructive text-sm mt-1">
-                  {form.formState.errors.telefone.message}
-                </p>
-              )}
-            </div>
-          </div>
-        );
-
       case 4:
         return (
           <div className="space-y-4">
             <div>
               <h2 className="text-2xl font-bold text-foreground mb-2">
-                Qual curso você tem interesse?
+                Qual é o seu nível de escolaridade?
               </h2>
-              <p className="text-muted-foreground">Escolha a modalidade desejada</p>
+              <p className="text-muted-foreground">Escolha sua escolaridade atual</p>
             </div>
-            <div className="space-y-3">
-              {CURSOS.map((curso) => (
-                <label
-                  key={curso}
-                  className="flex items-center gap-3 p-4 border-2 rounded-lg cursor-pointer hover:border-primary transition-colors"
-                >
-                  <input
-                    type="radio"
-                    {...form.register("curso")}
-                    value={curso}
-                    className="w-5 h-5 accent-primary"
-                  />
-                  <span className="text-base">{curso}</span>
-                </label>
-              ))}
-              {form.formState.errors.curso && (
+            <div>
+              <label className="block text-sm font-medium mb-2">Nível de escolaridade</label>
+              <Select
+                value={form.watch("escolaridade")}
+                onValueChange={(value) => form.setValue("escolaridade", value)}
+              >
+                <SelectTrigger className="h-12 text-base">
+                  <SelectValue placeholder="Selecione sua escolaridade" />
+                </SelectTrigger>
+                <SelectContent>
+                  {ESCOLARIDADES.map((esc) => (
+                    <SelectItem key={esc} value={esc}>
+                      {esc}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {form.formState.errors.escolaridade && (
                 <p className="text-destructive text-sm mt-1">
-                  {form.formState.errors.curso.message}
+                  {form.formState.errors.escolaridade.message}
                 </p>
               )}
             </div>
@@ -234,23 +268,62 @@ export const MultiStepForm = () => {
           <div className="space-y-4">
             <div>
               <h2 className="text-2xl font-bold text-foreground mb-2">
-                Qual é a sua cidade?
+                Qual modalidade você tem interesse?
               </h2>
-              <p className="text-muted-foreground">Para oferecermos o melhor atendimento</p>
+              <p className="text-muted-foreground">Escolha a modalidade desejada</p>
             </div>
             <div>
-              <label className="block text-sm font-medium mb-2">Cidade</label>
-              <Input
-                {...form.register("cidade")}
-                placeholder="Digite sua cidade"
-                className="h-12 text-base"
-                autoFocus
-              />
-              {form.formState.errors.cidade && (
+              <label className="block text-sm font-medium mb-2">Modalidade de interesse</label>
+              <Select
+                value={form.watch("modalidade")}
+                onValueChange={(value) => form.setValue("modalidade", value)}
+              >
+                <SelectTrigger className="h-12 text-base">
+                  <SelectValue placeholder="Selecione uma modalidade" />
+                </SelectTrigger>
+                <SelectContent>
+                  {MODALIDADES.map((mod) => (
+                    <SelectItem key={mod} value={mod}>
+                      {mod}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {form.formState.errors.modalidade && (
                 <p className="text-destructive text-sm mt-1">
-                  {form.formState.errors.cidade.message}
+                  {form.formState.errors.modalidade.message}
                 </p>
               )}
+            </div>
+          </div>
+        );
+
+      case 6:
+        if (!isSuccess || !submittedData) return null;
+        return (
+          <div className="space-y-6 text-center">
+            <div className="text-6xl">🎉</div>
+            <div>
+              <h2 className="text-3xl font-bold text-foreground mb-3">
+                Obrigado, {submittedData.nome}!
+              </h2>
+              <p className="text-lg text-muted-foreground">
+                Recebemos suas informações com sucesso!
+              </p>
+              <p className="text-lg text-muted-foreground mt-2">
+                Em breve entraremos em contato sobre os cursos de <span className="font-semibold text-primary">{submittedData.modalidade}</span>.
+              </p>
+            </div>
+            <div className="pt-4">
+              <Button
+                onClick={() => {
+                  window.open("https://wa.me/5531989236061?text=Olá!%20Acabei%20de%20enviar%20meus%20dados%20no%20formulário.", "_blank");
+                }}
+                className="h-14 px-8 text-lg bg-green-600 hover:bg-green-700 text-white"
+                size="lg"
+              >
+                🟢 Falar no WhatsApp Agora
+              </Button>
             </div>
           </div>
         );
@@ -264,62 +337,66 @@ export const MultiStepForm = () => {
     <div className="w-full max-w-2xl mx-auto p-6">
       <div className="bg-white rounded-2xl shadow-xl p-8">
         {/* Progress */}
-        <div className="mb-8">
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-sm font-medium text-muted-foreground">
-              Etapa {step} de {totalSteps}
-            </span>
-            <span className="text-sm font-bold text-primary">{Math.round(progress)}%</span>
+        {step < 6 && (
+          <div className="mb-8">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-sm font-medium text-muted-foreground">
+                Etapa {step} de 5
+              </span>
+              <span className="text-sm font-bold text-primary">{Math.round((step / 5) * 100)}%</span>
+            </div>
+            <Progress value={(step / 5) * 100} className="h-2" />
           </div>
-          <Progress value={progress} className="h-2" />
-        </div>
+        )}
 
         <form onSubmit={form.handleSubmit(onSubmit)}>
           {/* Step Content */}
           <div className="min-h-[300px] mb-8">{renderStep()}</div>
 
           {/* Navigation Buttons */}
-          <div className="flex gap-3">
-            {step > 1 && (
-              <Button
-                type="button"
-                variant="outline"
-                onClick={prevStep}
-                className="flex-1 h-12"
-                disabled={isSubmitting}
-              >
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Voltar
-              </Button>
-            )}
+          {step < 6 && (
+            <div className="flex gap-3">
+              {step > 1 && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={prevStep}
+                  className="flex-1 h-12"
+                  disabled={isSubmitting}
+                >
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  Voltar
+                </Button>
+              )}
 
-            {step < totalSteps ? (
-              <Button
-                type="button"
-                onClick={nextStep}
-                className="flex-1 h-12"
-                disabled={isSubmitting}
-              >
-                Próximo
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            ) : (
-              <Button
-                type="submit"
-                className="flex-1 h-12"
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Enviando...
-                  </>
-                ) : (
-                  "Finalizar"
-                )}
-              </Button>
-            )}
-          </div>
+              {step < 5 ? (
+                <Button
+                  type="button"
+                  onClick={nextStep}
+                  className="flex-1 h-12"
+                  disabled={isSubmitting}
+                >
+                  Próximo
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              ) : (
+                <Button
+                  type="submit"
+                  className="flex-1 h-12"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Enviando...
+                    </>
+                  ) : (
+                    "Finalizar"
+                  )}
+                </Button>
+              )}
+            </div>
+          )}
         </form>
       </div>
     </div>
