@@ -18,8 +18,9 @@ Este site está configurado para enviar automaticamente os dados de conversão p
      - email → Coluna B
      - telefone → Coluna C
      - curso → Coluna D
-     - data_cadastro → Coluna E
-     - origem → Coluna F
+     - cidade → Coluna E
+     - data_cadastro → Coluna F
+     - origem → Coluna G
 
 4. **Adicione o webhook no Lovable Cloud**:
    - Abra o Cloud no Lovable
@@ -56,6 +57,7 @@ function doPost(e) {
     data.email,
     data.telefone,
     data.curso,
+    data.cidade || '',
     data.origem
   ]);
   
@@ -90,6 +92,7 @@ Após configurar o webhook:
   "email": "email@exemplo.com",
   "telefone": "(00) 00000-0000",
   "curso": "Graduação",
+  "cidade": "São Paulo",
   "data_cadastro": "2025-01-01T10:00:00.000Z",
   "origem": "Site EAD"
 }

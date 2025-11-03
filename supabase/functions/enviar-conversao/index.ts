@@ -10,6 +10,7 @@ interface ConversaoData {
   email: string;
   telefone: string;
   curso: string;
+  cidade?: string;
   timestamp: string;
 }
 
@@ -50,6 +51,9 @@ serve(async (req) => {
     formData.append('email', data.email);
     formData.append('telefone', data.telefone);
     formData.append('curso', data.curso);
+    if (data.cidade) {
+      formData.append('cidade', data.cidade);
+    }
     formData.append('data_cadastro', data.timestamp);
     formData.append('origem', 'Site EAD');
 
