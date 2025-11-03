@@ -352,7 +352,7 @@ export const MultiStepForm = () => {
 
         <form onSubmit={form.handleSubmit(onSubmit)}>
           {/* Step Content */}
-          <div className="min-h-[300px] mb-8">{renderStep()}</div>
+          <div className="min-h-[200px] mb-4">{renderStep()}</div>
 
           {/* Navigation Buttons */}
           {step < 6 && (
