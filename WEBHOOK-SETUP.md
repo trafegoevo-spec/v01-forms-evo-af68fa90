@@ -18,7 +18,7 @@ Este site está configurado para enviar automaticamente os dados de conversão p
      - email → Coluna B
      - telefone → Coluna C
      - curso → Coluna D
-     - cidade → Coluna E
+     - graduacao → Coluna E
      - data_cadastro → Coluna F
      - origem → Coluna G
 
@@ -57,7 +57,7 @@ function doPost(e) {
     data.email,
     data.telefone,
     data.curso,
-    data.cidade || '',
+    data.graduacao || '',
     data.origem
   ]);
   
@@ -92,7 +92,7 @@ Após configurar o webhook:
   "email": "email@exemplo.com",
   "telefone": "(00) 00000-0000",
   "curso": "Graduação",
-  "cidade": "São Paulo",
+  "graduacao": "Ensino Superior Completo",
   "data_cadastro": "2025-01-01T10:00:00.000Z",
   "origem": "Site EAD"
 }

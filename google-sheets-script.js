@@ -66,7 +66,7 @@ function handleRequest(data) {
   
   // Cria cabeçalhos na primeira linha se a aba estiver vazia
   if (sheet.getLastRow() === 0) {
-    var headers = ["Data/Hora", "Nome", "Email", "Telefone", "Curso", "Cidade", "Origem"];
+    var headers = ["Data/Hora", "Nome", "Email", "Telefone", "Curso", "Graduação", "Origem"];
     sheet.appendRow(headers);
     
     // Formata cabeçalho
@@ -83,7 +83,7 @@ function handleRequest(data) {
     data.email || "",
     data.telefone || "",
     data.curso || "",
-    data.cidade || "",
+    data.graduacao || "",
     data.origem || "Site EAD"
   ]);
   
