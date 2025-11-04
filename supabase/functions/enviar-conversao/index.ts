@@ -10,7 +10,7 @@ interface ConversaoData {
   email: string;
   telefone: string;
   curso: string;
-  cidade?: string;
+  graduacao?: string;
   timestamp: string;
 }
 
@@ -51,7 +51,7 @@ serve(async (req) => {
       email: data.email,
       telefone: data.telefone,
       curso: data.curso,
-      cidade: data.cidade || '',
+      graduacao: data.graduacao || '',
       data_cadastro: data.timestamp,
       origem: 'Site EAD'
     };
