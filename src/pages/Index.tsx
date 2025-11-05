@@ -1,30 +1,27 @@
-import { GraduationCap } from "lucide-react";
 import { MultiStepForm } from "@/components/MultiStepForm";
+import bannerImage from "@/assets/banner-education.jpg";
 
 const Index = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
-      {/* Header with Icon */}
-      <div className="flex justify-center pt-12 mb-6">
-        <div className="bg-blue-100 rounded-full p-6">
-          <GraduationCap className="h-12 w-12 text-blue-600" />
-        </div>
-      </div>
-
-      {/* Title Section */}
-      <div className="text-center mb-8 px-4">
-        <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-3">
-          Comece Sua Jornada Educacional
-        </h1>
-        <p className="text-muted-foreground text-base md:text-lg">
-          Preencha o formulário para receber mais informações sobre nossos cursos
-        </p>
+      {/* Banner - Desktop only */}
+      <div className="hidden md:flex justify-center pt-8 pb-6">
+        <img 
+          src={bannerImage} 
+          alt="Banner Educacional" 
+          className="w-full max-w-[1200px] h-auto rounded-lg shadow-lg"
+        />
       </div>
 
       {/* Multi-Step Form */}
-      <main className="container mx-auto px-4 pb-12">
+      <main className="container mx-auto px-4 pb-12 pt-8 md:pt-0">
         <MultiStepForm />
       </main>
+
+      {/* Footer */}
+      <footer className="py-6 text-center text-sm text-muted-foreground">
+        <p>© EVO Marketing & Tecnologia 2024. Otimize seus resultados de vendas.</p>
+      </footer>
     </div>
   );
 };
