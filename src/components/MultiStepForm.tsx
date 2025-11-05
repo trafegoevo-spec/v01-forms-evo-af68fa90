@@ -113,22 +113,47 @@ export const MultiStepForm = () => {
     console.log("Enviando dados:", data);
 
     try {
-      const { error } = await supabase.functions.invoke("enviar-conversao", {
+      // 1. Salvar no banco de dados
+      const { error: dbError } = await supabase
+        .from("leads")
+        .insert({
+          nome: data.nome,
+          email: data.email,
+          whatsapp: data.whatsapp,
+          escolaridade: data.escolaridade,
+          modalidade: data.modalidade,
+        });
+
+      if (dbError) {
+        console.error("Erro ao salvar no banco:", dbError);
+        throw dbError;
+      }
+
+      // 2. Enviar para Google Sheets via webhook (backup)
+      const { error: webhookError } = await supabase.functions.invoke("enviar-conversao", {
         body: {
           nome: data.nome,
           email: data.email,
           telefone: data.whatsapp,
           curso: data.modalidade,
-          cidade: data.escolaridade,
+          graduacao: data.escolaridade,
           timestamp: new Date().toISOString(),
         },
       });
 
-      if (error) throw error;
+      // Não bloquear o sucesso se o webhook falhar
+      if (webhookError) {
+        console.warn("Webhook falhou (dados salvos no banco):", webhookError);
+      }
 
       setSubmittedData(data);
       setIsSuccess(true);
       setStep(6);
+      
+      toast({
+        title: "Cadastro enviado com sucesso!",
+        description: "Em breve entraremos em contato.",
+      });
     } catch (error: any) {
       console.error("Erro ao enviar:", error);
       toast({
