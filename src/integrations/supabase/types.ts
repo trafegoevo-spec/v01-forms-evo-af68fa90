@@ -14,36 +14,7 @@ export type Database = {
   }
   public: {
     Tables: {
-      leads: {
-        Row: {
-          created_at: string
-          email: string
-          escolaridade: string
-          id: string
-          modalidade: string
-          nome: string
-          whatsapp: string
-        }
-        Insert: {
-          created_at?: string
-          email: string
-          escolaridade: string
-          id?: string
-          modalidade: string
-          nome: string
-          whatsapp: string
-        }
-        Update: {
-          created_at?: string
-          email?: string
-          escolaridade?: string
-          id?: string
-          modalidade?: string
-          nome?: string
-          whatsapp?: string
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Views: {
       [_ in never]: never

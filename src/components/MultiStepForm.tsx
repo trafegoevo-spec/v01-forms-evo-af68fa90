@@ -9,20 +9,11 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, ArrowRight, ArrowLeft, MessageCircle } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
-import { 
-  FORM_STEPS, 
-  ESCOLARIDADES, 
-  MODALIDADES, 
-  SUCCESS_PAGE, 
-  VALIDATION,
-  TOAST_MESSAGES,
-  WEBHOOK_MAPPING
-} from "@/config/formConfig";
 
 const formSchema = z.object({
-  nome: z.string().min(VALIDATION.nome.minLength, VALIDATION.nome.errorMessage).max(VALIDATION.nome.maxLength),
+  nome: z.string().min(3, "Nome deve ter no mínimo 3 caracteres").max(100),
   whatsapp: z.string()
-    .regex(VALIDATION.whatsapp.format, VALIDATION.whatsapp.errorMessage)
+    .regex(/^\(\d{2}\) \d{5}-\d{4}$/, "WhatsApp inválido. Use o formato (99) 99999-9999")
     .refine((val) => {
       const ddd = parseInt(val.substring(1, 3));
       return ddd >= 11 && ddd <= 99 && ddd !== 20 && ddd !== 30 && ddd !== 40 && ddd !== 50 && ddd !== 60 && ddd !== 70 && ddd !== 80 && ddd !== 90;
@@ -31,12 +22,31 @@ const formSchema = z.object({
       const nono = val.charAt(5);
       return nono === "9";
     }, "WhatsApp deve começar com 9"),
-  email: z.string().email(VALIDATION.email.errorMessage).max(VALIDATION.email.maxLength),
+  email: z.string().email("Email inválido").max(255),
   escolaridade: z.string().min(1, "Selecione seu nível de escolaridade"),
   modalidade: z.string().min(1, "Selecione uma modalidade"),
 });
 
 type FormData = z.infer<typeof formSchema>;
+
+const ESCOLARIDADES = [
+  "Ensino médio incompleto",
+  "Ensino médio completo",
+  "Graduação em andamento",
+  "Graduação completa",
+  "Pós-graduação em andamento",
+  "Pós-graduação completa",
+  "Mestrado / Doutorado",
+];
+
+const MODALIDADES = [
+  "EJA EAD",
+  "Técnico EAD",
+  "Graduação EAD",
+  "Segunda Graduação EAD",
+  "Disciplinas Isoladas EAD",
+  "Pós-graduação EAD",
+];
 
 export const MultiStepForm = () => {
   const [step, setStep] = useState(1);
@@ -103,48 +113,27 @@ export const MultiStepForm = () => {
     console.log("Enviando dados:", data);
 
     try {
-      // 1. Salvar no banco de dados
-      const { error: dbError } = await supabase
-        .from("leads")
-        .insert({
+      const { error } = await supabase.functions.invoke("enviar-conversao", {
+        body: {
           nome: data.nome,
           email: data.email,
-          whatsapp: data.whatsapp,
-          escolaridade: data.escolaridade,
-          modalidade: data.modalidade,
-        });
-
-      if (dbError) {
-        console.error("Erro ao salvar no banco:", dbError);
-        throw dbError;
-      }
-
-      // 2. Enviar para Google Sheets via webhook (backup)
-      const { error: webhookError } = await supabase.functions.invoke("enviar-conversao", {
-        body: {
-          [WEBHOOK_MAPPING.nome]: data.nome,
-          [WEBHOOK_MAPPING.email]: data.email,
-          [WEBHOOK_MAPPING.whatsapp]: data.whatsapp,
-          [WEBHOOK_MAPPING.modalidade]: data.modalidade,
-          [WEBHOOK_MAPPING.escolaridade]: data.escolaridade,
+          telefone: data.whatsapp,
+          curso: data.modalidade,
+          cidade: data.escolaridade,
           timestamp: new Date().toISOString(),
         },
       });
 
-      // Não bloquear o sucesso se o webhook falhar
-      if (webhookError) {
-        console.warn("Webhook falhou (dados salvos no banco):", webhookError);
-      }
+      if (error) throw error;
 
       setSubmittedData(data);
       setIsSuccess(true);
       setStep(6);
-      
-      toast(TOAST_MESSAGES.success);
     } catch (error: any) {
       console.error("Erro ao enviar:", error);
       toast({
-        ...TOAST_MESSAGES.error,
+        title: "Erro ao enviar cadastro",
+        description: "Tente novamente mais tarde.",
         variant: "destructive",
       });
     } finally {
@@ -159,15 +148,15 @@ export const MultiStepForm = () => {
           <div className="space-y-4">
             <div>
               <h2 className="text-2xl font-bold text-foreground mb-2">
-                {FORM_STEPS.nome.title}
+                Qual é o seu nome?
               </h2>
-              <p className="text-muted-foreground">{FORM_STEPS.nome.subtitle}</p>
+              <p className="text-muted-foreground">Como devemos te chamar?</p>
             </div>
             <div>
-              <label className="block text-sm font-medium mb-2">{FORM_STEPS.nome.label}</label>
+              <label className="block text-sm font-medium mb-2">Nome completo</label>
               <Input
                 {...form.register("nome")}
-                placeholder={FORM_STEPS.nome.placeholder}
+                placeholder="Digite seu nome completo"
                 className="h-12 text-base"
                 autoFocus
               />
@@ -185,16 +174,16 @@ export const MultiStepForm = () => {
           <div className="space-y-4">
             <div>
               <h2 className="text-2xl font-bold text-foreground mb-2">
-                {FORM_STEPS.whatsapp.title}
+                Qual é o seu WhatsApp?
               </h2>
-              <p className="text-muted-foreground">{FORM_STEPS.whatsapp.subtitle}</p>
+              <p className="text-muted-foreground">Para entrarmos em contato</p>
             </div>
             <div>
-              <label className="block text-sm font-medium mb-2">{FORM_STEPS.whatsapp.label}</label>
+              <label className="block text-sm font-medium mb-2">WhatsApp</label>
               <Input
                 {...form.register("whatsapp")}
-                type={FORM_STEPS.whatsapp.type}
-                placeholder={FORM_STEPS.whatsapp.placeholder}
+                type="tel"
+                placeholder="(99) 99999-9999"
                 className="h-12 text-base"
                 autoComplete="off"
                 autoFocus
@@ -217,16 +206,16 @@ export const MultiStepForm = () => {
           <div className="space-y-4">
             <div>
               <h2 className="text-2xl font-bold text-foreground mb-2">
-                {FORM_STEPS.email.title}
+                Qual é o seu e-mail?
               </h2>
-              <p className="text-muted-foreground">{FORM_STEPS.email.subtitle}</p>
+              <p className="text-muted-foreground">Enviaremos informações para você</p>
             </div>
             <div>
-              <label className="block text-sm font-medium mb-2">{FORM_STEPS.email.label}</label>
+              <label className="block text-sm font-medium mb-2">E-mail</label>
               <Input
                 {...form.register("email")}
-                type={FORM_STEPS.email.type}
-                placeholder={FORM_STEPS.email.placeholder}
+                type="email"
+                placeholder="seu@email.com"
                 className="h-12 text-base"
                 autoFocus
               />
@@ -244,18 +233,18 @@ export const MultiStepForm = () => {
           <div className="space-y-4">
             <div>
               <h2 className="text-2xl font-bold text-foreground mb-2">
-                {FORM_STEPS.escolaridade.title}
+                Qual é o seu nível de escolaridade?
               </h2>
-              <p className="text-muted-foreground">{FORM_STEPS.escolaridade.subtitle}</p>
+              <p className="text-muted-foreground">Escolha sua escolaridade atual</p>
             </div>
             <div>
-              <label className="block text-sm font-medium mb-2">{FORM_STEPS.escolaridade.label}</label>
+              <label className="block text-sm font-medium mb-2">Nível de escolaridade</label>
               <Select
                 value={form.watch("escolaridade")}
                 onValueChange={(value) => form.setValue("escolaridade", value)}
               >
                 <SelectTrigger className="h-12 text-base">
-                  <SelectValue placeholder={FORM_STEPS.escolaridade.placeholder} />
+                  <SelectValue placeholder="Selecione sua escolaridade" />
                 </SelectTrigger>
                 <SelectContent>
                   {ESCOLARIDADES.map((esc) => (
@@ -279,18 +268,18 @@ export const MultiStepForm = () => {
           <div className="space-y-4">
             <div>
               <h2 className="text-2xl font-bold text-foreground mb-2">
-                {FORM_STEPS.modalidade.title}
+                Qual modalidade você tem interesse?
               </h2>
-              <p className="text-muted-foreground">{FORM_STEPS.modalidade.subtitle}</p>
+              <p className="text-muted-foreground">Escolha a modalidade desejada</p>
             </div>
             <div>
-              <label className="block text-sm font-medium mb-2">{FORM_STEPS.modalidade.label}</label>
+              <label className="block text-sm font-medium mb-2">Modalidade de interesse</label>
               <Select
                 value={form.watch("modalidade")}
                 onValueChange={(value) => form.setValue("modalidade", value)}
               >
                 <SelectTrigger className="h-12 text-base">
-                  <SelectValue placeholder={FORM_STEPS.modalidade.placeholder} />
+                  <SelectValue placeholder="Selecione uma modalidade" />
                 </SelectTrigger>
                 <SelectContent>
                   {MODALIDADES.map((mod) => (
@@ -311,30 +300,30 @@ export const MultiStepForm = () => {
 
       case 6:
         if (!isSuccess || !submittedData) return null;
-        const whatsappUrl = `https://wa.me/${SUCCESS_PAGE.whatsappButton.phone}?text=${encodeURIComponent(SUCCESS_PAGE.whatsappButton.message)}`;
-        
         return (
           <div className="space-y-6 text-center">
-            <div className="text-6xl">{SUCCESS_PAGE.emoji}</div>
+            <div className="text-6xl">🎉</div>
             <div>
               <h2 className="text-3xl font-bold text-foreground mb-3">
-                {SUCCESS_PAGE.title(submittedData.nome)}
+                Obrigado, {submittedData.nome.split(' ')[0]}!
               </h2>
               <p className="text-lg text-muted-foreground">
-                {SUCCESS_PAGE.message1}
+                Recebemos suas informações com sucesso!
               </p>
               <p className="text-lg text-muted-foreground mt-2">
-                {SUCCESS_PAGE.message2(submittedData.modalidade)}
+                Em breve entraremos em contato sobre os cursos de <span className="font-semibold text-primary">{submittedData.modalidade}</span>.
               </p>
             </div>
             <div className="pt-4">
               <Button
-                onClick={() => window.open(whatsappUrl, "_blank")}
+                onClick={() => {
+                  window.open("https://wa.me/5531989236061?text=Olá!%20Acabei%20de%20enviar%20meus%20dados%20no%20formulário.", "_blank");
+                }}
                 className="h-14 px-8 text-lg bg-green-600 hover:bg-green-700 text-white"
                 size="lg"
               >
                 <MessageCircle className="mr-2 h-5 w-5" />
-                {SUCCESS_PAGE.whatsappButton.text}
+                Falar no WhatsApp Agora
               </Button>
             </div>
           </div>

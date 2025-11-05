@@ -16,33 +16,9 @@
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:site" content="@lovable_dev" />
     <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
-
-    <!-- Google Tag Manager - Configure em src/config/gtmConfig.ts -->
-    <script type="module">
-      import { GTM_CONFIG } from '/src/config/gtmConfig.ts';
-      
-      if (GTM_CONFIG.ENABLED && GTM_CONFIG.GTM_ID) {
-        (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-        new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-        j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-        'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-        })(window,document,'script','dataLayer',GTM_CONFIG.GTM_ID);
-      }
-    </script>
   </head>
 
   <body>
-    <!-- Google Tag Manager (noscript) - Configure em src/config/gtmConfig.ts -->
-    <noscript>
-      <iframe id="gtm-noscript" src="" height="0" width="0" style="display:none;visibility:hidden"></iframe>
-      <script type="module">
-        import { GTM_CONFIG } from '/src/config/gtmConfig.ts';
-        if (GTM_CONFIG.ENABLED && GTM_CONFIG.GTM_ID) {
-          document.getElementById('gtm-noscript').src = `https://www.googletagmanager.com/ns.html?id=${GTM_CONFIG.GTM_ID}`;
-        }
-      </script>
-    </noscript>
-    
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
