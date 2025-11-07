@@ -48,20 +48,57 @@ serve(async (req) => {
 
     console.log("Enviando para webhook:", payload);
 
-    const webhookResponse = await fetch(webhookUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
-    });
+    try {
+      const webhookResponse = await fetch(webhookUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+        signal: AbortSignal.timeout(10000), // Timeout de 10 segundos
+      });
 
-    if (!webhookResponse.ok) {
-      console.error("Erro ao enviar para webhook:", await webhookResponse.text());
-      throw new Error("Falha ao enviar para planilha");
+      const responseText = await webhookResponse.text();
+      
+      if (!webhookResponse.ok) {
+        console.error("Erro ao enviar para webhook (status " + webhookResponse.status + "):", responseText);
+        
+        // Se for erro do Google (rate limit), retorna sucesso parcial
+        if (responseText.includes('muitas solicitações') || responseText.includes('indisponível')) {
+          console.warn("Google Sheets temporariamente indisponível. Dados salvos localmente.");
+          return new Response(
+            JSON.stringify({ 
+              success: true, 
+              warning: "Dados salvos. Planilha temporariamente indisponível (muitas requisições).",
+              data 
+            }),
+            {
+              status: 200,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            }
+          );
+        }
+        
+        throw new Error("Webhook retornou erro: " + webhookResponse.status);
+      }
+
+      console.log("Conversão enviada para planilha com sucesso!");
+    } catch (webhookError: any) {
+      console.error("Erro ao chamar webhook:", webhookError.message);
+      
+      // Retorna sucesso parcial - dados foram salvos no Supabase
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          warning: "Dados salvos localmente. Erro ao enviar para planilha: " + webhookError.message,
+          data 
+        }),
+        {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
     }
-
-    console.log("Conversão enviada para planilha com sucesso!");
 
     return new Response(
       JSON.stringify({ 
