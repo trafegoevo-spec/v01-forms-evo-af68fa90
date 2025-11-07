@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      form_questions: {
+        Row: {
+          created_at: string
+          field_name: string
+          id: string
+          options: Json
+          question: string
+          step: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          field_name: string
+          id?: string
+          options: Json
+          question: string
+          step: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          field_name?: string
+          id?: string
+          options?: Json
+          question?: string
+          step?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       leads: {
         Row: {
           created_at: string
