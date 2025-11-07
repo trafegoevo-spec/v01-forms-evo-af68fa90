@@ -101,6 +101,16 @@ export const AuthDialog = ({ open, onOpenChange }: AuthDialogProps) => {
             >
               {isLogin ? "Não tem conta? Criar conta" : "Já tem conta? Fazer login"}
             </Button>
+
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={loading}
+              className="w-full"
+            >
+              Continuar sem login
+            </Button>
           </div>
         </form>
       </DialogContent>

@@ -61,8 +61,8 @@ const Index = () => {
         open={showAuthDialog} 
         onOpenChange={(open) => {
           setShowAuthDialog(open);
-          if (!open && user) {
-            handleAuthSuccess();
+          if (!open) {
+            setShowForm(true);
           }
         }} 
       />
