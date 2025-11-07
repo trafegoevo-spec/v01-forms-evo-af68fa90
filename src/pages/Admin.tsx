@@ -26,6 +26,7 @@ const Admin = () => {
   const { toast } = useToast();
   const [questions, setQuestions] = useState<FormQuestion[]>([]);
   const [loading, setLoading] = useState(true);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !isAdmin) {
@@ -67,24 +68,40 @@ const Admin = () => {
     }
   };
 
-  const updateQuestion = async (id: string, updates: Partial<FormQuestion>) => {
-    try {
-      const { error } = await supabase
-        .from("form_questions")
-        .update(updates)
-        .eq("id", id);
+  const updateQuestionLocal = (id: string, updates: Partial<FormQuestion>) => {
+    setQuestions(prev => 
+      prev.map(q => q.id === id ? { ...q, ...updates } : q)
+    );
+    setHasUnsavedChanges(true);
+  };
 
-      if (error) throw error;
+  const saveAllChanges = async () => {
+    try {
+      for (const question of questions) {
+        const { error } = await supabase
+          .from("form_questions")
+          .update({
+            question: question.question,
+            subtitle: question.subtitle,
+            field_name: question.field_name,
+            input_type: question.input_type,
+            options: question.options,
+          })
+          .eq("id", question.id);
+
+        if (error) throw error;
+      }
 
       toast({
-        title: "Pergunta atualizada!",
-        description: "As alterações foram salvas.",
+        title: "Alterações salvas!",
+        description: "Todas as mudanças foram salvas com sucesso.",
       });
 
+      setHasUnsavedChanges(false);
       loadQuestions();
     } catch (error: any) {
       toast({
-        title: "Erro ao atualizar",
+        title: "Erro ao salvar",
         description: error.message,
         variant: "destructive",
       });
@@ -121,7 +138,7 @@ const Admin = () => {
     if (!question) return;
     
     const newOptions = [...question.options, `Opção ${question.options.length + 1}`];
-    updateQuestion(questionId, { options: newOptions });
+    updateQuestionLocal(questionId, { options: newOptions });
   };
 
   const removeOption = (questionId: string, index: number) => {
@@ -129,7 +146,7 @@ const Admin = () => {
     if (!question) return;
     
     const newOptions = question.options.filter((_, i) => i !== index);
-    updateQuestion(questionId, { options: newOptions });
+    updateQuestionLocal(questionId, { options: newOptions });
   };
 
   const updateOption = (questionId: string, optionIndex: number, value: string) => {
@@ -137,7 +154,7 @@ const Admin = () => {
     if (!question) return;
     
     const newOptions = question.options.map((opt, i) => i === optionIndex ? value : opt);
-    updateQuestion(questionId, { options: newOptions });
+    updateQuestionLocal(questionId, { options: newOptions });
   };
 
   const addNewQuestion = async () => {
@@ -288,9 +305,8 @@ const Admin = () => {
                   <Input
                     value={question.question}
                     onChange={(e) =>
-                      updateQuestion(question.id, { question: e.target.value })
+                      updateQuestionLocal(question.id, { question: e.target.value })
                     }
-                    onBlur={() => loadQuestions()}
                   />
                 </div>
 
@@ -299,9 +315,8 @@ const Admin = () => {
                   <Input
                     value={question.subtitle || ""}
                     onChange={(e) =>
-                      updateQuestion(question.id, { subtitle: e.target.value })
+                      updateQuestionLocal(question.id, { subtitle: e.target.value })
                     }
-                    onBlur={() => loadQuestions()}
                     placeholder="Texto explicativo abaixo da pergunta"
                   />
                 </div>
@@ -311,9 +326,8 @@ const Admin = () => {
                   <Input
                     value={question.field_name}
                     onChange={(e) =>
-                      updateQuestion(question.id, { field_name: e.target.value })
+                      updateQuestionLocal(question.id, { field_name: e.target.value })
                     }
-                    onBlur={() => loadQuestions()}
                   />
                 </div>
 
@@ -322,7 +336,7 @@ const Admin = () => {
                   <Select
                     value={question.input_type || 'text'}
                     onValueChange={(value: 'text' | 'select') => {
-                      updateQuestion(question.id, { input_type: value });
+                      updateQuestionLocal(question.id, { input_type: value });
                     }}
                   >
                     <SelectTrigger>
@@ -354,7 +368,6 @@ const Admin = () => {
                           <Input
                             value={option}
                             onChange={(e) => updateOption(question.id, index, e.target.value)}
-                            onBlur={() => loadQuestions()}
                             placeholder={`Opção ${index + 1}`}
                           />
                           <Button
@@ -373,6 +386,19 @@ const Admin = () => {
             </Card>
           ))}
         </div>
+
+        {questions.length > 0 && (
+          <div className="flex justify-end mt-6 sticky bottom-6">
+            <Button 
+              onClick={saveAllChanges}
+              size="lg"
+              disabled={!hasUnsavedChanges}
+              className="shadow-lg"
+            >
+              {hasUnsavedChanges ? "Salvar Alterações" : "Tudo Salvo"}
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );
