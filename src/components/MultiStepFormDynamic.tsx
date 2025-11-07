@@ -112,6 +112,16 @@ export const MultiStepFormDynamic = () => {
 
     if (isValid && step < totalSteps) {
       setStep(step + 1);
+      
+      // GTM - Track form step view
+      if (typeof window !== 'undefined' && (window as any).dataLayer) {
+        (window as any).dataLayer.push({
+          event: 'form_step_view',
+          step_number: step + 1,
+          step_name: questions[step]?.field_name || '',
+          total_steps: questions.length
+        });
+      }
     }
   };
 
@@ -123,6 +133,14 @@ export const MultiStepFormDynamic = () => {
 
   const onSubmit = async (data: any) => {
     setIsSubmitting(true);
+
+    // GTM - Track form submission attempt
+    if (typeof window !== 'undefined' && (window as any).dataLayer) {
+      (window as any).dataLayer.push({
+        event: 'form_submission',
+        form_name: 'lead_form'
+      });
+    }
 
     try {
       // Prepare lead data with both legacy fields and dynamic form_data
@@ -151,6 +169,17 @@ export const MultiStepFormDynamic = () => {
       });
 
       if (error) console.error("Webhook error:", error);
+
+      // GTM - Track successful conversion
+      if (typeof window !== 'undefined' && (window as any).dataLayer) {
+        (window as any).dataLayer.push({
+          event: 'form_conversion',
+          form_name: 'lead_form',
+          lead_name: data.nome || '',
+          lead_email: data.email || '',
+          ...data // Include all form fields
+        });
+      }
 
       setSubmittedData(data);
       setIsSuccess(true);
