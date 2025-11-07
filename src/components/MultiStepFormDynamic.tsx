@@ -31,14 +31,6 @@ export const MultiStepFormDynamic = () => {
 
   useEffect(() => {
     loadQuestions();
-    
-    // Meta Pixel - Track form view
-    if (typeof window !== 'undefined' && (window as any).fbq) {
-      (window as any).fbq('track', 'ViewContent', {
-        content_name: 'Lead Form',
-        content_category: 'form'
-      });
-    }
   }, []);
 
   const loadQuestions = async () => {
@@ -130,15 +122,6 @@ export const MultiStepFormDynamic = () => {
           total_steps: questions.length
         });
       }
-
-      // Meta Pixel - Track progress through form
-      if (typeof window !== 'undefined' && (window as any).fbq && step + 1 === 2) {
-        // Track when user starts filling the form (reaches step 2)
-        (window as any).fbq('track', 'InitiateCheckout', {
-          content_name: 'Lead Form Started',
-          num_items: questions.length
-        });
-      }
     }
   };
 
@@ -156,13 +139,6 @@ export const MultiStepFormDynamic = () => {
       (window as any).dataLayer.push({
         event: 'form_submission',
         form_name: 'lead_form'
-      });
-    }
-
-    // Meta Pixel - Track form submission attempt
-    if (typeof window !== 'undefined' && (window as any).fbq) {
-      (window as any).fbq('track', 'SubmitApplication', {
-        content_name: 'Lead Form Submission'
       });
     }
 
@@ -202,15 +178,6 @@ export const MultiStepFormDynamic = () => {
           lead_name: data.nome || '',
           lead_email: data.email || '',
           ...data // Include all form fields
-        });
-      }
-
-      // Meta Pixel - Track Lead conversion
-      if (typeof window !== 'undefined' && (window as any).fbq) {
-        (window as any).fbq('track', 'Lead', {
-          content_name: 'Lead Form Completed',
-          content_category: 'lead_generation',
-          status: 'completed'
         });
       }
 
