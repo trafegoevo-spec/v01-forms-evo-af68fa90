@@ -5,15 +5,6 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-interface ConversaoData {
-  nome: string;
-  email: string;
-  telefone: string;
-  curso: string;
-  graduacao?: string;
-  timestamp: string;
-}
-
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -21,7 +12,7 @@ serve(async (req) => {
   }
 
   try {
-    const data: ConversaoData = await req.json();
+    const data = await req.json();
     
     console.log("Conversão recebida:", data);
 
@@ -45,16 +36,15 @@ serve(async (req) => {
       );
     }
 
-    // Envia dados para o webhook usando JSON
+    // Prepara payload com todos os campos do formulário dinâmico
     const payload = {
-      nome: data.nome,
-      email: data.email,
-      telefone: data.telefone,
-      curso: data.curso,
-      graduacao: data.graduacao || '',
-      data_cadastro: data.timestamp,
+      ...data, // Envia todos os campos recebidos
+      data_cadastro: data.timestamp || new Date().toISOString(),
       origem: 'Site EAD'
     };
+
+    // Remove timestamp duplicado se existir
+    delete payload.timestamp;
 
     console.log("Enviando para webhook:", payload);
 

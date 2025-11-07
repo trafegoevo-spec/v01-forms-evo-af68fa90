@@ -19,7 +19,7 @@ export type Database = {
           created_at: string
           field_name: string
           id: string
-          input_type: string | null
+          input_type: string
           options: Json
           question: string
           step: number
@@ -30,7 +30,7 @@ export type Database = {
           created_at?: string
           field_name: string
           id?: string
-          input_type?: string | null
+          input_type?: string
           options: Json
           question: string
           step: number
@@ -41,7 +41,7 @@ export type Database = {
           created_at?: string
           field_name?: string
           id?: string
-          input_type?: string | null
+          input_type?: string
           options?: Json
           question?: string
           step?: number
@@ -55,6 +55,7 @@ export type Database = {
           created_at: string
           email: string
           escolaridade: string
+          form_data: Json | null
           id: string
           modalidade: string
           nome: string
@@ -64,6 +65,7 @@ export type Database = {
           created_at?: string
           email: string
           escolaridade: string
+          form_data?: Json | null
           id?: string
           modalidade: string
           nome: string
@@ -73,6 +75,7 @@ export type Database = {
           created_at?: string
           email?: string
           escolaridade?: string
+          form_data?: Json | null
           id?: string
           modalidade?: string
           nome?: string

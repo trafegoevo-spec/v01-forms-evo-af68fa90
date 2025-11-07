@@ -142,13 +142,22 @@ const Admin = () => {
 
   const addNewQuestion = async () => {
     const maxStep = Math.max(...questions.map(q => q.step), 0);
+    
+    // Generate unique field_name
+    let fieldName = `campo_${maxStep + 1}`;
+    let counter = 1;
+    while (questions.some(q => q.field_name === fieldName)) {
+      counter++;
+      fieldName = `campo_${maxStep + 1}_${counter}`;
+    }
+    
     try {
       const { error } = await supabase
         .from("form_questions")
         .insert({
           step: maxStep + 1,
           question: "Nova pergunta",
-          field_name: `campo_${maxStep + 1}`,
+          field_name: fieldName,
           options: [],
           input_type: 'text',
         });

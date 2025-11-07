@@ -65,15 +65,17 @@ export const MultiStepFormDynamic = () => {
     const schemaFields: Record<string, z.ZodType<any>> = {};
 
     questions.forEach(q => {
-      if (q.field_name === "whatsapp") {
+      // Detect field type based on field_name for special validation
+      if (q.field_name.toLowerCase().includes("whatsapp") || q.field_name.toLowerCase().includes("telefone")) {
         schemaFields[q.field_name] = z.string()
           .regex(/^\(\d{2}\) \d{5}-\d{4}$/, "WhatsApp inválido. Use o formato (99) 99999-9999");
-      } else if (q.field_name === "email") {
+      } else if (q.field_name.toLowerCase().includes("email")) {
         schemaFields[q.field_name] = z.string().email("Email inválido").max(255);
-      } else if (q.options.length > 0) {
+      } else if (q.input_type === 'select' && q.options.length > 0) {
         schemaFields[q.field_name] = z.string().min(1, "Selecione uma opção");
       } else {
-        schemaFields[q.field_name] = z.string().min(3, "Campo obrigatório").max(100);
+        // Text input
+        schemaFields[q.field_name] = z.string().min(1, "Campo obrigatório").max(200);
       }
     });
 
@@ -123,12 +125,24 @@ export const MultiStepFormDynamic = () => {
     setIsSubmitting(true);
 
     try {
+      // Prepare lead data with both legacy fields and dynamic form_data
+      const leadData = {
+        // Keep legacy fields for backwards compatibility
+        nome: data.nome || '',
+        whatsapp: data.whatsapp || '',
+        email: data.email || '',
+        escolaridade: data.escolaridade || '',
+        modalidade: data.modalidade || '',
+        // Store all form data in JSONB column
+        form_data: data,
+      };
+
       // Save to database
-      const { error: dbError } = await supabase.from("leads").insert([data]);
+      const { error: dbError } = await supabase.from("leads").insert([leadData]);
 
       if (dbError) throw dbError;
 
-      // Send to webhook/edge function
+      // Send to webhook/edge function with all form data
       const { error } = await supabase.functions.invoke("enviar-conversao", {
         body: {
           ...data,
@@ -230,9 +244,15 @@ export const MultiStepFormDynamic = () => {
             // Input field for text questions
             <Input
               {...form.register(currentQuestion.field_name)}
-              type={currentQuestion.field_name === "email" ? "email" : currentQuestion.field_name === "whatsapp" ? "tel" : "text"}
+              type={
+                currentQuestion.field_name.toLowerCase().includes("email") 
+                  ? "email" 
+                  : (currentQuestion.field_name.toLowerCase().includes("whatsapp") || currentQuestion.field_name.toLowerCase().includes("telefone"))
+                  ? "tel" 
+                  : "text"
+              }
               placeholder={
-                currentQuestion.field_name === "whatsapp"
+                (currentQuestion.field_name.toLowerCase().includes("whatsapp") || currentQuestion.field_name.toLowerCase().includes("telefone"))
                   ? "(99) 99999-9999"
                   : `Digite ${currentQuestion.question.toLowerCase()}`
               }
@@ -240,7 +260,7 @@ export const MultiStepFormDynamic = () => {
               autoFocus
               autoComplete="off"
               onChange={
-                currentQuestion.field_name === "whatsapp"
+                (currentQuestion.field_name.toLowerCase().includes("whatsapp") || currentQuestion.field_name.toLowerCase().includes("telefone"))
                   ? (e) => {
                       const formatted = formatWhatsApp(e.target.value);
                       form.setValue(currentQuestion.field_name, formatted);
@@ -266,6 +286,22 @@ export const MultiStepFormDynamic = () => {
         <div className="bg-white rounded-2xl shadow-xl p-8 text-center">
           <Loader2 className="h-8 w-8 animate-spin mx-auto" />
           <p className="mt-2 text-muted-foreground">Carregando formulário...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show message if no questions configured
+  if (questions.length === 0) {
+    return (
+      <div className="w-full max-w-2xl mx-auto p-6">
+        <div className="bg-white rounded-2xl shadow-xl p-8 text-center">
+          <p className="text-lg text-muted-foreground">
+            Nenhuma pergunta configurada ainda.
+          </p>
+          <p className="text-sm text-muted-foreground mt-2">
+            Entre em contato conosco para mais informações.
+          </p>
         </div>
       </div>
     );
