@@ -1,20 +1,14 @@
 import { MultiStepForm } from "@/components/MultiStepForm";
-import bannerImage from "@/assets/banner-education.jpg";
+import { LogoUploader } from "@/components/LogoUploader";
 
 const Index = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
-      {/* Banner - Desktop only */}
-      <div className="hidden md:flex justify-center pt-8 pb-6">
-        <img 
-          src={bannerImage} 
-          alt="Banner Educacional" 
-          className="w-full max-w-[1200px] h-auto rounded-lg shadow-lg"
-        />
-      </div>
+      {/* Logo Upload */}
+      <LogoUploader />
 
       {/* Multi-Step Form */}
-      <main className="container mx-auto px-4 pb-12 pt-8 md:pt-0">
+      <main className="container mx-auto px-4 pb-12">
         <MultiStepForm />
       </main>
 
