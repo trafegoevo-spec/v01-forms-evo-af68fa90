@@ -61,13 +61,59 @@ function handleRequest(data) {
   
   // Adiciona timestamp se não vier nos dados
   if (!data.data_cadastro && !data.timestamp) {
-    data.data_cadastro = new Date().toISOString();
+    data.data_cadastro = new Date().toLocaleString('pt-BR');
   }
   
-  // Cria cabeçalhos na primeira linha se a aba estiver vazia
-  if (sheet.getLastRow() === 0) {
-    var headers = ["Data/Hora", "Nome", "Email", "Telefone", "Curso", "Graduação", "Origem"];
-    sheet.appendRow(headers);
+  // Pega os headers atuais (primeira linha)
+  var headers = [];
+  if (sheet.getLastRow() > 0) {
+    headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  }
+  
+  // Se não houver headers, cria com Data/Hora primeiro
+  if (headers.length === 0 || headers[0] === '') {
+    headers = ['Data/Hora'];
+  }
+  
+  // Garante que Data/Hora está sempre na primeira coluna
+  if (headers[0] !== 'Data/Hora') {
+    headers.unshift('Data/Hora');
+  }
+  
+  // Prepara array de dados
+  var rowData = new Array(headers.length).fill('');
+  rowData[0] = data.data_cadastro || data.timestamp || new Date().toLocaleString('pt-BR');
+  
+  var headersUpdated = false;
+  
+  // Itera sobre todos os campos recebidos
+  for (var key in data) {
+    if (data.hasOwnProperty(key) && key !== 'data_cadastro' && key !== 'timestamp' && key !== 'origem') {
+      var headerIndex = headers.indexOf(key);
+      
+      // Se a coluna não existe, adiciona
+      if (headerIndex === -1) {
+        headers.push(key);
+        headerIndex = headers.length - 1;
+        headersUpdated = true;
+      }
+      
+      // Garante que o array de dados tenha o tamanho correto
+      while (rowData.length < headers.length) {
+        rowData.push('');
+      }
+      
+      rowData[headerIndex] = data[key] || '';
+    }
+  }
+  
+  // Atualiza os headers se necessário
+  if (headersUpdated || sheet.getLastRow() === 0) {
+    // Limpa a primeira linha e escreve os novos headers
+    if (sheet.getLastRow() > 0) {
+      sheet.getRange(1, 1, 1, sheet.getMaxColumns()).clear();
+    }
+    sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
     
     // Formata cabeçalho
     var headerRange = sheet.getRange(1, 1, 1, headers.length);
@@ -77,21 +123,14 @@ function handleRequest(data) {
   }
   
   // Adiciona nova linha com os dados
-  sheet.appendRow([
-    data.data_cadastro || data.timestamp || new Date(),
-    data.nome || "",
-    data.email || "",
-    data.telefone || "",
-    data.curso || "",
-    data.graduacao || "",
-    data.origem || "Site EAD"
-  ]);
+  sheet.appendRow(rowData);
   
   // Retorna sucesso
   return ContentService.createTextOutput(
     JSON.stringify({ 
       success: true, 
-      message: "Lead registrado na aba: " + nomeAba 
+      message: "Lead registrado na aba: " + nomeAba,
+      columns: headers.length
     })
   ).setMimeType(ContentService.MimeType.JSON);
 }
@@ -102,6 +141,7 @@ function handleRequest(data) {
  * ✅ Cria abas automaticamente baseado no campo "origem"
  * ✅ Adiciona timestamp automaticamente
  * ✅ Cria cabeçalhos formatados automaticamente
+ * ✅ Adiciona COLUNAS AUTOMATICAMENTE quando novos campos aparecem no formulário
  * ✅ Usa planilha específica por ID ou planilha ativa
  * ✅ Retorna JSON com status de sucesso/erro
  */
