@@ -226,6 +226,7 @@ export const MultiStepFormDynamic = () => {
           {currentQuestion.input_type === 'select' && currentQuestion.options.length > 0 ? (
             // Select field for questions with options
             <Select
+              key={`select-${currentQuestion.field_name}-${step}`}
               value={form.watch(currentQuestion.field_name)}
               onValueChange={(value) => form.setValue(currentQuestion.field_name, value)}
             >
@@ -243,6 +244,7 @@ export const MultiStepFormDynamic = () => {
           ) : (
             // Input field for text questions
             <Input
+              key={`input-${currentQuestion.field_name}-${step}`}
               {...form.register(currentQuestion.field_name)}
               type={
                 currentQuestion.field_name.toLowerCase().includes("email") 
