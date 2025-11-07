@@ -22,6 +22,7 @@ export type Database = {
           options: Json
           question: string
           step: number
+          subtitle: string | null
           updated_at: string
         }
         Insert: {
@@ -31,6 +32,7 @@ export type Database = {
           options: Json
           question: string
           step: number
+          subtitle?: string | null
           updated_at?: string
         }
         Update: {
@@ -40,6 +42,7 @@ export type Database = {
           options?: Json
           question?: string
           step?: number
+          subtitle?: string | null
           updated_at?: string
         }
         Relationships: []

@@ -7,12 +7,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, ArrowUp, ArrowDown } from "lucide-react";
 
 interface FormQuestion {
   id: string;
   step: number;
   question: string;
+  subtitle?: string;
   options: string[];
   field_name: string;
 }
@@ -126,6 +127,72 @@ const Admin = () => {
     updateQuestion(questionId, { options: newOptions });
   };
 
+  const addNewQuestion = async () => {
+    const maxStep = Math.max(...questions.map(q => q.step), 0);
+    try {
+      const { error } = await supabase
+        .from("form_questions")
+        .insert({
+          step: maxStep + 1,
+          question: "Nova pergunta",
+          field_name: `campo_${maxStep + 1}`,
+          options: [],
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Pergunta criada!",
+      });
+
+      loadQuestions();
+    } catch (error: any) {
+      toast({
+        title: "Erro ao criar pergunta",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const moveQuestion = async (questionId: string, direction: "up" | "down") => {
+    const currentIndex = questions.findIndex(q => q.id === questionId);
+    if (
+      (direction === "up" && currentIndex === 0) ||
+      (direction === "down" && currentIndex === questions.length - 1)
+    ) {
+      return;
+    }
+
+    const targetIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1;
+    const currentQuestion = questions[currentIndex];
+    const targetQuestion = questions[targetIndex];
+
+    try {
+      await supabase
+        .from("form_questions")
+        .update({ step: targetQuestion.step })
+        .eq("id", currentQuestion.id);
+
+      await supabase
+        .from("form_questions")
+        .update({ step: currentQuestion.step })
+        .eq("id", targetQuestion.id);
+
+      toast({
+        title: "Ordem atualizada!",
+      });
+
+      loadQuestions();
+    } catch (error: any) {
+      toast({
+        title: "Erro ao mover pergunta",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
   if (authLoading || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -151,7 +218,13 @@ const Admin = () => {
           </Button>
         </div>
 
-        <h1 className="text-3xl font-bold mb-6">Editar Questionário</h1>
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-3xl font-bold">Editar Questionário</h1>
+          <Button onClick={addNewQuestion}>
+            <Plus className="mr-2 h-4 w-4" />
+            Nova Pergunta
+          </Button>
+        </div>
 
         <div className="space-y-4">
           {questions.map((question) => (
@@ -159,13 +232,31 @@ const Admin = () => {
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
                   <span>Passo {question.step}</span>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => deleteQuestion(question.id)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => moveQuestion(question.id, "up")}
+                      disabled={questions.findIndex(q => q.id === question.id) === 0}
+                    >
+                      <ArrowUp className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => moveQuestion(question.id, "down")}
+                      disabled={questions.findIndex(q => q.id === question.id) === questions.length - 1}
+                    >
+                      <ArrowDown className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => deleteQuestion(question.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -177,6 +268,18 @@ const Admin = () => {
                       updateQuestion(question.id, { question: e.target.value })
                     }
                     onBlur={() => loadQuestions()}
+                  />
+                </div>
+
+                <div>
+                  <Label>Subtexto (opcional)</Label>
+                  <Input
+                    value={question.subtitle || ""}
+                    onChange={(e) =>
+                      updateQuestion(question.id, { subtitle: e.target.value })
+                    }
+                    onBlur={() => loadQuestions()}
+                    placeholder="Texto explicativo abaixo da pergunta"
                   />
                 </div>
 

@@ -14,6 +14,7 @@ interface Question {
   id: string;
   step: number;
   question: string;
+  subtitle?: string;
   options: string[];
   field_name: string;
 }
@@ -195,6 +196,11 @@ export const MultiStepFormDynamic = () => {
           <h2 className="text-2xl font-bold text-foreground mb-2">
             {currentQuestion.question}
           </h2>
+          {currentQuestion.subtitle && (
+            <p className="text-sm text-muted-foreground mt-1">
+              {currentQuestion.subtitle}
+            </p>
+          )}
         </div>
         <div>
           <label className="block text-sm font-medium mb-2">
