@@ -7,7 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Plus, Trash2, ArrowUp, ArrowDown } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, ArrowUp, ArrowDown, X } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface FormQuestion {
   id: string;
@@ -16,6 +17,7 @@ interface FormQuestion {
   subtitle?: string;
   options: string[];
   field_name: string;
+  input_type?: 'text' | 'select';
 }
 
 const Admin = () => {
@@ -49,7 +51,8 @@ const Admin = () => {
       // Transform data to match FormQuestion type
       const transformedData = (data || []).map(item => ({
         ...item,
-        options: Array.isArray(item.options) ? item.options as string[] : []
+        options: Array.isArray(item.options) ? item.options as string[] : [],
+        input_type: (item.input_type === 'select' || item.input_type === 'text' ? item.input_type : 'text') as 'text' | 'select'
       }));
       
       setQuestions(transformedData);
@@ -113,17 +116,27 @@ const Admin = () => {
     }
   };
 
-  const addOption = (questionId: string, currentOptions: string[]) => {
-    const newOption = prompt("Digite a nova opção:");
-    if (newOption) {
-      updateQuestion(questionId, {
-        options: [...currentOptions, newOption],
-      });
-    }
+  const addOption = (questionId: string) => {
+    const question = questions.find(q => q.id === questionId);
+    if (!question) return;
+    
+    const newOptions = [...question.options, `Opção ${question.options.length + 1}`];
+    updateQuestion(questionId, { options: newOptions });
   };
 
-  const removeOption = (questionId: string, currentOptions: string[], index: number) => {
-    const newOptions = currentOptions.filter((_, i) => i !== index);
+  const removeOption = (questionId: string, index: number) => {
+    const question = questions.find(q => q.id === questionId);
+    if (!question) return;
+    
+    const newOptions = question.options.filter((_, i) => i !== index);
+    updateQuestion(questionId, { options: newOptions });
+  };
+
+  const updateOption = (questionId: string, optionIndex: number, value: string) => {
+    const question = questions.find(q => q.id === questionId);
+    if (!question) return;
+    
+    const newOptions = question.options.map((opt, i) => i === optionIndex ? value : opt);
     updateQuestion(questionId, { options: newOptions });
   };
 
@@ -137,6 +150,7 @@ const Admin = () => {
           question: "Nova pergunta",
           field_name: `campo_${maxStep + 1}`,
           options: [],
+          input_type: 'text',
         });
 
       if (error) throw error;
@@ -294,32 +308,55 @@ const Admin = () => {
                   />
                 </div>
 
-                {question.options.length > 0 && (
+                <div>
+                  <Label>Tipo de Resposta</Label>
+                  <Select
+                    value={question.input_type || 'text'}
+                    onValueChange={(value: 'text' | 'select') => {
+                      updateQuestion(question.id, { input_type: value });
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="text">Resposta Escrita</SelectItem>
+                      <SelectItem value="select">Múltipla Escolha</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {question.input_type === 'select' && (
                   <div>
-                    <Label>Opções</Label>
-                    <div className="space-y-2 mt-2">
-                      {question.options.map((option, index) => (
-                        <div key={index} className="flex items-center gap-2">
-                          <Input value={option} readOnly />
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() =>
-                              removeOption(question.id, question.options, index)
-                            }
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ))}
+                    <div className="flex items-center justify-between mb-2">
+                      <Label>Opções de Escolha</Label>
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => addOption(question.id, question.options)}
+                        onClick={() => addOption(question.id)}
                       >
                         <Plus className="mr-2 h-4 w-4" />
                         Adicionar Opção
                       </Button>
+                    </div>
+                    <div className="space-y-2">
+                      {question.options.map((option, index) => (
+                        <div key={index} className="flex items-center gap-2">
+                          <Input
+                            value={option}
+                            onChange={(e) => updateOption(question.id, index, e.target.value)}
+                            onBlur={() => loadQuestions()}
+                            placeholder={`Opção ${index + 1}`}
+                          />
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => removeOption(question.id, index)}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 )}

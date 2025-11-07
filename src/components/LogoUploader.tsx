@@ -2,12 +2,13 @@ import { useState, useRef } from "react";
 import { Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import logoImage from "@/assets/logo.jpg";
 
 const LOGO_STORAGE_KEY = "custom_logo";
 
 export const LogoUploader = () => {
   const [logoUrl, setLogoUrl] = useState<string | null>(() => {
-    return localStorage.getItem(LOGO_STORAGE_KEY);
+    return localStorage.getItem(LOGO_STORAGE_KEY) || logoImage;
   });
   const [isEditing, setIsEditing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);

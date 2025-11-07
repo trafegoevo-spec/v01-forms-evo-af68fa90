@@ -17,6 +17,7 @@ interface Question {
   subtitle?: string;
   options: string[];
   field_name: string;
+  input_type?: 'text' | 'select';
 }
 
 export const MultiStepFormDynamic = () => {
@@ -43,7 +44,8 @@ export const MultiStepFormDynamic = () => {
 
       const transformedData = (data || []).map(item => ({
         ...item,
-        options: Array.isArray(item.options) ? item.options as string[] : []
+        options: Array.isArray(item.options) ? item.options as string[] : [],
+        input_type: (item.input_type === 'select' || item.input_type === 'text' ? item.input_type : 'text') as 'text' | 'select'
       }));
 
       setQuestions(transformedData);
@@ -207,7 +209,7 @@ export const MultiStepFormDynamic = () => {
             {currentQuestion.question}
           </label>
 
-          {currentQuestion.options.length > 0 ? (
+          {currentQuestion.input_type === 'select' && currentQuestion.options.length > 0 ? (
             // Select field for questions with options
             <Select
               value={form.watch(currentQuestion.field_name)}
