@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Plus, Trash2, ArrowUp, ArrowDown, X } from "lucide-react";
+import { Eye, Plus, Trash2, ArrowUp, ArrowDown, X } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AuthDialog } from "@/components/AuthDialog";
 import { LogoUploader } from "@/components/LogoUploader";
@@ -286,8 +286,8 @@ const Admin = () => {
       <div className="max-w-4xl mx-auto">
         <div className="flex items-center justify-between mb-6">
           <Button variant="ghost" onClick={() => navigate("/")}>
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Voltar
+            <Eye className="mr-2 h-4 w-4" />
+            Visualizar Formulário
           </Button>
           <Button variant="outline" onClick={signOut}>
             Sair
