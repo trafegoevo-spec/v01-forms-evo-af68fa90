@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { MultiStepFormDynamic } from "@/components/MultiStepFormDynamic";
 import { LogoDisplay } from "@/components/LogoDisplay";
@@ -7,15 +6,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { Settings } from "lucide-react";
 
 const Index = () => {
-  const { user, isAdmin, loading } = useAuth();
+  const { isAdmin } = useAuth();
   const navigate = useNavigate();
-
-  useEffect(() => {
-    // Redirect admin users to /admin after login
-    if (!loading && user && isAdmin) {
-      navigate("/admin");
-    }
-  }, [user, isAdmin, loading, navigate]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
