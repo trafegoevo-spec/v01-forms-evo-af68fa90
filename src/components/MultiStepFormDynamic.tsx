@@ -143,15 +143,8 @@ export const MultiStepFormDynamic = () => {
     }
 
     try {
-      // Prepare lead data with both legacy fields and dynamic form_data
+      // Save all form data dynamically in form_data
       const leadData = {
-        // Keep legacy fields for backwards compatibility
-        nome: data.nome || '',
-        whatsapp: data.whatsapp || '',
-        email: data.email || '',
-        escolaridade: data.escolaridade || '',
-        modalidade: data.modalidade || '',
-        // Store all form data in JSONB column
         form_data: data,
       };
 
@@ -170,14 +163,12 @@ export const MultiStepFormDynamic = () => {
 
       if (error) console.error("Webhook error:", error);
 
-      // GTM - Track successful conversion
+      // GTM - Track successful conversion with all dynamic fields
       if (typeof window !== 'undefined' && (window as any).dataLayer) {
         (window as any).dataLayer.push({
           event: 'form_conversion',
           form_name: 'lead_form',
-          lead_name: data.nome || '',
-          lead_email: data.email || '',
-          ...data // Include all form fields
+          ...data // Include all form fields dynamically
         });
       }
 

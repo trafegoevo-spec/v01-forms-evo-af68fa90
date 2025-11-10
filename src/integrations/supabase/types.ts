@@ -53,33 +53,18 @@ export type Database = {
       leads: {
         Row: {
           created_at: string
-          email: string
-          escolaridade: string
-          form_data: Json | null
+          form_data: Json
           id: string
-          modalidade: string
-          nome: string
-          whatsapp: string
         }
         Insert: {
           created_at?: string
-          email: string
-          escolaridade: string
-          form_data?: Json | null
+          form_data?: Json
           id?: string
-          modalidade: string
-          nome: string
-          whatsapp: string
         }
         Update: {
           created_at?: string
-          email?: string
-          escolaridade?: string
-          form_data?: Json | null
+          form_data?: Json
           id?: string
-          modalidade?: string
-          nome?: string
-          whatsapp?: string
         }
         Relationships: []
       }
