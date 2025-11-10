@@ -1,9 +1,21 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// Input validation schema
+const formDataSchema = z.object({
+  timestamp: z.string().optional(),
+}).catchall(z.union([
+  z.string().max(1000),
+  z.number(),
+  z.boolean(),
+  z.array(z.string().max(500)).max(50),
+  z.null()
+]));
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -12,9 +24,31 @@ serve(async (req) => {
   }
 
   try {
-    const data = await req.json();
+    const rawData = await req.json();
     
-    console.log("Conversão recebida:", data);
+    // Validate input data
+    const validationResult = formDataSchema.safeParse(rawData);
+    
+    if (!validationResult.success) {
+      console.error("Validation failed:", validationResult.error.errors);
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: "Invalid input data",
+          details: validationResult.error.errors.map(e => ({
+            field: e.path.join('.'),
+            message: e.message
+          }))
+        }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
+    
+    const data = validationResult.data;
+    console.log("Conversão validada - total de campos:", Object.keys(data).length);
 
     // Webhook URL da planilha (Zapier, Make, Google Sheets, etc.)
     const webhookUrl = Deno.env.get('WEBHOOK_URL');
@@ -46,11 +80,7 @@ serve(async (req) => {
     // Remove timestamp duplicado se existir
     delete payload.timestamp;
 
-    console.log("Total de campos recebidos:", Object.keys(data).length);
-    console.log("Campos recebidos:", Object.keys(data));
-    console.log("Total de campos no payload:", Object.keys(payload).length);
-    console.log("Campos no payload:", Object.keys(payload));
-    console.log("Payload completo:", JSON.stringify(payload, null, 2));
+    console.log("Payload preparado com", Object.keys(payload).length, "campos");
 
     try {
       const webhookResponse = await fetch(webhookUrl, {
