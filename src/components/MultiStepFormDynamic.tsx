@@ -17,7 +17,7 @@ interface Question {
   subtitle?: string;
   options: string[];
   field_name: string;
-  input_type?: 'text' | 'select';
+  input_type?: 'text' | 'select' | 'password';
 }
 
 export const MultiStepFormDynamic = () => {
@@ -45,7 +45,7 @@ export const MultiStepFormDynamic = () => {
       const transformedData = (data || []).map(item => ({
         ...item,
         options: Array.isArray(item.options) ? item.options as string[] : [],
-        input_type: (item.input_type === 'select' || item.input_type === 'text' ? item.input_type : 'text') as 'text' | 'select'
+        input_type: (['select', 'text', 'password'].includes(item.input_type) ? item.input_type : 'text') as 'text' | 'select' | 'password'
       }));
 
       setQuestions(transformedData);
@@ -267,7 +267,9 @@ export const MultiStepFormDynamic = () => {
               key={`input-${currentQuestion.field_name}-${step}`}
               {...form.register(currentQuestion.field_name)}
               type={
-                currentQuestion.field_name.toLowerCase().includes("email") 
+                currentQuestion.input_type === 'password'
+                  ? "password"
+                  : currentQuestion.field_name.toLowerCase().includes("email") 
                   ? "email" 
                   : (currentQuestion.field_name.toLowerCase().includes("whatsapp") || currentQuestion.field_name.toLowerCase().includes("telefone"))
                   ? "tel" 

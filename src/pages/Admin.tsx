@@ -19,7 +19,7 @@ interface FormQuestion {
   subtitle?: string;
   options: string[];
   field_name: string;
-  input_type?: 'text' | 'select';
+  input_type?: 'text' | 'select' | 'password';
 }
 
 const Admin = () => {
@@ -59,7 +59,7 @@ const Admin = () => {
       const transformedData = (data || []).map(item => ({
         ...item,
         options: Array.isArray(item.options) ? item.options as string[] : [],
-        input_type: (item.input_type === 'select' || item.input_type === 'text' ? item.input_type : 'text') as 'text' | 'select'
+        input_type: (['select', 'text', 'password'].includes(item.input_type) ? item.input_type : 'text') as 'text' | 'select' | 'password'
       }));
       
       setQuestions(transformedData);
@@ -374,7 +374,7 @@ const Admin = () => {
                   <Label>Tipo de Resposta</Label>
                   <Select
                     value={question.input_type || 'text'}
-                    onValueChange={(value: 'text' | 'select') => {
+                    onValueChange={(value: 'text' | 'select' | 'password') => {
                       updateQuestionLocal(question.id, { input_type: value });
                     }}
                   >
@@ -383,6 +383,7 @@ const Admin = () => {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="text">Resposta Escrita</SelectItem>
+                      <SelectItem value="password">Campo Oculto (senha)</SelectItem>
                       <SelectItem value="select">Múltipla Escolha</SelectItem>
                     </SelectContent>
                   </Select>
