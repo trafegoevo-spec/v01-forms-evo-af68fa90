@@ -46,7 +46,11 @@ serve(async (req) => {
     // Remove timestamp duplicado se existir
     delete payload.timestamp;
 
-    console.log("Enviando para webhook:", payload);
+    console.log("Total de campos recebidos:", Object.keys(data).length);
+    console.log("Campos recebidos:", Object.keys(data));
+    console.log("Total de campos no payload:", Object.keys(payload).length);
+    console.log("Campos no payload:", Object.keys(payload));
+    console.log("Payload completo:", JSON.stringify(payload, null, 2));
 
     try {
       const webhookResponse = await fetch(webhookUrl, {
