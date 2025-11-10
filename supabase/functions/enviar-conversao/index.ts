@@ -60,8 +60,7 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ 
           success: true, 
-          message: "Dados recebidos. Configure WEBHOOK_URL para enviar para planilha.",
-          data 
+          message: "Dados recebidos. Configure WEBHOOK_URL para enviar para planilha."
         }),
         {
           status: 200,
@@ -103,8 +102,7 @@ serve(async (req) => {
           return new Response(
             JSON.stringify({ 
               success: true, 
-              warning: "Dados salvos. Planilha temporariamente indisponível (muitas requisições).",
-              data 
+              warning: "Dados salvos. Planilha temporariamente indisponível (muitas requisições)."
             }),
             {
               status: 200,
@@ -124,8 +122,7 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ 
           success: true, 
-          warning: "Dados salvos localmente. Erro ao enviar para planilha: " + webhookError.message,
-          data 
+          warning: "Dados salvos localmente. Erro ao enviar para planilha: " + webhookError.message
         }),
         {
           status: 200,
