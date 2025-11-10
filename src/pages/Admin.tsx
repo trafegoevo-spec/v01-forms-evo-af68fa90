@@ -383,7 +383,7 @@ const Admin = () => {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="text">Resposta Escrita</SelectItem>
-                      <SelectItem value="password">Campo Oculto (senha)</SelectItem>
+                      <SelectItem value="password">Campo Oculto</SelectItem>
                       <SelectItem value="select">Múltipla Escolha</SelectItem>
                     </SelectContent>
                   </Select>
