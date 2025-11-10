@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Plus, Trash2, ArrowUp, ArrowDown, X } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { AuthDialog } from "@/components/AuthDialog";
 
 interface FormQuestion {
   id: string;
@@ -21,18 +22,23 @@ interface FormQuestion {
 }
 
 const Admin = () => {
-  const { isAdmin, loading: authLoading, signOut } = useAuth();
+  const { user, isAdmin, loading: authLoading, signOut } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [questions, setQuestions] = useState<FormQuestion[]>([]);
   const [loading, setLoading] = useState(true);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [showAuthDialog, setShowAuthDialog] = useState(false);
 
   useEffect(() => {
-    if (!authLoading && !isAdmin) {
-      navigate("/");
+    if (!authLoading) {
+      if (!user) {
+        setShowAuthDialog(true);
+      } else if (!isAdmin) {
+        navigate("/");
+      }
     }
-  }, [isAdmin, authLoading, navigate]);
+  }, [user, isAdmin, authLoading, navigate]);
 
   useEffect(() => {
     if (isAdmin) {
@@ -241,8 +247,15 @@ const Admin = () => {
     );
   }
 
-  if (!isAdmin) {
-    return null;
+  if (!user || !isAdmin) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+        <AuthDialog 
+          open={showAuthDialog} 
+          onOpenChange={setShowAuthDialog}
+        />
+      </div>
+    );
   }
 
   return (
