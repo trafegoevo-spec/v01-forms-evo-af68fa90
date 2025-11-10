@@ -285,7 +285,7 @@ const Admin = () => {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-6">
       <div className="max-w-4xl mx-auto">
         <div className="flex items-center justify-between mb-6">
-          <Button variant="ghost" onClick={() => navigate("/")}>
+          <Button variant="ghost" onClick={() => navigate("/?preview=true")}>
             <Eye className="mr-2 h-4 w-4" />
             Visualizar Formulário
           </Button>

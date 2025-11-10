@@ -1,4 +1,5 @@
-import { useNavigate } from "react-router-dom";
+import { useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { MultiStepFormDynamic } from "@/components/MultiStepFormDynamic";
 import { LogoDisplay } from "@/components/LogoDisplay";
 import { Button } from "@/components/ui/button";
@@ -6,8 +7,17 @@ import { useAuth } from "@/hooks/useAuth";
 import { Settings } from "lucide-react";
 
 const Index = () => {
-  const { isAdmin } = useAuth();
+  const { user, isAdmin, loading } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const preview = searchParams.get('preview');
+
+  useEffect(() => {
+    // Redirect admin users to /admin after login, unless they're previewing
+    if (!loading && user && isAdmin && preview !== 'true') {
+      navigate("/admin");
+    }
+  }, [user, isAdmin, loading, navigate, preview]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
