@@ -35,17 +35,16 @@ const Admin = () => {
     if (!authLoading) {
       if (!user) {
         setShowAuthDialog(true);
-      } else if (!isAdmin) {
+      } else if (user && !isAdmin) {
+        // User is authenticated but not admin - redirect to home
         navigate("/");
+      } else if (user && isAdmin) {
+        // User is authenticated and is admin - close dialog and load questions
+        setShowAuthDialog(false);
+        loadQuestions();
       }
     }
   }, [user, isAdmin, authLoading, navigate]);
-
-  useEffect(() => {
-    if (isAdmin) {
-      loadQuestions();
-    }
-  }, [isAdmin]);
 
   const loadQuestions = async () => {
     try {
@@ -240,7 +239,7 @@ const Admin = () => {
     }
   };
 
-  if (authLoading || loading) {
+  if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <p>Carregando...</p>
@@ -248,13 +247,31 @@ const Admin = () => {
     );
   }
 
-  if (!user || !isAdmin) {
+  if (!user) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
         <AuthDialog 
           open={showAuthDialog} 
           onOpenChange={setShowAuthDialog}
         />
+      </div>
+    );
+  }
+
+  // User is authenticated but not admin - will redirect via useEffect
+  if (!isAdmin) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p>Verificando permissões...</p>
+      </div>
+    );
+  }
+
+  // Show loading while questions are being fetched
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p>Carregando perguntas...</p>
       </div>
     );
   }
