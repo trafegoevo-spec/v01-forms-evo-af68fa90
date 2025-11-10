@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Plus, Trash2, ArrowUp, ArrowDown, X } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AuthDialog } from "@/components/AuthDialog";
+import { LogoUploader } from "@/components/LogoUploader";
 
 interface FormQuestion {
   id: string;
@@ -270,6 +271,9 @@ const Admin = () => {
             Sair
           </Button>
         </div>
+
+        {/* Logo Upload */}
+        <LogoUploader />
 
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-3xl font-bold">Editar Questionário</h1>

@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { MultiStepFormDynamic } from "@/components/MultiStepFormDynamic";
-import { LogoUploader } from "@/components/LogoUploader";
+import { LogoDisplay } from "@/components/LogoDisplay";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { Settings } from "lucide-react";
@@ -11,8 +11,8 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
-      {/* Logo Upload */}
-      <LogoUploader />
+      {/* Logo Display */}
+      <LogoDisplay />
 
       {/* Admin button */}
       {isAdmin && (
