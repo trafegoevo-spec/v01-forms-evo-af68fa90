@@ -252,7 +252,12 @@ const Admin = () => {
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
         <AuthDialog 
           open={showAuthDialog} 
-          onOpenChange={setShowAuthDialog}
+          onOpenChange={(open) => {
+            if (!open) {
+              navigate("/");
+            }
+            setShowAuthDialog(open);
+          }}
         />
       </div>
     );
