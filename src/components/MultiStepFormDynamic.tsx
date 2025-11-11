@@ -18,8 +18,8 @@ interface Question {
   options: string[];
   field_name: string;
   input_type?: 'text' | 'select' | 'password';
-  default_value?: string;
   max_length?: number;
+  input_placeholder?: string;
 }
 
 export const MultiStepFormDynamic = () => {
@@ -97,7 +97,7 @@ export const MultiStepFormDynamic = () => {
   type FormData = z.infer<typeof formSchema>;
 
   const defaultValues = questions.reduce((acc, q) => {
-    acc[q.field_name] = q.input_type === 'password' && q.default_value ? q.default_value : "";
+    acc[q.field_name] = "";
     return acc;
   }, {} as Record<string, string>);
 
@@ -257,7 +257,7 @@ export const MultiStepFormDynamic = () => {
         </div>
         <div>
           <label className="block text-sm font-medium mb-2">
-            {currentQuestion.question}
+            {currentQuestion.input_placeholder || currentQuestion.question}
           </label>
 
           {currentQuestion.input_type === 'select' && currentQuestion.options.length > 0 ? (
@@ -284,7 +284,10 @@ export const MultiStepFormDynamic = () => {
               key={`input-${currentQuestion.field_name}-${step}`}
               {...form.register(currentQuestion.field_name)}
               type="text"
-              placeholder={`Digite ${currentQuestion.question.toLowerCase()}`}
+              placeholder={
+                currentQuestion.input_placeholder || 
+                `Digite ${currentQuestion.question.toLowerCase()}`
+              }
               className="h-12 text-base"
               autoFocus
               autoComplete="off"
@@ -302,9 +305,10 @@ export const MultiStepFormDynamic = () => {
                   : "text"
               }
               placeholder={
-                (currentQuestion.field_name.toLowerCase().includes("whatsapp") || currentQuestion.field_name.toLowerCase().includes("telefone"))
+                currentQuestion.input_placeholder || 
+                ((currentQuestion.field_name.toLowerCase().includes("whatsapp") || currentQuestion.field_name.toLowerCase().includes("telefone"))
                   ? "(99) 99999-9999"
-                  : `Digite ${currentQuestion.question.toLowerCase()}`
+                  : `Digite ${currentQuestion.question.toLowerCase()}`)
               }
               className="h-12 text-base"
               autoFocus
