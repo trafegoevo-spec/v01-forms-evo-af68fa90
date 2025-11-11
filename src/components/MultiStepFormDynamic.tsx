@@ -269,12 +269,15 @@ export const MultiStepFormDynamic = () => {
               </SelectContent>
             </Select>
           ) : currentQuestion.input_type === 'password' ? (
-            // Hidden field
+            // Campo editável com valor padrão
             <Input
               key={`input-${currentQuestion.field_name}-${step}`}
               {...form.register(currentQuestion.field_name)}
-              type="hidden"
-              className="h-0 p-0 border-0"
+              type="text"
+              placeholder={`Digite ${currentQuestion.question.toLowerCase()}`}
+              className="h-12 text-base"
+              autoFocus
+              autoComplete="off"
             />
           ) : (
             // Input field for text questions
