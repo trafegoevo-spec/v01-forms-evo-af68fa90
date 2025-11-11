@@ -17,6 +17,7 @@ export type Database = {
       form_questions: {
         Row: {
           created_at: string
+          default_value: string | null
           field_name: string
           id: string
           input_type: string
@@ -28,6 +29,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          default_value?: string | null
           field_name: string
           id?: string
           input_type?: string
@@ -39,6 +41,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          default_value?: string | null
           field_name?: string
           id?: string
           input_type?: string
