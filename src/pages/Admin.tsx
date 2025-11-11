@@ -20,6 +20,7 @@ interface FormQuestion {
   options: string[];
   field_name: string;
   input_type?: 'text' | 'select' | 'password';
+  default_value?: string;
 }
 
 const Admin = () => {
@@ -92,6 +93,7 @@ const Admin = () => {
             field_name: question.field_name,
             input_type: question.input_type,
             options: question.options,
+            default_value: question.default_value,
           })
           .eq("id", question.id);
 
@@ -388,6 +390,19 @@ const Admin = () => {
                     </SelectContent>
                   </Select>
                 </div>
+
+                {question.input_type === 'password' && (
+                  <div>
+                    <Label>Valor do Campo Oculto</Label>
+                    <Input
+                      value={question.default_value || ""}
+                      onChange={(e) =>
+                        updateQuestionLocal(question.id, { default_value: e.target.value })
+                      }
+                      placeholder="Digite o valor que será enviado automaticamente"
+                    />
+                  </div>
+                )}
 
                 {question.input_type === 'select' && (
                   <div>

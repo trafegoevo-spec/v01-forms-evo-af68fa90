@@ -18,6 +18,7 @@ interface Question {
   options: string[];
   field_name: string;
   input_type?: 'text' | 'select' | 'password';
+  default_value?: string;
 }
 
 export const MultiStepFormDynamic = () => {
@@ -86,7 +87,7 @@ export const MultiStepFormDynamic = () => {
   type FormData = z.infer<typeof formSchema>;
 
   const defaultValues = questions.reduce((acc, q) => {
-    acc[q.field_name] = "";
+    acc[q.field_name] = q.input_type === 'password' && q.default_value ? q.default_value : "";
     return acc;
   }, {} as Record<string, string>);
 
@@ -169,6 +170,12 @@ export const MultiStepFormDynamic = () => {
           event: 'form_conversion',
           form_name: 'lead_form',
           ...data // Include all form fields dynamically
+        });
+        
+        // Disparar evento de sucesso do formulário
+        (window as any).dataLayer.push({
+          event: 'form_sucesso',
+          form_nome: 'FormularioEAD'
         });
       }
 
@@ -261,15 +268,21 @@ export const MultiStepFormDynamic = () => {
                 ))}
               </SelectContent>
             </Select>
+          ) : currentQuestion.input_type === 'password' ? (
+            // Hidden field
+            <Input
+              key={`input-${currentQuestion.field_name}-${step}`}
+              {...form.register(currentQuestion.field_name)}
+              type="hidden"
+              className="h-0 p-0 border-0"
+            />
           ) : (
             // Input field for text questions
             <Input
               key={`input-${currentQuestion.field_name}-${step}`}
               {...form.register(currentQuestion.field_name)}
               type={
-                currentQuestion.input_type === 'password'
-                  ? "password"
-                  : currentQuestion.field_name.toLowerCase().includes("email") 
+                currentQuestion.field_name.toLowerCase().includes("email") 
                   ? "email" 
                   : (currentQuestion.field_name.toLowerCase().includes("whatsapp") || currentQuestion.field_name.toLowerCase().includes("telefone"))
                   ? "tel" 
