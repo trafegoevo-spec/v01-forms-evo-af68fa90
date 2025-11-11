@@ -19,9 +19,7 @@ export type Database = {
           created_at: string
           field_name: string
           id: string
-          input_placeholder: string | null
           input_type: string
-          max_length: number | null
           options: Json
           question: string
           step: number
@@ -32,9 +30,7 @@ export type Database = {
           created_at?: string
           field_name: string
           id?: string
-          input_placeholder?: string | null
           input_type?: string
-          max_length?: number | null
           options: Json
           question: string
           step: number
@@ -45,9 +41,7 @@ export type Database = {
           created_at?: string
           field_name?: string
           id?: string
-          input_placeholder?: string | null
           input_type?: string
-          max_length?: number | null
           options?: Json
           question?: string
           step?: number

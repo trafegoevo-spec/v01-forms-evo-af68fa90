@@ -18,8 +18,6 @@ interface Question {
   options: string[];
   field_name: string;
   input_type?: 'text' | 'select' | 'password';
-  max_length?: number;
-  input_placeholder?: string;
 }
 
 export const MultiStepFormDynamic = () => {
@@ -70,23 +68,14 @@ export const MultiStepFormDynamic = () => {
       // Detect field type based on field_name for special validation
       if (q.field_name.toLowerCase().includes("whatsapp") || q.field_name.toLowerCase().includes("telefone")) {
         schemaFields[q.field_name] = z.string()
-          .regex(/^\(\d{2}\) \d{5}-\d{4}$/, "Telefone inválido. Use o formato (99) 99999-9999")
-          .refine((val) => val.replace(/\D/g, "").length === 11, {
-            message: "Telefone deve ter exatamente 11 dígitos"
-          });
+          .regex(/^\(\d{2}\) \d{5}-\d{4}$/, "WhatsApp inválido. Use o formato (99) 99999-9999");
       } else if (q.field_name.toLowerCase().includes("email")) {
         schemaFields[q.field_name] = z.string().email("Email inválido").max(255);
       } else if (q.input_type === 'select' && q.options.length > 0) {
         schemaFields[q.field_name] = z.string().min(1, "Selecione uma opção");
       } else {
-        // Text input with optional max_length
-        let schema = z.string().min(1, "Campo obrigatório");
-        if (q.max_length && q.max_length > 0) {
-          schema = schema.max(q.max_length, `Máximo de ${q.max_length} caracteres`);
-        } else {
-          schema = schema.max(200);
-        }
-        schemaFields[q.field_name] = schema;
+        // Text input
+        schemaFields[q.field_name] = z.string().min(1, "Campo obrigatório").max(200);
       }
     });
 
@@ -181,12 +170,6 @@ export const MultiStepFormDynamic = () => {
           form_name: 'lead_form',
           ...data // Include all form fields dynamically
         });
-        
-        // Disparar evento de sucesso do formulário
-        (window as any).dataLayer.push({
-          event: 'form_sucesso',
-          form_nome: 'FormularioEAD'
-        });
       }
 
       setSubmittedData(data);
@@ -257,7 +240,7 @@ export const MultiStepFormDynamic = () => {
         </div>
         <div>
           <label className="block text-sm font-medium mb-2">
-            {currentQuestion.input_placeholder || currentQuestion.question}
+            {currentQuestion.question}
           </label>
 
           {currentQuestion.input_type === 'select' && currentQuestion.options.length > 0 ? (
@@ -278,42 +261,28 @@ export const MultiStepFormDynamic = () => {
                 ))}
               </SelectContent>
             </Select>
-          ) : currentQuestion.input_type === 'password' ? (
-            // Campo editável com valor padrão
-            <Input
-              key={`input-${currentQuestion.field_name}-${step}`}
-              {...form.register(currentQuestion.field_name)}
-              type="text"
-              placeholder={
-                currentQuestion.input_placeholder || 
-                `Digite ${currentQuestion.question.toLowerCase()}`
-              }
-              className="h-12 text-base"
-              autoFocus
-              autoComplete="off"
-            />
           ) : (
             // Input field for text questions
             <Input
               key={`input-${currentQuestion.field_name}-${step}`}
               {...form.register(currentQuestion.field_name)}
               type={
-                currentQuestion.field_name.toLowerCase().includes("email") 
+                currentQuestion.input_type === 'password'
+                  ? "password"
+                  : currentQuestion.field_name.toLowerCase().includes("email") 
                   ? "email" 
                   : (currentQuestion.field_name.toLowerCase().includes("whatsapp") || currentQuestion.field_name.toLowerCase().includes("telefone"))
                   ? "tel" 
                   : "text"
               }
               placeholder={
-                currentQuestion.input_placeholder || 
-                ((currentQuestion.field_name.toLowerCase().includes("whatsapp") || currentQuestion.field_name.toLowerCase().includes("telefone"))
+                (currentQuestion.field_name.toLowerCase().includes("whatsapp") || currentQuestion.field_name.toLowerCase().includes("telefone"))
                   ? "(99) 99999-9999"
-                  : `Digite ${currentQuestion.question.toLowerCase()}`)
+                  : `Digite ${currentQuestion.question.toLowerCase()}`
               }
               className="h-12 text-base"
               autoFocus
               autoComplete="off"
-              maxLength={currentQuestion.max_length || undefined}
               onChange={
                 (currentQuestion.field_name.toLowerCase().includes("whatsapp") || currentQuestion.field_name.toLowerCase().includes("telefone"))
                   ? (e) => {
