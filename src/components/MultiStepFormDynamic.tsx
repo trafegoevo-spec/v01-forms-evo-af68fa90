@@ -19,6 +19,7 @@ interface Question {
   field_name: string;
   input_type?: 'text' | 'select' | 'password';
   default_value?: string;
+  max_length?: number;
 }
 
 export const MultiStepFormDynamic = () => {
@@ -69,14 +70,23 @@ export const MultiStepFormDynamic = () => {
       // Detect field type based on field_name for special validation
       if (q.field_name.toLowerCase().includes("whatsapp") || q.field_name.toLowerCase().includes("telefone")) {
         schemaFields[q.field_name] = z.string()
-          .regex(/^\(\d{2}\) \d{5}-\d{4}$/, "WhatsApp inválido. Use o formato (99) 99999-9999");
+          .regex(/^\(\d{2}\) \d{5}-\d{4}$/, "Telefone inválido. Use o formato (99) 99999-9999")
+          .refine((val) => val.replace(/\D/g, "").length === 11, {
+            message: "Telefone deve ter exatamente 11 dígitos"
+          });
       } else if (q.field_name.toLowerCase().includes("email")) {
         schemaFields[q.field_name] = z.string().email("Email inválido").max(255);
       } else if (q.input_type === 'select' && q.options.length > 0) {
         schemaFields[q.field_name] = z.string().min(1, "Selecione uma opção");
       } else {
-        // Text input
-        schemaFields[q.field_name] = z.string().min(1, "Campo obrigatório").max(200);
+        // Text input with optional max_length
+        let schema = z.string().min(1, "Campo obrigatório");
+        if (q.max_length && q.max_length > 0) {
+          schema = schema.max(q.max_length, `Máximo de ${q.max_length} caracteres`);
+        } else {
+          schema = schema.max(200);
+        }
+        schemaFields[q.field_name] = schema;
       }
     });
 
@@ -299,6 +309,7 @@ export const MultiStepFormDynamic = () => {
               className="h-12 text-base"
               autoFocus
               autoComplete="off"
+              maxLength={currentQuestion.max_length || undefined}
               onChange={
                 (currentQuestion.field_name.toLowerCase().includes("whatsapp") || currentQuestion.field_name.toLowerCase().includes("telefone"))
                   ? (e) => {
