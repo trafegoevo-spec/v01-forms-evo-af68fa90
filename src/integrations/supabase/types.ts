@@ -21,6 +21,7 @@ export type Database = {
           field_name: string
           id: string
           input_type: string
+          max_length: number | null
           options: Json
           question: string
           step: number
@@ -33,6 +34,7 @@ export type Database = {
           field_name: string
           id?: string
           input_type?: string
+          max_length?: number | null
           options: Json
           question: string
           step: number
@@ -45,6 +47,7 @@ export type Database = {
           field_name?: string
           id?: string
           input_type?: string
+          max_length?: number | null
           options?: Json
           question?: string
           step?: number

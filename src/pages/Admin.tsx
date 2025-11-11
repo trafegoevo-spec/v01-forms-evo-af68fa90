@@ -21,6 +21,7 @@ interface FormQuestion {
   field_name: string;
   input_type?: 'text' | 'select' | 'password';
   default_value?: string;
+  max_length?: number;
 }
 
 const Admin = () => {
@@ -94,6 +95,7 @@ const Admin = () => {
             input_type: question.input_type,
             options: question.options,
             default_value: question.default_value,
+            max_length: question.max_length,
           })
           .eq("id", question.id);
 
@@ -371,6 +373,23 @@ const Admin = () => {
                     }
                   />
                 </div>
+
+                {question.input_type !== 'select' && (
+                  <div>
+                    <Label>Limite de Caracteres (opcional)</Label>
+                    <Input
+                      type="number"
+                      value={question.max_length || ""}
+                      onChange={(e) =>
+                        updateQuestionLocal(question.id, { 
+                          max_length: e.target.value ? parseInt(e.target.value) : undefined 
+                        })
+                      }
+                      placeholder="Deixe vazio para sem limite"
+                      min="1"
+                    />
+                  </div>
+                )}
 
                 <div>
                   <Label>Tipo de Resposta</Label>
