@@ -17,9 +17,9 @@ export type Database = {
       form_questions: {
         Row: {
           created_at: string
-          default_value: string | null
           field_name: string
           id: string
+          input_placeholder: string | null
           input_type: string
           max_length: number | null
           options: Json
@@ -30,9 +30,9 @@ export type Database = {
         }
         Insert: {
           created_at?: string
-          default_value?: string | null
           field_name: string
           id?: string
+          input_placeholder?: string | null
           input_type?: string
           max_length?: number | null
           options: Json
@@ -43,9 +43,9 @@ export type Database = {
         }
         Update: {
           created_at?: string
-          default_value?: string | null
           field_name?: string
           id?: string
+          input_placeholder?: string | null
           input_type?: string
           max_length?: number | null
           options?: Json

@@ -20,8 +20,8 @@ interface FormQuestion {
   options: string[];
   field_name: string;
   input_type?: 'text' | 'select' | 'password';
-  default_value?: string;
   max_length?: number;
+  input_placeholder?: string;
 }
 
 const Admin = () => {
@@ -94,8 +94,8 @@ const Admin = () => {
             field_name: question.field_name,
             input_type: question.input_type,
             options: question.options,
-            default_value: question.default_value,
             max_length: question.max_length,
+            input_placeholder: question.input_placeholder,
           })
           .eq("id", question.id);
 
@@ -374,6 +374,19 @@ const Admin = () => {
                   />
                 </div>
 
+                {question.input_type !== 'select' && question.input_type !== 'password' && (
+                  <div>
+                    <Label>Texto do Campo de Resposta</Label>
+                    <Input
+                      value={question.input_placeholder || ""}
+                      onChange={(e) =>
+                        updateQuestionLocal(question.id, { input_placeholder: e.target.value })
+                      }
+                      placeholder="Ex: Digite qual é o seu nome completo?"
+                    />
+                  </div>
+                )}
+
                 {question.input_type !== 'select' && (
                   <div>
                     <Label>Limite de Caracteres (opcional)</Label>
@@ -409,19 +422,6 @@ const Admin = () => {
                     </SelectContent>
                   </Select>
                 </div>
-
-                {question.input_type === 'password' && (
-                  <div>
-                    <Label>Valor do Campo Oculto</Label>
-                    <Input
-                      value={question.default_value || ""}
-                      onChange={(e) =>
-                        updateQuestionLocal(question.id, { default_value: e.target.value })
-                      }
-                      placeholder="Digite o valor que será enviado automaticamente"
-                    />
-                  </div>
-                )}
 
                 {question.input_type === 'select' && (
                   <div>
