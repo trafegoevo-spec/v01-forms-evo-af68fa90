@@ -197,11 +197,11 @@ export const MultiStepFormDynamic = () => {
       if (typeof window !== 'undefined') {
         (window as any).dataLayer = (window as any).dataLayer || [];
         (window as any).dataLayer.push({
-          event: 'form_submit',
+          event: 'gtm.formSubmit',
           form_nome: 'FormularioEAD',
           timestamp: new Date().toISOString()
         });
-        console.log('GTM event fired: form_submit');
+        console.log('GTM event fired: gtm.formSubmit');
       }
 
       setSubmittedData(data);
