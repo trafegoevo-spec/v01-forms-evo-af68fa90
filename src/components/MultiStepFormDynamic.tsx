@@ -152,6 +152,17 @@ export const MultiStepFormDynamic = () => {
     }
   };
 
+  const handleKeyDown = async (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (step < questions.length) {
+        await nextStep();
+      } else {
+        form.handleSubmit(onSubmit)();
+      }
+    }
+  };
+
   const prevStep = () => {
     if (step > 1) {
       setStep(step - 1);
@@ -182,11 +193,11 @@ export const MultiStepFormDynamic = () => {
 
       if (error) console.error("Webhook error:", error);
 
-      // GTM - Disparar evento de sucesso do formulário após última pergunta
+      // GTM - Disparar evento quando usuário clica em Finalizar
       if (typeof window !== 'undefined' && (window as any).dataLayer) {
         (window as any).dataLayer = (window as any).dataLayer || [];
         (window as any).dataLayer.push({
-          event: 'form_sucesso',
+          event: 'form_submit',
           form_nome: 'FormularioEAD'
         });
       }
@@ -293,6 +304,7 @@ export const MultiStepFormDynamic = () => {
               className="h-12 text-base"
               autoFocus
               autoComplete="off"
+              onKeyDown={handleKeyDown}
             />
           ) : (
             // Input field for text questions
@@ -329,6 +341,7 @@ export const MultiStepFormDynamic = () => {
                     }
                   : undefined
               }
+              onKeyDown={handleKeyDown}
             />
           )}
 
