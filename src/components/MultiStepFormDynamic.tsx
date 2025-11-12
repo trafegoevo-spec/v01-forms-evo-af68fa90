@@ -194,12 +194,14 @@ export const MultiStepFormDynamic = () => {
       if (error) console.error("Webhook error:", error);
 
       // GTM - Disparar evento quando usuário clica em Finalizar
-      if (typeof window !== 'undefined' && (window as any).dataLayer) {
+      if (typeof window !== 'undefined') {
         (window as any).dataLayer = (window as any).dataLayer || [];
         (window as any).dataLayer.push({
           event: 'form_submit',
-          form_nome: 'FormularioEAD'
+          form_nome: 'FormularioEAD',
+          timestamp: new Date().toISOString()
         });
+        console.log('GTM event fired: form_submit');
       }
 
       setSubmittedData(data);
@@ -278,7 +280,13 @@ export const MultiStepFormDynamic = () => {
             <Select
               key={`select-${currentQuestion.field_name}-${step}`}
               value={form.watch(currentQuestion.field_name)}
-              onValueChange={(value) => form.setValue(currentQuestion.field_name, value)}
+              onValueChange={async (value) => {
+                form.setValue(currentQuestion.field_name, value);
+                // Avançar automaticamente após selecionar
+                if (step < questions.length) {
+                  setTimeout(() => nextStep(), 300);
+                }
+              }}
             >
               <SelectTrigger className="h-12 text-base">
                 <SelectValue placeholder="Selecione uma opção" />
