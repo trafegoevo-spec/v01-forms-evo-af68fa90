@@ -70,9 +70,26 @@ export const MultiStepFormDynamic = () => {
       // Detect field type based on field_name for special validation
       if (q.field_name.toLowerCase().includes("whatsapp") || q.field_name.toLowerCase().includes("telefone")) {
         schemaFields[q.field_name] = z.string()
-          .regex(/^\(\d{2}\) \d{5}-\d{4}$/, "Telefone inválido. Use o formato (99) 99999-9999")
-          .refine((val) => val.replace(/\D/g, "").length === 11, {
-            message: "Telefone deve ter exatamente 11 dígitos"
+          .regex(/^\+55 \(\d{2}\) \d{5}-\d{4}$/, "Telefone inválido. Use o formato +55 (99) 99999-9999")
+          .refine((val) => {
+            const cleaned = val.replace(/\D/g, "");
+            return cleaned.length === 13; // 55 + 11 dígitos
+          }, {
+            message: "Telefone deve ter 11 dígitos + código do país"
+          })
+          .refine((val) => {
+            const ddd = val.match(/\((\d{2})\)/)?.[1];
+            if (!ddd) return false;
+            const dddNum = parseInt(ddd);
+            return dddNum >= 11 && dddNum <= 99;
+          }, {
+            message: "DDD inválido. Use um DDD brasileiro válido"
+          })
+          .refine((val) => {
+            const ninthDigit = val.match(/\) (\d)/)?.[1];
+            return ninthDigit === "9";
+          }, {
+            message: "Número de celular deve começar com 9 após o DDD"
           });
       } else if (q.field_name.toLowerCase().includes("email")) {
         schemaFields[q.field_name] = z.string().email("Email inválido").max(255);
@@ -110,10 +127,19 @@ export const MultiStepFormDynamic = () => {
   const currentQuestion = questions[step - 1];
 
   const formatWhatsApp = (value: string) => {
-    const cleaned = value.replace(/\D/g, "");
-    if (cleaned.length <= 2) return cleaned;
-    if (cleaned.length <= 7) return `(${cleaned.slice(0, 2)}) ${cleaned.slice(2)}`;
-    return `(${cleaned.slice(0, 2)}) ${cleaned.slice(2, 7)}-${cleaned.slice(7, 11)}`;
+    // Remove tudo exceto dígitos
+    let cleaned = value.replace(/\D/g, "");
+    
+    // Remove o 55 se o usuário tentar digitar
+    if (cleaned.startsWith("55")) {
+      cleaned = cleaned.slice(2);
+    }
+    
+    // Formatar com +55 no início
+    if (cleaned.length === 0) return "+55 ";
+    if (cleaned.length <= 2) return `+55 (${cleaned}`;
+    if (cleaned.length <= 7) return `+55 (${cleaned.slice(0, 2)}) ${cleaned.slice(2)}`;
+    return `+55 (${cleaned.slice(0, 2)}) ${cleaned.slice(2, 7)}-${cleaned.slice(7, 11)}`;
   };
 
   const nextStep = async () => {
@@ -123,16 +149,6 @@ export const MultiStepFormDynamic = () => {
 
     if (isValid && step < totalSteps) {
       setStep(step + 1);
-      
-      // GTM - Track form step view
-      if (typeof window !== 'undefined' && (window as any).dataLayer) {
-        (window as any).dataLayer.push({
-          event: 'form_step_view',
-          step_number: step + 1,
-          step_name: questions[step]?.field_name || '',
-          total_steps: questions.length
-        });
-      }
     }
   };
 
@@ -144,14 +160,6 @@ export const MultiStepFormDynamic = () => {
 
   const onSubmit = async (data: any) => {
     setIsSubmitting(true);
-
-    // GTM - Track form submission attempt
-    if (typeof window !== 'undefined' && (window as any).dataLayer) {
-      (window as any).dataLayer.push({
-        event: 'form_submission',
-        form_name: 'lead_form'
-      });
-    }
 
     try {
       // Save all form data dynamically in form_data
@@ -174,15 +182,9 @@ export const MultiStepFormDynamic = () => {
 
       if (error) console.error("Webhook error:", error);
 
-      // GTM - Track successful conversion with all dynamic fields
+      // GTM - Disparar evento de sucesso do formulário após última pergunta
       if (typeof window !== 'undefined' && (window as any).dataLayer) {
-        (window as any).dataLayer.push({
-          event: 'form_conversion',
-          form_name: 'lead_form',
-          ...data // Include all form fields dynamically
-        });
-        
-        // Disparar evento de sucesso do formulário
+        (window as any).dataLayer = (window as any).dataLayer || [];
         (window as any).dataLayer.push({
           event: 'form_sucesso',
           form_nome: 'FormularioEAD'
@@ -307,13 +309,18 @@ export const MultiStepFormDynamic = () => {
               placeholder={
                 currentQuestion.input_placeholder || 
                 ((currentQuestion.field_name.toLowerCase().includes("whatsapp") || currentQuestion.field_name.toLowerCase().includes("telefone"))
-                  ? "(99) 99999-9999"
+                  ? "+55 (99) 99999-9999"
                   : `Digite ${currentQuestion.question.toLowerCase()}`)
               }
               className="h-12 text-base"
               autoFocus
               autoComplete="off"
               maxLength={currentQuestion.max_length || undefined}
+              value={
+                (currentQuestion.field_name.toLowerCase().includes("whatsapp") || currentQuestion.field_name.toLowerCase().includes("telefone"))
+                  ? form.watch(currentQuestion.field_name) || "+55 "
+                  : form.watch(currentQuestion.field_name)
+              }
               onChange={
                 (currentQuestion.field_name.toLowerCase().includes("whatsapp") || currentQuestion.field_name.toLowerCase().includes("telefone"))
                   ? (e) => {
