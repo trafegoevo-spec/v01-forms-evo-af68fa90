@@ -244,10 +244,10 @@ export const MultiStepFormDynamic = () => {
               onClick={() => {
                 window.open("https://wa.me/5531989236061?text=Olá!%20Acabei%20de%20enviar%20meus%20dados%20no%20formulário.", "_blank");
               }}
-              className="h-14 px-8 text-lg bg-green-600 hover:bg-green-700 text-white"
-              size="lg"
+              className="h-12 px-6 text-base bg-green-600 hover:bg-green-700 text-white"
+              size="default"
             >
-              <MessageCircle className="mr-2 h-5 w-5" />
+              <MessageCircle className="mr-2 h-4 w-4" />
               Falar no WhatsApp Agora
             </Button>
           </div>
