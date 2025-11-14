@@ -259,21 +259,17 @@ export const MultiStepFormDynamic = () => {
     if (!currentQuestion) return null;
 
     return (
-      <div className="space-y-4">
-        <div>
-          <h2 className="text-2xl font-bold text-foreground mb-2">
-            {currentQuestion.question}
-          </h2>
+      <div className="space-y-6">
+        <h2 className="text-4xl font-bold text-foreground">
+          {currentQuestion.question}
+        </h2>
+        
+        <div className="space-y-3">
           {currentQuestion.subtitle && (
-            <p className="text-sm text-muted-foreground mt-1">
+            <label className="block text-base font-medium text-foreground">
               {currentQuestion.subtitle}
-            </p>
+            </label>
           )}
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-2">
-            {currentQuestion.input_placeholder || currentQuestion.question}
-          </label>
 
           {currentQuestion.input_type === 'select' && currentQuestion.options.length > 0 ? (
             // Select field for questions with options
