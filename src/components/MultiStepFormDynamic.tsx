@@ -29,10 +29,12 @@ export const MultiStepFormDynamic = () => {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
   const [submittedData, setSubmittedData] = useState<any>(null);
+  const [settings, setSettings] = useState<any>(null);
   const { toast } = useToast();
 
   useEffect(() => {
     loadQuestions();
+    loadSettings();
   }, []);
 
   const loadQuestions = async () => {
@@ -59,6 +61,20 @@ export const MultiStepFormDynamic = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadSettings = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("app_settings")
+        .select("*")
+        .single();
+
+      if (error) throw error;
+      setSettings(data);
+    } catch (error: any) {
+      console.error("Erro ao carregar configurações:", error);
     }
   };
 
@@ -230,19 +246,21 @@ export const MultiStepFormDynamic = () => {
           <div className="text-6xl">🎉</div>
           <div>
             <h2 className="text-3xl font-bold text-foreground mb-3">
-              Obrigado, {firstName}!
+              {settings?.success_title || "Obrigado"}, {firstName}!
             </h2>
             <p className="text-lg text-muted-foreground">
-              Recebemos suas informações com sucesso!
+              {settings?.success_description || "Recebemos suas informações com sucesso!"}
             </p>
             <p className="text-lg text-muted-foreground mt-2">
-              Em breve entraremos em contato.
+              {settings?.success_subtitle || "Em breve entraremos em contato."}
             </p>
           </div>
           <div className="pt-4">
             <Button
               onClick={() => {
-                window.open("https://wa.me/5531989236061?text=Olá!%20Acabei%20de%20enviar%20meus%20dados%20no%20formulário.", "_blank");
+                const whatsappNumber = settings?.whatsapp_number || "5531989236061";
+                const message = settings?.whatsapp_message || "Olá! Acabei de enviar meus dados no formulário.";
+                window.open(`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`, "_blank");
               }}
               className="h-12 px-6 text-base bg-green-600 hover:bg-green-700 text-white"
               size="default"
