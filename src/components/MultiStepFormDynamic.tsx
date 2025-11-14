@@ -251,23 +251,14 @@ export const MultiStepFormDynamic = () => {
             <p className="text-lg text-muted-foreground">
               {settings?.success_description || "Recebemos suas informações com sucesso!"}
             </p>
-            <p className="text-lg text-muted-foreground mt-2">
-              {settings?.success_subtitle || "Em breve entraremos em contato."}
-            </p>
           </div>
-          <div className="pt-4">
-            <Button
-              onClick={() => {
-                const whatsappNumber = settings?.whatsapp_number || "5531989236061";
-                const message = settings?.whatsapp_message || "Olá! Acabei de enviar meus dados no formulário.";
-                window.open(`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`, "_blank");
-              }}
-              className="h-12 px-6 text-base bg-green-600 hover:bg-green-700 text-white"
-              size="default"
-            >
-              <MessageCircle className="mr-2 h-4 w-4" />
-              Falar no WhatsApp Agora
-            </Button>
+          
+          <div className="bg-muted/30 rounded-lg p-8 mt-6">
+            <MessageCircle className="w-16 h-16 mx-auto text-green-600 mb-4" />
+            <h3 className="text-2xl font-semibold text-green-600 mb-4">WhatsApp</h3>
+            <p className="text-base text-foreground leading-relaxed">
+              Em breve entraremos em contato com você através do WhatsApp para dar continuidade ao seu atendimento.
+            </p>
           </div>
         </div>
       );
