@@ -24,6 +24,15 @@ interface FormQuestion {
   input_placeholder?: string;
 }
 
+interface AppSettings {
+  id: string;
+  whatsapp_number: string;
+  whatsapp_message: string;
+  success_title: string;
+  success_description: string;
+  success_subtitle: string;
+}
+
 const Admin = () => {
   const { user, isAdmin, loading: authLoading, signOut } = useAuth();
   const navigate = useNavigate();
@@ -32,6 +41,8 @@ const Admin = () => {
   const [loading, setLoading] = useState(true);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [showAuthDialog, setShowAuthDialog] = useState(false);
+  const [settings, setSettings] = useState<AppSettings | null>(null);
+  const [settingsChanged, setSettingsChanged] = useState(false);
 
   useEffect(() => {
     if (!authLoading) {
@@ -44,6 +55,7 @@ const Admin = () => {
         // User is authenticated and is admin - close dialog and load questions
         setShowAuthDialog(false);
         loadQuestions();
+        loadSettings();
       }
     }
   }, [user, isAdmin, authLoading, navigate]);
@@ -74,6 +86,58 @@ const Admin = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const loadSettings = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("app_settings")
+        .select("*")
+        .single();
+
+      if (error) throw error;
+      setSettings(data);
+    } catch (error: any) {
+      console.error("Erro ao carregar configurações:", error);
+    }
+  };
+
+  const saveSettings = async () => {
+    if (!settings) return;
+
+    try {
+      const { error } = await supabase
+        .from("app_settings")
+        .update({
+          whatsapp_number: settings.whatsapp_number,
+          whatsapp_message: settings.whatsapp_message,
+          success_title: settings.success_title,
+          success_description: settings.success_description,
+          success_subtitle: settings.success_subtitle,
+        })
+        .eq("id", settings.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Configurações salvas!",
+        description: "As configurações foram atualizadas com sucesso.",
+      });
+
+      setSettingsChanged(false);
+    } catch (error: any) {
+      toast({
+        title: "Erro ao salvar configurações",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const updateSettings = (updates: Partial<AppSettings>) => {
+    if (!settings) return;
+    setSettings({ ...settings, ...updates });
+    setSettingsChanged(true);
   };
 
   const updateQuestionLocal = (id: string, updates: Partial<FormQuestion>) => {
@@ -460,6 +524,78 @@ const Admin = () => {
             </Card>
           ))}
         </div>
+
+        {/* Configurações Gerais */}
+        {settings && (
+          <div className="mt-8">
+            <h2 className="text-2xl font-bold mb-4">Configurações Gerais</h2>
+            <Card>
+              <CardHeader>
+                <CardTitle>Botão WhatsApp e Página de Sucesso</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label>Número do WhatsApp</Label>
+                  <Input
+                    value={settings.whatsapp_number}
+                    onChange={(e) => updateSettings({ whatsapp_number: e.target.value })}
+                    placeholder="5531989236061"
+                  />
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Formato: código do país + DDD + número (sem espaços ou caracteres especiais)
+                  </p>
+                </div>
+
+                <div>
+                  <Label>Mensagem do WhatsApp</Label>
+                  <Input
+                    value={settings.whatsapp_message}
+                    onChange={(e) => updateSettings({ whatsapp_message: e.target.value })}
+                    placeholder="Olá! Acabei de enviar meus dados no formulário."
+                  />
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Mensagem que será enviada automaticamente ao abrir o WhatsApp
+                  </p>
+                </div>
+
+                <div>
+                  <Label>Título da Página de Sucesso</Label>
+                  <Input
+                    value={settings.success_title}
+                    onChange={(e) => updateSettings({ success_title: e.target.value })}
+                    placeholder="Obrigado"
+                  />
+                </div>
+
+                <div>
+                  <Label>Descrição da Página de Sucesso</Label>
+                  <Input
+                    value={settings.success_description}
+                    onChange={(e) => updateSettings({ success_description: e.target.value })}
+                    placeholder="Recebemos suas informações com sucesso!"
+                  />
+                </div>
+
+                <div>
+                  <Label>Subtítulo da Página de Sucesso</Label>
+                  <Input
+                    value={settings.success_subtitle}
+                    onChange={(e) => updateSettings({ success_subtitle: e.target.value })}
+                    placeholder="Em breve entraremos em contato."
+                  />
+                </div>
+
+                <Button 
+                  onClick={saveSettings}
+                  disabled={!settingsChanged}
+                  className="w-full"
+                >
+                  {settingsChanged ? "Salvar Configurações" : "Configurações Salvas"}
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
         {questions.length > 0 && (
           <div className="flex justify-end mt-6 sticky bottom-6">

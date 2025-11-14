@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      app_settings: {
+        Row: {
+          created_at: string
+          id: string
+          success_description: string
+          success_subtitle: string
+          success_title: string
+          updated_at: string
+          whatsapp_message: string
+          whatsapp_number: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          success_description?: string
+          success_subtitle?: string
+          success_title?: string
+          updated_at?: string
+          whatsapp_message?: string
+          whatsapp_number?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          success_description?: string
+          success_subtitle?: string
+          success_title?: string
+          updated_at?: string
+          whatsapp_message?: string
+          whatsapp_number?: string
+        }
+        Relationships: []
+      }
       form_questions: {
         Row: {
           created_at: string
