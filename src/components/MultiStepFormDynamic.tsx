@@ -131,13 +131,19 @@ export const MultiStepFormDynamic = () => {
   type FormData = z.infer<typeof formSchema>;
 
   const defaultValues = questions.reduce((acc, q) => {
-    acc[q.field_name] = "";
+    // Initialize phone fields with +55 prefix
+    if (q.field_name.toLowerCase().includes("whatsapp") || q.field_name.toLowerCase().includes("telefone")) {
+      acc[q.field_name] = "+55 ";
+    } else {
+      acc[q.field_name] = "";
+    }
     return acc;
   }, {} as Record<string, string>);
 
   const form = useForm<any>({
     resolver: zodResolver(formSchema),
     defaultValues,
+    mode: "onChange",
   });
 
   const totalSteps = questions.length + 1; // +1 for success page
@@ -309,7 +315,6 @@ export const MultiStepFormDynamic = () => {
             // Campo editável com valor padrão
             <Input
               key={`input-${currentQuestion.field_name}-${step}`}
-              {...form.register(currentQuestion.field_name)}
               type="text"
               placeholder={
                 currentQuestion.input_placeholder || 
@@ -318,43 +323,42 @@ export const MultiStepFormDynamic = () => {
               className="h-12 text-base"
               autoFocus
               autoComplete="off"
+              value={form.watch(currentQuestion.field_name) || ""}
+              onChange={(e) => form.setValue(currentQuestion.field_name, e.target.value, { shouldValidate: true })}
+              onKeyDown={handleKeyDown}
+            />
+          ) : (currentQuestion.field_name.toLowerCase().includes("whatsapp") || currentQuestion.field_name.toLowerCase().includes("telefone")) ? (
+            // WhatsApp/Phone field with special formatting
+            <Input
+              key={`input-${currentQuestion.field_name}-${step}`}
+              type="tel"
+              placeholder={currentQuestion.input_placeholder || "+55 (99) 99999-9999"}
+              className="h-12 text-base"
+              autoFocus
+              autoComplete="off"
+              maxLength={currentQuestion.max_length || 19}
+              value={form.watch(currentQuestion.field_name) || "+55 "}
+              onChange={(e) => {
+                const formatted = formatWhatsApp(e.target.value);
+                form.setValue(currentQuestion.field_name, formatted, { shouldValidate: true });
+              }}
               onKeyDown={handleKeyDown}
             />
           ) : (
-            // Input field for text questions
+            // Regular text/email fields
             <Input
               key={`input-${currentQuestion.field_name}-${step}`}
-              {...form.register(currentQuestion.field_name)}
-              type={
-                currentQuestion.field_name.toLowerCase().includes("email") 
-                  ? "email" 
-                  : (currentQuestion.field_name.toLowerCase().includes("whatsapp") || currentQuestion.field_name.toLowerCase().includes("telefone"))
-                  ? "tel" 
-                  : "text"
-              }
+              type={currentQuestion.field_name.toLowerCase().includes("email") ? "email" : "text"}
               placeholder={
                 currentQuestion.input_placeholder || 
-                ((currentQuestion.field_name.toLowerCase().includes("whatsapp") || currentQuestion.field_name.toLowerCase().includes("telefone"))
-                  ? "+55 (99) 99999-9999"
-                  : `Digite ${currentQuestion.question.toLowerCase()}`)
+                `Digite ${currentQuestion.question.toLowerCase()}`
               }
               className="h-12 text-base"
               autoFocus
               autoComplete="off"
               maxLength={currentQuestion.max_length || undefined}
-              value={
-                (currentQuestion.field_name.toLowerCase().includes("whatsapp") || currentQuestion.field_name.toLowerCase().includes("telefone"))
-                  ? form.watch(currentQuestion.field_name) || "+55 "
-                  : form.watch(currentQuestion.field_name)
-              }
-              onChange={
-                (currentQuestion.field_name.toLowerCase().includes("whatsapp") || currentQuestion.field_name.toLowerCase().includes("telefone"))
-                  ? (e) => {
-                      const formatted = formatWhatsApp(e.target.value);
-                      form.setValue(currentQuestion.field_name, formatted);
-                    }
-                  : undefined
-              }
+              value={form.watch(currentQuestion.field_name) || ""}
+              onChange={(e) => form.setValue(currentQuestion.field_name, e.target.value, { shouldValidate: true })}
               onKeyDown={handleKeyDown}
             />
           )}
