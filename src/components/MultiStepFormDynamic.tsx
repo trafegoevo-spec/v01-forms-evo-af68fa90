@@ -24,6 +24,7 @@ interface Question {
 }
 
 export const MultiStepFormDynamic = () => {
+  const [showLanding, setShowLanding] = useState(true);
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -395,6 +396,60 @@ export const MultiStepFormDynamic = () => {
           <p className="text-sm text-muted-foreground mt-2">
             Entre em contato conosco para mais informações.
           </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Landing Page
+  if (showLanding) {
+    return (
+      <div className="w-full min-h-[600px] flex items-center justify-center p-6">
+        <div className="max-w-6xl w-full grid md:grid-cols-2 gap-12 items-center">
+          {/* Left Column - Content */}
+          <div className="space-y-8">
+            <h1 className="text-5xl md:text-6xl font-bold leading-tight">
+              Descubra o que está impedindo seu bebê de{" "}
+              <span className="text-brand-blue">dormir no berço</span>
+            </h1>
+            
+            <p className="text-lg text-muted-foreground leading-relaxed">
+              Responda 5 perguntas rápidas e receba um plano prático com base no método da influenciadora Larissa, que ensinou o próprio bebê a dormir no berço com tranquilidade.
+            </p>
+
+            <div className="flex flex-wrap gap-4">
+              <div className="flex items-center gap-2 text-sm text-foreground">
+                <span className="text-brand-blue">🌙</span>
+                <span>Método gentil</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm text-foreground">
+                <span className="text-pink-500">❤️</span>
+                <span>Com afeto</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm text-foreground">
+                <span className="text-blue-500">✨</span>
+                <span>Resultados reais</span>
+              </div>
+            </div>
+
+            <Button 
+              onClick={() => setShowLanding(false)}
+              className="bg-brand-pink hover:bg-brand-pink/90 text-white h-14 px-8 text-lg rounded-full shadow-lg hover:shadow-xl transition-all"
+            >
+              Começar Quiz
+              <ArrowRight className="ml-2 h-5 w-5" />
+            </Button>
+          </div>
+
+          {/* Right Column - Image Placeholder */}
+          <div className="hidden md:block relative">
+            <div className="bg-gradient-to-br from-brand-blue/20 to-brand-pink/20 rounded-3xl aspect-[3/4] flex items-center justify-center relative overflow-hidden">
+              <div className="absolute bottom-8 right-8 bg-white rounded-2xl shadow-lg px-6 py-3">
+                <p className="text-3xl font-bold text-brand-pink">90k+</p>
+                <p className="text-sm text-muted-foreground">seguidores</p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     );
