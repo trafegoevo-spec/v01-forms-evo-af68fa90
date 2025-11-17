@@ -7,7 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, ArrowRight, ArrowLeft, MessageCircle } from "lucide-react";
+import { Loader2, ArrowRight, ArrowLeft } from "lucide-react";
+import whatsappIcon from "@/assets/whatsapp.png";
 import { Progress } from "@/components/ui/progress";
 
 interface Question {
@@ -254,7 +255,7 @@ export const MultiStepFormDynamic = () => {
           </div>
           
           <div className="bg-muted/30 rounded-lg p-8 mt-6">
-            <MessageCircle className="w-16 h-16 mx-auto text-green-600 mb-4" />
+            <img src={whatsappIcon} alt="WhatsApp" className="w-16 h-16 mx-auto mb-4" />
             <h3 className="text-2xl font-semibold text-green-600 mb-4">WhatsApp</h3>
             <p className="text-base text-foreground leading-relaxed">
               Em breve entraremos em contato com você através do WhatsApp para dar continuidade ao seu atendimento.
