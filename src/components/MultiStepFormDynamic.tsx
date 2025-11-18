@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -24,6 +25,9 @@ interface Question {
 }
 
 export const MultiStepFormDynamic = () => {
+  const [searchParams] = useSearchParams();
+  const formTitle = searchParams.get('form_title') || "Descubra o que está impedindo seu bebê de dormir no berço";
+  
   const [showLanding, setShowLanding] = useState(true);
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -211,6 +215,7 @@ export const MultiStepFormDynamic = () => {
       const { error } = await supabase.functions.invoke("enviar-conversao", {
         body: {
           ...data,
+          form_title: formTitle,
           timestamp: new Date().toISOString(),
         },
       });
@@ -409,8 +414,7 @@ export const MultiStepFormDynamic = () => {
           {/* Left Column - Content */}
           <div className="space-y-8">
             <h1 className="text-5xl md:text-6xl font-bold leading-tight">
-              Descubra o que está impedindo seu bebê de{" "}
-              <span className="text-brand-blue">dormir no berço</span>
+              {formTitle}
             </h1>
             
             <p className="text-lg text-muted-foreground leading-relaxed">
