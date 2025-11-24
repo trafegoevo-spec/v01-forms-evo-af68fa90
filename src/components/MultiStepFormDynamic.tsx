@@ -113,6 +113,10 @@ export const MultiStepFormDynamic = () => {
           }, {
             message: "Número de celular deve começar com 9 após o DDD"
           });
+      } else if (q.field_name.toLowerCase().includes("placa")) {
+        schemaFields[q.field_name] = z.string()
+          .regex(/^[A-Z]{3}\d[A-Z]\d{2}$/, "Placa inválida. Use o formato Mercosul: ABC1D23")
+          .length(7, "Placa deve ter exatamente 7 caracteres");
       } else if (q.field_name.toLowerCase().includes("email")) {
         schemaFields[q.field_name] = z.string().email("Email inválido").max(255);
       } else if (q.input_type === 'select' && q.options.length > 0) {
@@ -136,9 +140,9 @@ export const MultiStepFormDynamic = () => {
   type FormData = z.infer<typeof formSchema>;
 
   const defaultValues = questions.reduce((acc, q) => {
-    // Initialize phone fields with +55 prefix
+    // Initialize phone fields with 55 prefix
     if (q.field_name.toLowerCase().includes("whatsapp") || q.field_name.toLowerCase().includes("telefone")) {
-      acc[q.field_name] = "+55 ";
+      acc[q.field_name] = "55 ";
     } else {
       acc[q.field_name] = "";
     }
@@ -168,6 +172,18 @@ export const MultiStepFormDynamic = () => {
     if (cleaned.length <= 2) return `55 (${cleaned}`;
     if (cleaned.length <= 7) return `55 (${cleaned.slice(0, 2)}) ${cleaned.slice(2)}`;
     return `55 (${cleaned.slice(0, 2)}) ${cleaned.slice(2, 7)}-${cleaned.slice(7, 11)}`;
+  };
+
+  const formatPlaca = (value: string) => {
+    // Remove tudo exceto letras e números
+    let cleaned = value.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+    
+    // Limitar a 7 caracteres
+    if (cleaned.length > 7) {
+      cleaned = cleaned.slice(0, 7);
+    }
+    
+    return cleaned;
   };
 
   const nextStep = async () => {
@@ -338,14 +354,31 @@ export const MultiStepFormDynamic = () => {
             <Input
               key={`input-${currentQuestion.field_name}-${step}`}
               type="tel"
-              placeholder={currentQuestion.input_placeholder || "+55 (99) 99999-9999"}
+              placeholder={currentQuestion.input_placeholder || "55 (99) 99999-9999"}
               className="h-12 text-base"
               autoFocus
               autoComplete="off"
               maxLength={currentQuestion.max_length || 19}
-              value={form.watch(currentQuestion.field_name) || "+55 "}
+              value={form.watch(currentQuestion.field_name) || "55 "}
               onChange={(e) => {
                 const formatted = formatWhatsApp(e.target.value);
+                form.setValue(currentQuestion.field_name, formatted, { shouldValidate: true });
+              }}
+              onKeyDown={handleKeyDown}
+            />
+          ) : currentQuestion.field_name.toLowerCase().includes("placa") ? (
+            // Placa field with Mercosul formatting
+            <Input
+              key={`input-${currentQuestion.field_name}-${step}`}
+              type="text"
+              placeholder={currentQuestion.input_placeholder || "ABC1D23"}
+              className="h-12 text-base uppercase"
+              autoFocus
+              autoComplete="off"
+              maxLength={7}
+              value={form.watch(currentQuestion.field_name) || ""}
+              onChange={(e) => {
+                const formatted = formatPlaca(e.target.value);
                 form.setValue(currentQuestion.field_name, formatted, { shouldValidate: true });
               }}
               onKeyDown={handleKeyDown}
