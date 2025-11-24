@@ -92,7 +92,7 @@ export const MultiStepFormDynamic = () => {
       // Detect field type based on field_name for special validation
       if (q.field_name.toLowerCase().includes("whatsapp") || q.field_name.toLowerCase().includes("telefone")) {
         schemaFields[q.field_name] = z.string()
-          .regex(/^\+55 \(\d{2}\) \d{5}-\d{4}$/, "Telefone inválido. Use o formato +55 (99) 99999-9999")
+          .regex(/^55 \(\d{2}\) \d{5}-\d{4}$/, "Telefone inválido. Use o formato 55 (99) 99999-9999")
           .refine((val) => {
             const cleaned = val.replace(/\D/g, "");
             return cleaned.length === 13; // 55 + 11 dígitos
@@ -163,11 +163,11 @@ export const MultiStepFormDynamic = () => {
       cleaned = cleaned.slice(2);
     }
     
-    // Formatar com +55 no início
-    if (cleaned.length === 0) return "+55 ";
-    if (cleaned.length <= 2) return `+55 (${cleaned}`;
-    if (cleaned.length <= 7) return `+55 (${cleaned.slice(0, 2)}) ${cleaned.slice(2)}`;
-    return `+55 (${cleaned.slice(0, 2)}) ${cleaned.slice(2, 7)}-${cleaned.slice(7, 11)}`;
+    // Formatar com 55 no início
+    if (cleaned.length === 0) return "55 ";
+    if (cleaned.length <= 2) return `55 (${cleaned}`;
+    if (cleaned.length <= 7) return `55 (${cleaned.slice(0, 2)}) ${cleaned.slice(2)}`;
+    return `55 (${cleaned.slice(0, 2)}) ${cleaned.slice(2, 7)}-${cleaned.slice(7, 11)}`;
   };
 
   const nextStep = async () => {
