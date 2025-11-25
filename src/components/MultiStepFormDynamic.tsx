@@ -454,22 +454,3 @@ export const MultiStepFormDynamic = () => {
     </div>
   );
 };
-// --- Dynamic column creation update ---
-function ensureDynamicColumns(sheet, data) {
-  const headerRange = sheet.getRange(1, 1, 1, sheet.getLastColumn());
-  const header = headerRange.getValues()[0];
-
-  let updated = false;
-  Object.keys(data).forEach((key) => {
-    if (!header.includes(key)) {
-      sheet.insertColumnAfter(sheet.getLastColumn());
-      sheet.getRange(1, sheet.getLastColumn()).setValue(key);
-      header.push(key);
-      updated = true;
-    }
-  });
-
-  if (updated) {
-    sheet.getRange(1, 1, 1, header.length).setValues([header]);
-  }
-}
