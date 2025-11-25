@@ -1,20 +1,13 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Input validation schema
-const formDataSchema = z
-  .object({
-    timestamp: z.string().optional(),
-  })
-  .catchall(z.union([z.string().max(1000), z.number(), z.boolean(), z.array(z.string().max(500)).max(50), z.null()]));
-
+// Aceita QUALQUER estrutura enviada
 serve(async (req) => {
-  // Handle CORS preflight requests
+  // Preflight CORS
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -22,131 +15,76 @@ serve(async (req) => {
   try {
     const rawData = await req.json();
 
-    // Validate input data
-    const validationResult = formDataSchema.safeParse(rawData);
+    console.log("📥 Dados recebidos no webhook:", rawData);
 
-    if (!validationResult.success) {
-      console.error("Validation failed:", validationResult.error.errors);
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: "Invalid input data",
-          details: validationResult.error.errors.map((e) => ({
-            field: e.path.join("."),
-            message: e.message,
-          })),
-        }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        },
-      );
-    }
+    // ============================
+    //   SANAR PROBLEMA PRINCIPAL
+    // ============================
 
-    const data = validationResult.data;
-    console.log("Conversão validada - total de campos:", Object.keys(data).length);
+    // 1) Se houver `form_data`, extrair campos internos
+    const formData = rawData.form_data ?? rawData.data ?? rawData.body ?? rawData.payload ?? {};
 
-    // Webhook URL da planilha (Zapier, Make, Google Sheets, etc.)
+    // 2) Nome da aba dinâmico
+    const formName = rawData.form_name || rawData.formName || formData.form_name || "SemNome";
+
+    // 3) Monta payload final compatível com Apps Script
+    const payload = {
+      ...rawData, // Campos de nível raiz
+      ...formData, // Campos internos do formulário
+      form_name: formName,
+      timestamp: new Date().toISOString(),
+      origem: rawData.origem ?? "site",
+    };
+
+    console.log("📦 Payload final enviado à planilha:", payload);
+
+    // ============================
+    //       ENVIO À PLANILHA
+    // ============================
+
     const webhookUrl = Deno.env.get("WEBHOOK_URL");
 
     if (!webhookUrl) {
-      console.warn("WEBHOOK_URL não configurada. Configure em Cloud > Secrets");
-
-      // Retorna sucesso mesmo sem webhook para não bloquear o fluxo
+      console.warn("❗ WEBHOOK_URL não configurada no Supabase.");
       return new Response(
         JSON.stringify({
           success: true,
-          message: "Dados recebidos. Configure WEBHOOK_URL para enviar para planilha.",
+          warning: "WEBHOOK_URL não configurada. Dados apenas recebidos.",
         }),
-        {
-          status: 200,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        },
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
-    // Prepara payload com todos os campos do formulário dinâmico
-    const payload = {
-      ...data,
-      form_name: "autoprotecta",
-      timestamp: new Date().toISOString(),
-      origem: "autoprotecta",
-    };
+    const response = await fetch(webhookUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+      signal: AbortSignal.timeout(10000),
+    });
 
-    console.log("Payload preparado com", Object.keys(payload).length, "campos");
+    const text = await response.text();
+    console.log("📤 Resposta da planilha:", text);
 
-    try {
-      const webhookResponse = await fetch(webhookUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-        signal: AbortSignal.timeout(10000), // Timeout de 10 segundos
-      });
-
-      const responseText = await webhookResponse.text();
-
-      if (!webhookResponse.ok) {
-        console.error("Erro ao enviar para webhook (status " + webhookResponse.status + "):", responseText);
-
-        // Se for erro do Google (rate limit), retorna sucesso parcial
-        if (responseText.includes("muitas solicitações") || responseText.includes("indisponível")) {
-          console.warn("Google Sheets temporariamente indisponível. Dados salvos localmente.");
-          return new Response(
-            JSON.stringify({
-              success: true,
-              warning: "Dados salvos. Planilha temporariamente indisponível (muitas requisições).",
-            }),
-            {
-              status: 200,
-              headers: { ...corsHeaders, "Content-Type": "application/json" },
-            },
-          );
-        }
-
-        throw new Error("Webhook retornou erro: " + webhookResponse.status);
-      }
-
-      console.log("Conversão enviada para planilha com sucesso!");
-    } catch (webhookError: any) {
-      console.error("Erro ao chamar webhook:", webhookError.message);
-
-      // Retorna sucesso parcial - dados foram salvos no Supabase
-      return new Response(
-        JSON.stringify({
-          success: true,
-          warning: "Dados salvos localmente. Erro ao enviar para planilha: " + webhookError.message,
-        }),
-        {
-          status: 200,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        },
-      );
+    if (!response.ok) {
+      throw new Error("Webhook falhou: " + text);
     }
 
     return new Response(
       JSON.stringify({
         success: true,
-        message: "Dados enviados para planilha com sucesso!",
+        message: "Dados enviados para a planilha com sucesso!",
       }),
-      {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      },
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
-  } catch (error: any) {
-    console.error("Erro na função enviar-conversao:", error);
+  } catch (err: any) {
+    console.error("🔥 ERRO no envio:", err.message);
 
     return new Response(
       JSON.stringify({
         success: false,
-        error: error.message,
+        error: err.message,
       }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      },
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }
 });
