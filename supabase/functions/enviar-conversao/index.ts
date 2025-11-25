@@ -42,7 +42,7 @@ serve(async (req) => {
     //       ENVIO À PLANILHA
     // ============================
 
-    const webhookUrl = Deno.env.get("WEBHOOK_URL");
+    const webhookUrl = Deno.env.get("AUTOPROTECTA_URL");
 
     if (!webhookUrl) {
       console.warn("❗ WEBHOOK_URL não configurada no Supabase.");
