@@ -1,5 +1,3 @@
-// Usando secret AUTOPROTECTA_URL
-const AUTOPROTECTA_URL = process.env.AUTOPROTECTA_URL;
 // Arquivo corrigido: MultiStepFormDynamic.tsx
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
@@ -31,7 +29,7 @@ export const MultiStepFormDynamic = () => {
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [searchParams] = useSearchParams();
-  const formName = searchParams.get("form_name") || "facuvale";
+  const formName = searchParams.get("form_name") || "autoprotecta";
   const [isSuccess, setIsSuccess] = useState(false);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
