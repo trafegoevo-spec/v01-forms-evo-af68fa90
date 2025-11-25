@@ -47,16 +47,16 @@ serve(async (req) => {
     console.log("Conversão validada - total de campos:", Object.keys(data).length);
 
     // Webhook URL da planilha (Zapier, Make, Google Sheets, etc.)
-    const webhookUrl = Deno.env.get("AUTOPROTECTA_URL");
+    const webhookUrl = Deno.env.get("WEBHOOK_URL");
 
     if (!webhookUrl) {
-      console.warn("AUTOPROTECTA_URL não configurada. Configure em Cloud > Secrets");
+      console.warn("WEBHOOK_URL não configurada. Configure em Cloud > Secrets");
 
       // Retorna sucesso mesmo sem webhook para não bloquear o fluxo
       return new Response(
         JSON.stringify({
           success: true,
-          message: "Dados recebidos. Configure AUTOPROTECTA_URL para enviar para planilha.",
+          message: "Dados recebidos. Configure WEBHOOK_URL para enviar para planilha.",
         }),
         {
           status: 200,
@@ -67,13 +67,11 @@ serve(async (req) => {
 
     // Prepara payload com todos os campos do formulário dinâmico
     const payload = {
-      ...data, // Envia todos os campos recebidos
-      data_cadastro: data.timestamp || new Date().toISOString(),
-      origem: "Site EAD",
+      ...data,
+      form_name: "autoprotecta",
+      timestamp: new Date().toISOString(),
+      origem: "autoprotecta",
     };
-
-    // Remove timestamp duplicado se existir
-    delete payload.timestamp;
 
     console.log("Payload preparado com", Object.keys(payload).length, "campos");
 
