@@ -210,7 +210,12 @@ export const MultiStepFormDynamic = () => {
       const { error: dbError } = await supabase.from("leads").insert([leadData]);
       if (dbError) throw dbError;
 
-      const { error } = await supabase.functions.invoke("enviar-conversao", {
+      // Roteia para a edge function correta baseado no form_name
+      const edgeFunctionName = formName === "autoprotecta" 
+        ? "enviar-conversao-autoprotecta" 
+        : "enviar-conversao";
+
+      const { error } = await supabase.functions.invoke(edgeFunctionName, {
         body: {
           ...data,
           form_name: formName,
@@ -224,7 +229,7 @@ export const MultiStepFormDynamic = () => {
         (window as any).dataLayer = (window as any).dataLayer || [];
         (window as any).dataLayer.push({
           event: "gtm.formSubmit",
-          form_nome: "FormularioEAD",
+          form_nome: formName,
           timestamp: new Date().toISOString(),
         });
       }
@@ -452,22 +457,3 @@ export const MultiStepFormDynamic = () => {
     </div>
   );
 };
-// --- Dynamic column creation update ---
-function ensureDynamicColumns(sheet, data) {
-  const headerRange = sheet.getRange(1, 1, 1, sheet.getLastColumn());
-  const header = headerRange.getValues()[0];
-
-  let updated = false;
-  Object.keys(data).forEach((key) => {
-    if (!header.includes(key)) {
-      sheet.insertColumnAfter(sheet.getLastColumn());
-      sheet.getRange(1, sheet.getLastColumn()).setValue(key);
-      header.push(key);
-      updated = true;
-    }
-  });
-
-  if (updated) {
-    sheet.getRange(1, 1, 1, header.length).setValues([header]);
-  }
-}
