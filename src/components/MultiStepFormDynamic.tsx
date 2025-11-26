@@ -207,13 +207,14 @@ export const MultiStepFormDynamic = () => {
     try {
       const leadData = { form_data: data };
 
-      const { error: dbError } = await supabase.from("leads").insert([leadData]);
-      if (dbError) throw dbError;
-
-      // Roteia para a edge function correta baseado no form_name
+      // Roteia para a tabela e edge function corretas baseado no form_name
+      const tableName = formName === "autoprotecta" ? "leads_autoprotecta" : "leads";
       const edgeFunctionName = formName === "autoprotecta" 
         ? "enviar-conversao-autoprotecta" 
         : "enviar-conversao";
+
+      const { error: dbError } = await supabase.from(tableName).insert([leadData]);
+      if (dbError) throw dbError;
 
       const { error } = await supabase.functions.invoke(edgeFunctionName, {
         body: {

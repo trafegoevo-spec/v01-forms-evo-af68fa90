@@ -107,6 +107,24 @@ export type Database = {
         }
         Relationships: []
       }
+      leads_autoprotecta: {
+        Row: {
+          created_at: string
+          form_data: Json
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          form_data?: Json
+          id?: string
+        }
+        Update: {
+          created_at?: string
+          form_data?: Json
+          id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
