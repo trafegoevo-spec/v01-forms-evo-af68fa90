@@ -2,3 +2,6 @@ project_id = "wosoaxqisrpwxekdanac"
 
 [functions.enviar-conversao]
 verify_jwt = false
+
+[functions.enviar-conversao-autoprotecta]
+verify_jwt = false

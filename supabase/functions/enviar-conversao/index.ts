@@ -66,11 +66,12 @@ serve(async (req) => {
       sent_keys: Object.keys(flattened),
     });
   } catch (error) {
-    console.error("Erro na edge function:", error);
+    const errorMessage = error instanceof Error ? error.message : "Erro desconhecido";
+    console.error("Erro na edge function:", errorMessage);
     return jsonResponse(
       {
         success: false,
-        error: error.message,
+        error: errorMessage,
       },
       500,
     );
