@@ -120,7 +120,10 @@ export const MultiStepFormDynamic = () => {
       } else if (q.field_name.toLowerCase().includes("placa")) {
         schemaFields[q.field_name] = z
           .string()
-          .regex(/^[A-Z]{3}\d[A-Z]\d{2}$/, "Placa inválida. Use o formato Mercosul: ABC1D23")
+          .regex(
+            /^[A-Z]{3}\d[A-Z]\d{2}$|^[A-Z]{3}\d{4}$/,
+            "Placa inválida. Use formato Mercosul (ABC1D23) ou antigo (ABC1234)"
+          )
           .length(7, "Placa deve ter exatamente 7 caracteres");
       } else if (q.field_name.toLowerCase().includes("email")) {
         schemaFields[q.field_name] = z.string().email("Email inválido").max(255);
