@@ -236,6 +236,11 @@ export const MultiStepFormDynamic = () => {
           form_nome: formName,
           timestamp: new Date().toISOString(),
         });
+        
+        // Facebook Pixel tracking
+        if (typeof (window as any).fbq === 'function') {
+          (window as any).fbq('track', 'Lead');
+        }
       }
 
       setSubmittedData(data);
