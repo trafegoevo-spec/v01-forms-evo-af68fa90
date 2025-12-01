@@ -22,6 +22,7 @@ interface FormQuestion {
   input_type?: 'text' | 'select' | 'password';
   max_length?: number;
   input_placeholder?: string;
+  required?: boolean;
 }
 interface AppSettings {
   id: string;
@@ -81,7 +82,8 @@ const Admin = () => {
       const transformedData = (data || []).map(item => ({
         ...item,
         options: Array.isArray(item.options) ? item.options as string[] : [],
-        input_type: (['select', 'text', 'password'].includes(item.input_type) ? item.input_type : 'text') as 'text' | 'select' | 'password'
+        input_type: (['select', 'text', 'password'].includes(item.input_type) ? item.input_type : 'text') as 'text' | 'select' | 'password',
+        required: item.required !== undefined ? item.required : true
       }));
       setQuestions(transformedData);
     } catch (error: any) {
@@ -192,7 +194,8 @@ const Admin = () => {
           input_type: question.input_type,
           options: question.options,
           max_length: question.max_length,
-          input_placeholder: question.input_placeholder
+          input_placeholder: question.input_placeholder,
+          required: question.required !== undefined ? question.required : true
         }).eq("id", question.id);
         if (error) throw error;
       }
@@ -254,6 +257,13 @@ const Admin = () => {
     });
   };
   const addNewQuestion = async () => {
+    if (hasUnsavedChanges) {
+      if (!confirm("Você tem alterações não salvas. Salvar antes de adicionar nova pergunta?")) {
+        return;
+      }
+      await saveAllChanges();
+    }
+
     const maxStep = Math.max(...questions.map(q => q.step), 0);
 
     // Generate unique field_name
@@ -272,7 +282,8 @@ const Admin = () => {
         field_name: fieldName,
         options: [],
         input_type: 'text',
-        subdomain: formName
+        subdomain: formName,
+        required: true
       });
       if (error) throw error;
       toast({
@@ -464,6 +475,20 @@ VITE_GTM_ID=GTM-XXXXXXX`}
                       <SelectItem value="select">Múltipla Escolha</SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label htmlFor={`required-${question.id}`}>Campo Obrigatório</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Se desativado, o usuário pode pular esta pergunta
+                    </p>
+                  </div>
+                  <Switch 
+                    id={`required-${question.id}`}
+                    checked={question.required !== false} 
+                    onCheckedChange={(checked) => updateQuestionLocal(question.id, { required: checked })} 
+                  />
                 </div>
 
                 {question.input_type === 'select' && <div>

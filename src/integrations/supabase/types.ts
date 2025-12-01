@@ -72,6 +72,7 @@ export type Database = {
           max_length: number | null
           options: Json
           question: string
+          required: boolean
           step: number
           subdomain: string
           subtitle: string | null
@@ -86,6 +87,7 @@ export type Database = {
           max_length?: number | null
           options: Json
           question: string
+          required?: boolean
           step: number
           subdomain?: string
           subtitle?: string | null
@@ -100,6 +102,7 @@ export type Database = {
           max_length?: number | null
           options?: Json
           question?: string
+          required?: boolean
           step?: number
           subdomain?: string
           subtitle?: string | null
