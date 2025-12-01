@@ -20,7 +20,7 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    let webhookUrl = Deno.env.get("AUTOPROTECTA_URL");
+    let webhookUrl = Deno.env.get("EDUCA_URL");
 
     // Tentar buscar webhook_url personalizado do admin
     try {
@@ -38,21 +38,21 @@ serve(async (req) => {
     }
 
     if (!webhookUrl) {
-      console.error("❌ AUTOPROTECTA_URL não configurada");
+      console.error("❌ EDUCA_URL não configurada");
       return new Response(
-        JSON.stringify({ success: false, error: "AUTOPROTECTA_URL ausente" }),
+        JSON.stringify({ success: false, error: "EDUCA_URL ausente" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
     const payload = {
       ...data,
-      origem: "autoprotecta",
-      form_name: data.form_name || "autoprotecta",
+      origem: "educa",
+      form_name: data.form_name || "educa",
       timestamp: data.timestamp || new Date().toISOString(),
     };
 
-    console.log("📤 Enviando para Autoprotecta:", Object.keys(payload).length, "campos");
+    console.log("📤 Enviando para educa:", Object.keys(payload).length, "campos");
 
     const resp = await fetch(webhookUrl, {
       method: "POST",
@@ -71,10 +71,10 @@ serve(async (req) => {
       );
     }
 
-    console.log("✅ Enviado com sucesso para Autoprotecta");
+    console.log("✅ Enviado com sucesso para EDUCA");
 
     return new Response(
-      JSON.stringify({ success: true, message: "Dados enviados para planilha Autoprotecta" }),
+      JSON.stringify({ success: true, message: "Dados enviados para planilha EDUCA_URL" }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {
