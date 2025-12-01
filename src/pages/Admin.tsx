@@ -31,6 +31,8 @@ interface AppSettings {
   success_title: string;
   success_description: string;
   success_subtitle: string;
+  form_name: string;
+  webhook_url?: string;
 }
 
 const Admin = () => {
@@ -114,6 +116,8 @@ const Admin = () => {
           success_title: settings.success_title,
           success_description: settings.success_description,
           success_subtitle: settings.success_subtitle,
+          form_name: settings.form_name,
+          webhook_url: settings.webhook_url,
         })
         .eq("id", settings.id);
 
@@ -585,7 +589,31 @@ const Admin = () => {
                   />
                 </div>
 
-                <Button 
+                <div>
+                  <Label>Nome do Formulário</Label>
+                  <Input
+                    value={settings.form_name}
+                    onChange={(e) => updateSettings({ form_name: e.target.value })}
+                    placeholder="default"
+                  />
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Identificador único do formulário. Use "autoprotecta" para enviar para sistema Autoprotecta.
+                  </p>
+                </div>
+
+                <div>
+                  <Label>URL do Webhook (opcional)</Label>
+                  <Input
+                    value={settings.webhook_url || ""}
+                    onChange={(e) => updateSettings({ webhook_url: e.target.value })}
+                    placeholder="https://script.google.com/macros/s/.../exec"
+                  />
+                  <p className="text-sm text-muted-foreground mt-1">
+                    URL personalizada para onde os dados do formulário serão enviados. Deixe vazio para usar o padrão.
+                  </p>
+                </div>
+
+                <Button
                   onClick={saveSettings}
                   disabled={!settingsChanged}
                   className="w-full"

@@ -29,18 +29,28 @@ export const MultiStepFormDynamic = () => {
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [searchParams] = useSearchParams();
-  const formName = searchParams.get("form_name") || "autoprotecta";
   const [isSuccess, setIsSuccess] = useState(false);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
   const [submittedData, setSubmittedData] = useState<any>(null);
   const [settings, setSettings] = useState<any>(null);
+  const [formName, setFormName] = useState<string>("default");
   const { toast } = useToast();
 
   useEffect(() => {
     loadQuestions();
     loadSettings();
   }, []);
+
+  useEffect(() => {
+    // Define o form_name baseado na URL ou nas configurações do admin
+    const urlFormName = searchParams.get("form_name");
+    if (urlFormName) {
+      setFormName(urlFormName);
+    } else if (settings?.form_name) {
+      setFormName(settings.form_name);
+    }
+  }, [searchParams, settings]);
 
   const loadQuestions = async () => {
     try {
