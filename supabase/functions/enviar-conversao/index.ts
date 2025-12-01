@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 
 // CORS
 const corsHeaders = {
@@ -23,20 +24,39 @@ serve(async (req) => {
     const flattened = flattenPayload(data);
 
     // 🔥 Garante form_name e origem
-    flattened.form_name ??= "autoprotecta";
-    flattened.origem ??= "autoprotecta";
+    flattened.form_name ??= "default";
+    flattened.origem ??= "formulario";
 
     // 🔥 Timestamp automático
     flattened.timestamp ??= new Date().toISOString();
 
-    // URL do Apps Script
-    const webhookUrl = Deno.env.get("AUTOPROTECTA_URL") || Deno.env.get("WEBHOOK_URL");
+    // Buscar webhook_url das configurações do admin
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    let webhookUrl = Deno.env.get("WEBHOOK_URL");
+
+    // Tentar buscar webhook_url personalizado do admin
+    try {
+      const { data: settings, error } = await supabase
+        .from("app_settings")
+        .select("webhook_url")
+        .single();
+
+      if (!error && settings?.webhook_url) {
+        webhookUrl = settings.webhook_url;
+        console.log("📝 Usando webhook_url personalizado do admin");
+      }
+    } catch (err) {
+      console.warn("⚠️ Não foi possível buscar configurações do admin, usando padrão");
+    }
 
     if (!webhookUrl) {
-      console.warn("❗ Nenhum webhook configurado (AUTOPROTECTA_URL / WEBHOOK_URL)");
+      console.warn("❗ Nenhum webhook configurado");
       return jsonResponse({
         success: true,
-        message: "Dados recebidos — configure AUTOPROTECTA_URL",
+        message: "Dados recebidos — configure WEBHOOK_URL no admin",
       });
     }
 

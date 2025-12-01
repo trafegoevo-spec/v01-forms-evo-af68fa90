@@ -17,31 +17,37 @@ export type Database = {
       app_settings: {
         Row: {
           created_at: string
+          form_name: string
           id: string
           success_description: string
           success_subtitle: string
           success_title: string
           updated_at: string
+          webhook_url: string | null
           whatsapp_message: string
           whatsapp_number: string
         }
         Insert: {
           created_at?: string
+          form_name?: string
           id?: string
           success_description?: string
           success_subtitle?: string
           success_title?: string
           updated_at?: string
+          webhook_url?: string | null
           whatsapp_message?: string
           whatsapp_number?: string
         }
         Update: {
           created_at?: string
+          form_name?: string
           id?: string
           success_description?: string
           success_subtitle?: string
           success_title?: string
           updated_at?: string
+          webhook_url?: string | null
           whatsapp_message?: string
           whatsapp_number?: string
         }
