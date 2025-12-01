@@ -289,9 +289,19 @@ export const MultiStepFormDynamic = () => {
             <div className="bg-muted/30 rounded-lg p-8 mt-6">
               <img src={whatsappIcon} alt="WhatsApp" className="w-16 h-16 mx-auto mb-4" />
               <h3 className="text-2xl font-semibold text-green-600 mb-4">WhatsApp</h3>
-              <p className="text-base text-foreground leading-relaxed">
+              <p className="text-base text-foreground leading-relaxed mb-4">
                 Em breve entraremos em contato com você através do WhatsApp.
               </p>
+              <Button
+                onClick={() => {
+                  const phoneNumber = settings.whatsapp_number.replace(/\D/g, '');
+                  const message = encodeURIComponent(settings.whatsapp_message || 'Olá! Preenchi o formulário.');
+                  window.open(`https://wa.me/${phoneNumber}?text=${message}`, '_blank');
+                }}
+                className="w-full h-12 bg-green-600 hover:bg-green-700 text-white"
+              >
+                Conversar no WhatsApp
+              </Button>
             </div>
           )}
         </div>
