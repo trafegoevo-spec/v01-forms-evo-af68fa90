@@ -33,6 +33,7 @@ interface AppSettings {
   success_description: string;
   success_subtitle: string;
   form_name: string;
+  webhook_url?: string;
   whatsapp_enabled: boolean;
   gtm_id?: string;
 }
@@ -119,6 +120,7 @@ const Admin = () => {
           success_description: settings.success_description,
           success_subtitle: settings.success_subtitle,
           form_name: settings.form_name,
+          webhook_url: settings.webhook_url,
           whatsapp_enabled: settings.whatsapp_enabled,
           gtm_id: settings.gtm_id,
         })
@@ -617,6 +619,18 @@ const Admin = () => {
                   />
                   <p className="text-sm text-muted-foreground mt-1">
                     Identificador único do formulário. Use "autoprotecta" para enviar para sistema Autoprotecta.
+                  </p>
+                </div>
+
+                <div>
+                  <Label>URL do Webhook (opcional)</Label>
+                  <Input
+                    value={settings.webhook_url || ""}
+                    onChange={(e) => updateSettings({ webhook_url: e.target.value })}
+                    placeholder="https://script.google.com/macros/s/.../exec"
+                  />
+                  <p className="text-sm text-muted-foreground mt-1">
+                    URL personalizada para onde os dados do formulário serão enviados. Deixe vazio para usar o padrão.
                   </p>
                 </div>
 
