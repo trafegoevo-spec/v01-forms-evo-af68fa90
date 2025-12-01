@@ -34,7 +34,6 @@ interface AppSettings {
   success_subtitle: string;
   form_name: string;
   whatsapp_enabled: boolean;
-  gtm_id?: string;
   subdomain: string;
 }
 
@@ -124,7 +123,6 @@ const Admin = () => {
           success_subtitle: settings.success_subtitle,
           form_name: settings.form_name,
           whatsapp_enabled: settings.whatsapp_enabled,
-          gtm_id: settings.gtm_id,
         })
         .eq("id", settings.id);
 
@@ -651,18 +649,6 @@ VITE_GTM_ID=GTM-XXXXXXX`}
                   />
                   <p className="text-sm text-muted-foreground mt-1">
                     Identificador único do formulário. Use "autoprotecta" para enviar para sistema Autoprotecta.
-                  </p>
-                </div>
-
-                <div>
-                  <Label>Google Tag Manager ID</Label>
-                  <Input
-                    value={settings.gtm_id || ""}
-                    onChange={(e) => updateSettings({ gtm_id: e.target.value })}
-                    placeholder="GTM-XXXXXXX"
-                  />
-                  <p className="text-sm text-muted-foreground mt-1">
-                    ID do Google Tag Manager (ex: GTM-PRW9TPH). Deixe vazio para desabilitar.
                   </p>
                 </div>
 
