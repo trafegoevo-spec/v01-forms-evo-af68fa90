@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.enviar-conversao-autoprotecta]
 verify_jwt = false
+
+[functions.enviar-conversao-educa]
+verify_jwt = false
