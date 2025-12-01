@@ -81,7 +81,37 @@ export const MultiStepFormDynamic = () => {
         .eq("subdomain", formName)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        // Se não existir, criar configurações padrão
+        if (error.code === 'PGRST116') {
+          const defaultSettings = {
+            subdomain: formName,
+            form_name: formName,
+            whatsapp_enabled: true,
+            whatsapp_number: '5531989236061',
+            whatsapp_message: 'Olá! Acabei de enviar meus dados no formulário.',
+            success_title: 'Obrigado',
+            success_description: 'Recebemos suas informações com sucesso!',
+            success_subtitle: 'Em breve entraremos em contato.',
+          };
+
+          const { data: newData, error: insertError } = await supabase
+            .from("app_settings")
+            .insert([defaultSettings])
+            .select()
+            .single();
+
+          if (insertError) {
+            console.error("Erro ao criar configurações:", insertError);
+            return;
+          }
+          
+          setSettings(newData);
+          return;
+        }
+        throw error;
+      }
+      
       setSettings(data);
     } catch (error: any) {
       console.error("Erro ao carregar configurações:", error);
