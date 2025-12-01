@@ -10,11 +10,11 @@ const Index = () => {
   const { user, isAdmin, loading } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const preview = searchParams.get('preview');
+  const preview = searchParams.get("preview");
 
   useEffect(() => {
     // Redirect admin users to /admin after login, unless they're previewing
-    if (!loading && user && isAdmin && preview !== 'true') {
+    if (!loading && user && isAdmin && preview !== "true") {
       navigate("/admin");
     }
   }, [user, isAdmin, loading, navigate, preview]);
