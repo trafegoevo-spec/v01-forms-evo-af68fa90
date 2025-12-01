@@ -12,7 +12,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { Loader2, ArrowRight, ArrowLeft } from "lucide-react";
 import whatsappIcon from "@/assets/whatsapp.png";
 import { Progress } from "@/components/ui/progress";
-import { useSubdomain } from "@/hooks/useSubdomain";
 
 interface Question {
   id: string;
@@ -35,31 +34,20 @@ export const MultiStepFormDynamic = () => {
   const [loading, setLoading] = useState(true);
   const [submittedData, setSubmittedData] = useState<any>(null);
   const [settings, setSettings] = useState<any>(null);
-  const [formName, setFormName] = useState<string>("default");
   const { toast } = useToast();
-  const subdomain = useSubdomain();
+  const formName = import.meta.env.VITE_FORM_NAME || "default";
 
   useEffect(() => {
     loadQuestions();
     loadSettings();
   }, []);
 
-  useEffect(() => {
-    // Define o form_name baseado na URL ou nas configurações do admin
-    const urlFormName = searchParams.get("form_name");
-    if (urlFormName) {
-      setFormName(urlFormName);
-    } else if (settings?.form_name) {
-      setFormName(settings.form_name);
-    }
-  }, [searchParams, settings]);
-
   const loadQuestions = async () => {
     try {
       const { data, error } = await supabase
         .from("form_questions")
         .select("*")
-        .eq("subdomain", subdomain)
+        .eq("subdomain", formName)
         .order("step", { ascending: true });
 
       if (error) throw error;
@@ -90,7 +78,7 @@ export const MultiStepFormDynamic = () => {
       const { data, error } = await supabase
         .from("app_settings")
         .select("*")
-        .eq("subdomain", subdomain)
+        .eq("subdomain", formName)
         .single();
 
       if (error) throw error;

@@ -1,20 +1,10 @@
 import { useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { useSubdomain } from "@/hooks/useSubdomain";
 
 export const GTMScript = () => {
-  const subdomain = useSubdomain();
-  
   useEffect(() => {
     const loadGTM = async () => {
       try {
-        const { data: settings } = await supabase
-          .from("app_settings")
-          .select("gtm_id")
-          .eq("subdomain", subdomain)
-          .single();
-
-        const gtmId = settings?.gtm_id || "GTM-PRW9TPH";
+        const gtmId = import.meta.env.VITE_GTM_ID || "GTM-PRW9TPH";
 
         // Inject GTM script in head
         if (!document.querySelector(`script[src*="${gtmId}"]`)) {
@@ -45,7 +35,7 @@ export const GTMScript = () => {
     };
 
     loadGTM();
-  }, [subdomain]);
+  }, []);
 
   return null;
 };
