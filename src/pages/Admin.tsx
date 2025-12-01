@@ -35,6 +35,7 @@ interface AppSettings {
   form_name: string;
   webhook_url?: string;
   whatsapp_enabled: boolean;
+  gtm_id?: string;
 }
 
 const Admin = () => {
@@ -121,6 +122,7 @@ const Admin = () => {
           form_name: settings.form_name,
           webhook_url: settings.webhook_url,
           whatsapp_enabled: settings.whatsapp_enabled,
+          gtm_id: settings.gtm_id,
         })
         .eq("id", settings.id);
 
@@ -629,6 +631,18 @@ const Admin = () => {
                   />
                   <p className="text-sm text-muted-foreground mt-1">
                     URL personalizada para onde os dados do formulário serão enviados. Deixe vazio para usar o padrão.
+                  </p>
+                </div>
+
+                <div>
+                  <Label>Google Tag Manager ID</Label>
+                  <Input
+                    value={settings.gtm_id || ""}
+                    onChange={(e) => updateSettings({ gtm_id: e.target.value })}
+                    placeholder="GTM-XXXXXXX"
+                  />
+                  <p className="text-sm text-muted-foreground mt-1">
+                    ID do Google Tag Manager (ex: GTM-PRW9TPH). Deixe vazio para desabilitar.
                   </p>
                 </div>
 

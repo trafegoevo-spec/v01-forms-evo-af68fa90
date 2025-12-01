@@ -18,6 +18,7 @@ export type Database = {
         Row: {
           created_at: string
           form_name: string
+          gtm_id: string | null
           id: string
           success_description: string
           success_subtitle: string
@@ -31,6 +32,7 @@ export type Database = {
         Insert: {
           created_at?: string
           form_name?: string
+          gtm_id?: string | null
           id?: string
           success_description?: string
           success_subtitle?: string
@@ -44,6 +46,7 @@ export type Database = {
         Update: {
           created_at?: string
           form_name?: string
+          gtm_id?: string | null
           id?: string
           success_description?: string
           success_subtitle?: string
