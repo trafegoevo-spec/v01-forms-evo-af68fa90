@@ -12,7 +12,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { AuthDialog } from "@/components/AuthDialog";
 import { LogoUploader } from "@/components/LogoUploader";
 import { Switch } from "@/components/ui/switch";
-import { useSubdomain } from "@/hooks/useSubdomain";
 
 interface FormQuestion {
   id: string;
@@ -49,10 +48,7 @@ const Admin = () => {
   const [showAuthDialog, setShowAuthDialog] = useState(false);
   const [settings, setSettings] = useState<AppSettings | null>(null);
   const [settingsChanged, setSettingsChanged] = useState(false);
-  const currentSubdomain = useSubdomain();
-  const [selectedSubdomain, setSelectedSubdomain] = useState(currentSubdomain);
-  const [availableSubdomains, setAvailableSubdomains] = useState<string[]>([]);
-  const [newSubdomainName, setNewSubdomainName] = useState("");
+  const formName = import.meta.env.VITE_FORM_NAME || "default";
 
   useEffect(() => {
     if (!authLoading) {
@@ -64,41 +60,18 @@ const Admin = () => {
       } else if (user && isAdmin) {
         // User is authenticated and is admin - close dialog and load questions
         setShowAuthDialog(false);
-        loadAvailableSubdomains();
         loadQuestions();
         loadSettings();
       }
     }
   }, [user, isAdmin, authLoading, navigate]);
 
-  useEffect(() => {
-    if (isAdmin && selectedSubdomain) {
-      loadQuestions();
-      loadSettings();
-    }
-  }, [selectedSubdomain]);
-
-  const loadAvailableSubdomains = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("app_settings")
-        .select("subdomain")
-        .order("subdomain");
-
-      if (error) throw error;
-      const subdomains = data?.map(s => s.subdomain) || [];
-      setAvailableSubdomains(subdomains);
-    } catch (error: any) {
-      console.error("Erro ao carregar subdomínios:", error);
-    }
-  };
-
   const loadQuestions = async () => {
     try {
       const { data, error } = await supabase
         .from("form_questions")
         .select("*")
-        .eq("subdomain", selectedSubdomain)
+        .eq("subdomain", formName)
         .order("step", { ascending: true });
 
       if (error) throw error;
@@ -127,7 +100,7 @@ const Admin = () => {
       const { data, error } = await supabase
         .from("app_settings")
         .select("*")
-        .eq("subdomain", selectedSubdomain)
+        .eq("subdomain", formName)
         .single();
 
       if (error) throw error;
@@ -289,7 +262,7 @@ const Admin = () => {
           field_name: fieldName,
           options: [],
           input_type: 'text',
-          subdomain: selectedSubdomain,
+          subdomain: formName,
         });
 
       if (error) throw error;
@@ -346,50 +319,6 @@ const Admin = () => {
     }
   };
 
-  const createNewSubdomain = async () => {
-    if (!newSubdomainName.trim()) {
-      toast({
-        title: "Nome inválido",
-        description: "Digite um nome para o subdomínio",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      // Create app_settings for new subdomain
-      const { error: settingsError } = await supabase
-        .from("app_settings")
-        .insert([{
-          subdomain: newSubdomainName,
-          whatsapp_number: "5531989236061",
-          whatsapp_message: "Olá! Acabei de enviar meus dados no formulário.",
-          success_title: "Obrigado",
-          success_description: "Recebemos suas informações com sucesso!",
-          success_subtitle: "Em breve entraremos em contato.",
-          form_name: newSubdomainName,
-          whatsapp_enabled: true,
-          gtm_id: "GTM-PRW9TPH",
-        }]);
-
-      if (settingsError) throw settingsError;
-
-      toast({
-        title: "Subdomínio criado!",
-        description: `Subdomínio ${newSubdomainName} criado com sucesso`,
-      });
-
-      setNewSubdomainName("");
-      loadAvailableSubdomains();
-      setSelectedSubdomain(newSubdomainName);
-    } catch (error: any) {
-      toast({
-        title: "Erro ao criar subdomínio",
-        description: error.message,
-        variant: "destructive",
-      });
-    }
-  };
 
   if (authLoading) {
     return (
@@ -446,39 +375,30 @@ const Admin = () => {
           </Button>
         </div>
 
-        {/* Subdomain Selector */}
+        {/* Configuration Info */}
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle>Gerenciar Subdomínios</CardTitle>
+            <CardTitle>Configuração do Formulário</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-3">
             <div>
-              <Label>Subdomínio Atual</Label>
-              <Select value={selectedSubdomain} onValueChange={setSelectedSubdomain}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableSubdomains.map(sub => (
-                    <SelectItem key={sub} value={sub}>{sub}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <p className="text-sm text-muted-foreground mt-1">
-                Exemplo de URL: {selectedSubdomain}.evoleads.app
+              <Label>Form Name Atual</Label>
+              <p className="text-sm font-mono bg-muted p-2 rounded">{formName}</p>
+            </div>
+            <div>
+              <Label>Google Tag Manager ID</Label>
+              <p className="text-sm font-mono bg-muted p-2 rounded">
+                {import.meta.env.VITE_GTM_ID || "Não configurado"}
               </p>
             </div>
-
-            <div className="flex gap-2">
-              <Input
-                placeholder="Nome do novo subdomínio"
-                value={newSubdomainName}
-                onChange={(e) => setNewSubdomainName(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
-              />
-              <Button onClick={createNewSubdomain}>
-                <Plus className="mr-2 h-4 w-4" />
-                Criar
-              </Button>
+            <div className="pt-2 border-t">
+              <p className="text-xs text-muted-foreground mb-2">
+                Configure estas variáveis no arquivo <code className="bg-muted px-1 rounded">.env</code> para cada subdomínio:
+              </p>
+              <pre className="bg-muted p-3 rounded text-xs overflow-x-auto">
+{`VITE_FORM_NAME=${formName}
+VITE_GTM_ID=GTM-XXXXXXX`}
+              </pre>
             </div>
           </CardContent>
         </Card>
