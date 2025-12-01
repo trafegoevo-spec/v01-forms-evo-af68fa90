@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Loader2, ArrowRight, ArrowLeft } from "lucide-react";
 import whatsappIcon from "@/assets/whatsapp.png";
 import { Progress } from "@/components/ui/progress";
+import { useSubdomain } from "@/hooks/useSubdomain";
 
 interface Question {
   id: string;
@@ -36,6 +37,7 @@ export const MultiStepFormDynamic = () => {
   const [settings, setSettings] = useState<any>(null);
   const [formName, setFormName] = useState<string>("default");
   const { toast } = useToast();
+  const subdomain = useSubdomain();
 
   useEffect(() => {
     loadQuestions();
@@ -54,7 +56,11 @@ export const MultiStepFormDynamic = () => {
 
   const loadQuestions = async () => {
     try {
-      const { data, error } = await supabase.from("form_questions").select("*").order("step", { ascending: true });
+      const { data, error } = await supabase
+        .from("form_questions")
+        .select("*")
+        .eq("subdomain", subdomain)
+        .order("step", { ascending: true });
 
       if (error) throw error;
 
@@ -81,7 +87,11 @@ export const MultiStepFormDynamic = () => {
 
   const loadSettings = async () => {
     try {
-      const { data, error } = await supabase.from("app_settings").select("*").single();
+      const { data, error } = await supabase
+        .from("app_settings")
+        .select("*")
+        .eq("subdomain", subdomain)
+        .single();
 
       if (error) throw error;
       setSettings(data);

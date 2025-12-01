@@ -20,6 +20,7 @@ export type Database = {
           form_name: string
           gtm_id: string | null
           id: string
+          subdomain: string
           success_description: string
           success_subtitle: string
           success_title: string
@@ -34,6 +35,7 @@ export type Database = {
           form_name?: string
           gtm_id?: string | null
           id?: string
+          subdomain?: string
           success_description?: string
           success_subtitle?: string
           success_title?: string
@@ -48,6 +50,7 @@ export type Database = {
           form_name?: string
           gtm_id?: string | null
           id?: string
+          subdomain?: string
           success_description?: string
           success_subtitle?: string
           success_title?: string
@@ -70,6 +73,7 @@ export type Database = {
           options: Json
           question: string
           step: number
+          subdomain: string
           subtitle: string | null
           updated_at: string
         }
@@ -83,6 +87,7 @@ export type Database = {
           options: Json
           question: string
           step: number
+          subdomain?: string
           subtitle?: string | null
           updated_at?: string
         }
@@ -96,6 +101,7 @@ export type Database = {
           options?: Json
           question?: string
           step?: number
+          subdomain?: string
           subtitle?: string | null
           updated_at?: string
         }
