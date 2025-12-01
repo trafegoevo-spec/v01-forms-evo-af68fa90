@@ -285,13 +285,15 @@ export const MultiStepFormDynamic = () => {
     setIsSubmitting(true);
 
     try {
-      const leadData = { form_data: data };
+      const leadData = {  
+        form_name: formName,
+        form_data: data,
+        timestamp: new Date().toISOString(),
+      };
 
       // Roteia para a tabela e edge function corretas baseado no form_name
-      const tableName = formName === "autoprotecta" ? "leads_autoprotecta" : "leads";
-      const edgeFunctionName = formName === "autoprotecta" 
-        ? "enviar-conversao-autoprotecta" 
-        : "enviar-conversao";
+      const tableName = "leads";
+      const edgeFunctionName = "enviar-conversao";
 
       const { error: dbError } = await supabase.from(tableName).insert([leadData]);
       if (dbError) throw dbError;
@@ -314,10 +316,6 @@ export const MultiStepFormDynamic = () => {
           timestamp: new Date().toISOString(),
         });
         
-        // Facebook Pixel tracking
-        if (typeof (window as any).fbq === 'function') {
-          (window as any).fbq('track', 'Lead');
-        }
       }
 
       setSubmittedData(data);
