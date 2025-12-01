@@ -11,6 +11,7 @@ import { Eye, Plus, Trash2, ArrowUp, ArrowDown, X } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AuthDialog } from "@/components/AuthDialog";
 import { LogoUploader } from "@/components/LogoUploader";
+import { Switch } from "@/components/ui/switch";
 
 interface FormQuestion {
   id: string;
@@ -33,6 +34,7 @@ interface AppSettings {
   success_subtitle: string;
   form_name: string;
   webhook_url?: string;
+  whatsapp_enabled: boolean;
 }
 
 const Admin = () => {
@@ -118,6 +120,7 @@ const Admin = () => {
           success_subtitle: settings.success_subtitle,
           form_name: settings.form_name,
           webhook_url: settings.webhook_url,
+          whatsapp_enabled: settings.whatsapp_enabled,
         })
         .eq("id", settings.id);
 
@@ -538,12 +541,27 @@ const Admin = () => {
                 <CardTitle>Botão WhatsApp e Página de Sucesso</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="whatsapp-enabled">Exibir opção WhatsApp na página de obrigado</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Ative para mostrar a seção do WhatsApp após o envio do formulário
+                    </p>
+                  </div>
+                  <Switch
+                    id="whatsapp-enabled"
+                    checked={settings.whatsapp_enabled}
+                    onCheckedChange={(checked) => updateSettings({ whatsapp_enabled: checked })}
+                  />
+                </div>
+
                 <div>
                   <Label>Número do WhatsApp</Label>
                   <Input
                     value={settings.whatsapp_number}
                     onChange={(e) => updateSettings({ whatsapp_number: e.target.value })}
                     placeholder="5531989236061"
+                    disabled={!settings.whatsapp_enabled}
                   />
                   <p className="text-sm text-muted-foreground mt-1">
                     Formato: código do país + DDD + número (sem espaços ou caracteres especiais)
@@ -556,6 +574,7 @@ const Admin = () => {
                     value={settings.whatsapp_message}
                     onChange={(e) => updateSettings({ whatsapp_message: e.target.value })}
                     placeholder="Olá! Acabei de enviar meus dados no formulário."
+                    disabled={!settings.whatsapp_enabled}
                   />
                   <p className="text-sm text-muted-foreground mt-1">
                     Mensagem que será enviada automaticamente ao abrir o WhatsApp
