@@ -30,33 +30,13 @@ serve(async (req) => {
     // 🔥 Timestamp automático
     flattened.timestamp ??= new Date().toISOString();
 
-    // Buscar webhook_url das configurações do admin
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
-
-    let webhookUrl = Deno.env.get("WEBHOOK_URL");
-
-    // Tentar buscar webhook_url personalizado do admin
-    try {
-      const { data: settings, error } = await supabase
-        .from("app_settings")
-        .select("webhook_url")
-        .single();
-
-      if (!error && settings?.webhook_url) {
-        webhookUrl = settings.webhook_url;
-        console.log("📝 Usando webhook_url personalizado do admin");
-      }
-    } catch (err) {
-      console.warn("⚠️ Não foi possível buscar configurações do admin, usando padrão");
-    }
+    const webhookUrl = Deno.env.get("WEBHOOK_URL");
 
     if (!webhookUrl) {
       console.warn("❗ Nenhum webhook configurado");
       return jsonResponse({
         success: true,
-        message: "Dados recebidos — configure WEBHOOK_URL no admin",
+        message: "Dados recebidos — configure WEBHOOK_URL nas secrets",
       });
     }
 
