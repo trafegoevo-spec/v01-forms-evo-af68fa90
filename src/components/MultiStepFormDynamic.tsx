@@ -285,13 +285,15 @@ export const MultiStepFormDynamic = () => {
             </p>
           </div>
 
-          <div className="bg-muted/30 rounded-lg p-8 mt-6">
-            <img src={whatsappIcon} alt="WhatsApp" className="w-16 h-16 mx-auto mb-4" />
-            <h3 className="text-2xl font-semibold text-green-600 mb-4">WhatsApp</h3>
-            <p className="text-base text-foreground leading-relaxed">
-              Em breve entraremos em contato com você através do WhatsApp.
-            </p>
-          </div>
+          {settings?.whatsapp_enabled && (
+            <div className="bg-muted/30 rounded-lg p-8 mt-6">
+              <img src={whatsappIcon} alt="WhatsApp" className="w-16 h-16 mx-auto mb-4" />
+              <h3 className="text-2xl font-semibold text-green-600 mb-4">WhatsApp</h3>
+              <p className="text-base text-foreground leading-relaxed">
+                Em breve entraremos em contato com você através do WhatsApp.
+              </p>
+            </div>
+          )}
         </div>
       );
     }

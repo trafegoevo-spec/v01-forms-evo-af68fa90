@@ -24,6 +24,7 @@ export type Database = {
           success_title: string
           updated_at: string
           webhook_url: string | null
+          whatsapp_enabled: boolean
           whatsapp_message: string
           whatsapp_number: string
         }
@@ -36,6 +37,7 @@ export type Database = {
           success_title?: string
           updated_at?: string
           webhook_url?: string | null
+          whatsapp_enabled?: boolean
           whatsapp_message?: string
           whatsapp_number?: string
         }
@@ -48,6 +50,7 @@ export type Database = {
           success_title?: string
           updated_at?: string
           webhook_url?: string | null
+          whatsapp_enabled?: boolean
           whatsapp_message?: string
           whatsapp_number?: string
         }
