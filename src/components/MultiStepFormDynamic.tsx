@@ -23,6 +23,7 @@ interface Question {
   input_type?: "text" | "select" | "password";
   max_length?: number;
   input_placeholder?: string;
+  required?: boolean;
 }
 
 export const MultiStepFormDynamic = () => {
@@ -59,6 +60,7 @@ export const MultiStepFormDynamic = () => {
           | "text"
           | "select"
           | "password",
+        required: item.required !== undefined ? item.required : true,
       }));
 
       setQuestions(transformedData);
@@ -122,59 +124,87 @@ export const MultiStepFormDynamic = () => {
     const schemaFields: Record<string, z.ZodType<any>> = {};
 
     questions.forEach((q) => {
+      const isRequired = q.required !== false;
+      
       if (q.field_name.toLowerCase().includes("whatsapp") || q.field_name.toLowerCase().includes("telefone")) {
-        schemaFields[q.field_name] = z
-          .string()
-          .regex(/^55 \(\d{2}\) \d{5}-\d{4}$/, "Telefone inválido. Use o formato 55 (99) 99999-9999")
-          .refine(
-            (val) => {
-              const cleaned = val.replace(/\D/g, "");
-              return cleaned.length === 13;
-            },
-            {
-              message: "Telefone deve ter 11 dígitos + código do país",
-            },
-          )
-          .refine(
-            (val) => {
-              const ddd = val.match(/\((\d{2})\)/)?.[1];
-              if (!ddd) return false;
-              const dddNum = parseInt(ddd);
-              return dddNum >= 11 && dddNum <= 99;
-            },
-            {
-              message: "DDD inválido. Use um DDD brasileiro válido",
-            },
-          )
-          .refine(
-            (val) => {
-              const ninthDigit = val.match(/\) (\d)/)?.[1];
-              return ninthDigit === "9";
-            },
-            {
-              message: "Número de celular deve começar com 9 após o DDD",
-            },
-          );
-      } else if (q.field_name.toLowerCase().includes("placa")) {
-        schemaFields[q.field_name] = z
-          .string()
-          .regex(
-            /^[A-Z]{3}\d[A-Z]\d{2}$|^[A-Z]{3}\d{4}$/,
-            "Placa inválida. Use formato Mercosul (ABC1D23) ou antigo (ABC1234)"
-          )
-          .length(7, "Placa deve ter exatamente 7 caracteres");
-      } else if (q.field_name.toLowerCase().includes("email")) {
-        schemaFields[q.field_name] = z.string().email("Email inválido").max(255);
-      } else if (q.input_type === "select" && q.options.length > 0) {
-        schemaFields[q.field_name] = z.string().min(1, "Selecione uma opção");
-      } else {
-        let schema = z.string().min(1, "Campo obrigatório");
-        if (q.max_length && q.max_length > 0) {
-          schema = schema.max(q.max_length, `Máximo de ${q.max_length} caracteres`);
+        if (isRequired) {
+          schemaFields[q.field_name] = z
+            .string()
+            .regex(/^55 \(\d{2}\) \d{5}-\d{4}$/, "Telefone inválido. Use o formato 55 (99) 99999-9999")
+            .refine(
+              (val) => {
+                const cleaned = val.replace(/\D/g, "");
+                return cleaned.length === 13;
+              },
+              {
+                message: "Telefone deve ter 11 dígitos + código do país",
+              },
+            )
+            .refine(
+              (val) => {
+                const ddd = val.match(/\((\d{2})\)/)?.[1];
+                if (!ddd) return false;
+                const dddNum = parseInt(ddd);
+                return dddNum >= 11 && dddNum <= 99;
+              },
+              {
+                message: "DDD inválido. Use um DDD brasileiro válido",
+              },
+            )
+            .refine(
+              (val) => {
+                const ninthDigit = val.match(/\) (\d)/)?.[1];
+                return ninthDigit === "9";
+              },
+              {
+                message: "Número de celular deve começar com 9 após o DDD",
+              },
+            );
         } else {
-          schema = schema.max(200);
+          schemaFields[q.field_name] = z.string();
         }
-        schemaFields[q.field_name] = schema;
+      } else if (q.field_name.toLowerCase().includes("placa")) {
+        if (isRequired) {
+          schemaFields[q.field_name] = z
+            .string()
+            .regex(
+              /^[A-Z]{3}\d[A-Z]\d{2}$|^[A-Z]{3}\d{4}$/,
+              "Placa inválida. Use formato Mercosul (ABC1D23) ou antigo (ABC1234)"
+            )
+            .length(7, "Placa deve ter exatamente 7 caracteres");
+        } else {
+          schemaFields[q.field_name] = z.string();
+        }
+      } else if (q.field_name.toLowerCase().includes("email")) {
+        if (isRequired) {
+          schemaFields[q.field_name] = z.string().email("Email inválido").max(255);
+        } else {
+          schemaFields[q.field_name] = z.string().email("Email inválido").max(255).or(z.literal(""));
+        }
+      } else if (q.input_type === "select" && q.options.length > 0) {
+        if (isRequired) {
+          schemaFields[q.field_name] = z.string().min(1, "Selecione uma opção");
+        } else {
+          schemaFields[q.field_name] = z.string();
+        }
+      } else {
+        if (isRequired) {
+          let schema = z.string().min(1, "Campo obrigatório");
+          if (q.max_length && q.max_length > 0) {
+            schema = schema.max(q.max_length, `Máximo de ${q.max_length} caracteres`);
+          } else {
+            schema = schema.max(200);
+          }
+          schemaFields[q.field_name] = schema;
+        } else {
+          let schema = z.string();
+          if (q.max_length && q.max_length > 0) {
+            schema = schema.max(q.max_length, `Máximo de ${q.max_length} caracteres`);
+          } else {
+            schema = schema.max(200);
+          }
+          schemaFields[q.field_name] = schema;
+        }
       }
     });
 
@@ -224,6 +254,15 @@ export const MultiStepFormDynamic = () => {
 
   const nextStep = async () => {
     if (!currentQuestion) return;
+
+    const isRequired = currentQuestion.required !== false;
+    const value = form.watch(currentQuestion.field_name);
+    
+    // Se o campo não for obrigatório e estiver vazio, permitir avançar
+    if (!isRequired && (!value || value.trim() === '' || value === '55 ')) {
+      if (step < totalSteps) setStep(step + 1);
+      return;
+    }
 
     const isValid = await form.trigger(currentQuestion.field_name);
 
