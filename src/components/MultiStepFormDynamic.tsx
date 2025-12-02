@@ -285,28 +285,20 @@ export const MultiStepFormDynamic = () => {
     setIsSubmitting(true);
 
     try {
-      const leadData = {  
-        form_name: formName,
-        form_data: data,
-        timestamp: new Date().toISOString(),
-      };
+  const leadData = {
+    form_name: formName,
+    form_data: data,
+    timestamp: new Date().toISOString(),
+  };
 
-      // Roteia para a tabela e edge function corretas baseado no form_name
-      const tableName = "leads";
-      const edgeFunctionName = "enviar-conversao";
+  const { error: dbError } = await supabase.from("leads").insert([leadData]);
+  if (dbError) throw dbError;
 
-      const { error: dbError } = await supabase.from(tableName).insert([leadData]);
-      if (dbError) throw dbError;
+  const { error } = await supabase.functions.invoke("enviar-conversao", {
+    body: leadData,
+  });
 
-      const { error } = await supabase.functions.invoke(edgeFunctionName, {
-        body: {
-          ...data,
-          form_name: formName,
-          timestamp: new Date().toISOString(),
-        },
-      });
-
-      if (error) console.error("Webhook error:", error);
+  if (error) console.error("Webhook error:", error);
 
       if (typeof window !== "undefined") {
         (window as any).dataLayer = (window as any).dataLayer || [];
