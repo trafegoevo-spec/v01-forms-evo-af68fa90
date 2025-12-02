@@ -36,6 +36,7 @@ export const MultiStepFormDynamic = () => {
   const [submittedData, setSubmittedData] = useState<any>(null);
   const [settings, setSettings] = useState<any>(null);
   const { toast } = useToast();
+
   const formName = import.meta.env.VITE_FORM_NAME || "default";
 
   useEffect(() => {
@@ -56,10 +57,9 @@ export const MultiStepFormDynamic = () => {
       const transformedData = (data || []).map((item) => ({
         ...item,
         options: Array.isArray(item.options) ? (item.options as string[]) : [],
-        input_type: (["select", "text", "password"].includes(item.input_type) ? item.input_type : "text") as
-          | "text"
-          | "select"
-          | "password",
+        input_type: (["select", "text", "password"].includes(item.input_type)
+          ? item.input_type
+          : "text") as "text" | "select" | "password",
         required: item.required !== undefined ? item.required : true,
       }));
 
@@ -84,7 +84,6 @@ export const MultiStepFormDynamic = () => {
         .single();
 
       if (error) {
-        // Se não existir, criar configurações padrão
         if (error.code === 'PGRST116') {
           const defaultSettings = {
             subdomain: formName,
@@ -107,13 +106,14 @@ export const MultiStepFormDynamic = () => {
             console.error("Erro ao criar configurações:", insertError);
             return;
           }
-          
+
           setSettings(newData);
           return;
         }
+
         throw error;
       }
-      
+
       setSettings(data);
     } catch (error: any) {
       console.error("Erro ao carregar configurações:", error);
@@ -125,8 +125,11 @@ export const MultiStepFormDynamic = () => {
 
     questions.forEach((q) => {
       const isRequired = q.required !== false;
-      
-      if (q.field_name.toLowerCase().includes("whatsapp") || q.field_name.toLowerCase().includes("telefone")) {
+
+      if (
+        q.field_name.toLowerCase().includes("whatsapp") ||
+        q.field_name.toLowerCase().includes("telefone")
+      ) {
         if (isRequired) {
           schemaFields[q.field_name] = z
             .string()
@@ -136,9 +139,7 @@ export const MultiStepFormDynamic = () => {
                 const cleaned = val.replace(/\D/g, "");
                 return cleaned.length === 13;
               },
-              {
-                message: "Telefone deve ter 11 dígitos + código do país",
-              },
+              { message: "Telefone deve ter 11 dígitos + código do país" }
             )
             .refine(
               (val) => {
@@ -147,18 +148,14 @@ export const MultiStepFormDynamic = () => {
                 const dddNum = parseInt(ddd);
                 return dddNum >= 11 && dddNum <= 99;
               },
-              {
-                message: "DDD inválido. Use um DDD brasileiro válido",
-              },
+              { message: "DDD inválido. Use um DDD brasileiro válido" }
             )
             .refine(
               (val) => {
                 const ninthDigit = val.match(/\) (\d)/)?.[1];
                 return ninthDigit === "9";
               },
-              {
-                message: "Número de celular deve começar com 9 após o DDD",
-              },
+              { message: "Número de celular deve começar com 9 após o DDD" }
             );
         } else {
           schemaFields[q.field_name] = z.string();
@@ -190,19 +187,23 @@ export const MultiStepFormDynamic = () => {
       } else {
         if (isRequired) {
           let schema = z.string().min(1, "Campo obrigatório");
+
           if (q.max_length && q.max_length > 0) {
             schema = schema.max(q.max_length, `Máximo de ${q.max_length} caracteres`);
           } else {
             schema = schema.max(200);
           }
+
           schemaFields[q.field_name] = schema;
         } else {
           let schema = z.string();
+
           if (q.max_length && q.max_length > 0) {
             schema = schema.max(q.max_length, `Máximo de ${q.max_length} caracteres`);
           } else {
             schema = schema.max(200);
           }
+
           schemaFields[q.field_name] = schema;
         }
       }
@@ -216,14 +217,17 @@ export const MultiStepFormDynamic = () => {
 
   const defaultValues = questions.reduce(
     (acc, q) => {
-      if (q.field_name.toLowerCase().includes("whatsapp") || q.field_name.toLowerCase().includes("telefone")) {
+      if (
+        q.field_name.toLowerCase().includes("whatsapp") ||
+        q.field_name.toLowerCase().includes("telefone")
+      ) {
         acc[q.field_name] = "55 ";
       } else {
         acc[q.field_name] = "";
       }
       return acc;
     },
-    {} as Record<string, string>,
+    {} as Record<string, string>
   );
 
   const form = useForm<any>({
@@ -237,12 +241,12 @@ export const MultiStepFormDynamic = () => {
 
   const formatWhatsApp = (value: string) => {
     let cleaned = value.replace(/\D/g, "");
-
     if (cleaned.startsWith("55")) cleaned = cleaned.slice(2);
 
     if (cleaned.length === 0) return "55 ";
     if (cleaned.length <= 2) return `55 (${cleaned}`;
     if (cleaned.length <= 7) return `55 (${cleaned.slice(0, 2)}) ${cleaned.slice(2)}`;
+
     return `55 (${cleaned.slice(0, 2)}) ${cleaned.slice(2, 7)}-${cleaned.slice(7, 11)}`;
   };
 
@@ -257,8 +261,7 @@ export const MultiStepFormDynamic = () => {
 
     const isRequired = currentQuestion.required !== false;
     const value = form.watch(currentQuestion.field_name);
-    
-    // Se o campo não for obrigatório e estiver vazio, permitir avançar
+
     if (!isRequired && (!value || value.trim() === '' || value === '55 ')) {
       if (step < totalSteps) setStep(step + 1);
       return;
@@ -285,29 +288,33 @@ export const MultiStepFormDynamic = () => {
     setIsSubmitting(true);
 
     try {
-  const leadData = {
-    form_name: formName,
-    form_data: data,
-    timestamp: new Date().toISOString(),
-  };
+      const leadData = { form_data: data };
 
-  const { error: dbError } = await supabase.from("leads").insert([leadData]);
-  if (dbError) throw dbError;
+      const tableName = formName === "autoprotecta" ? "leads_autoprotecta" : "leads";
+      const edgeFunctionName =
+        formName === "autoprotecta" ? "enviar-conversao-autoprotecta" : "enviar-conversao";
 
-  const { error } = await supabase.functions.invoke("enviar-conversao", {
-    body: leadData,
-  });
+      const { error: dbError } = await supabase.from(tableName).insert([leadData]);
+      if (dbError) throw dbError;
 
-  if (error) console.error("Webhook error:", error);
+      const { error } = await supabase.functions.invoke(edgeFunctionName, {
+        body: {
+          ...data,
+          form_name: formName,
+          timestamp: new Date().toISOString(),
+        },
+      });
+
+      if (error) console.error("Webhook error:", error);
 
       if (typeof window !== "undefined") {
         (window as any).dataLayer = (window as any).dataLayer || [];
+
         (window as any).dataLayer.push({
           event: "gtm.formSubmit",
           form_nome: formName,
           timestamp: new Date().toISOString(),
         });
-        
       }
 
       setSubmittedData(data);
@@ -315,6 +322,7 @@ export const MultiStepFormDynamic = () => {
       setStep(totalSteps);
     } catch (error) {
       console.error("Erro ao enviar", error);
+
       toast({
         title: "Erro ao enviar cadastro",
         description: "Tente novamente mais tarde.",
@@ -328,15 +336,19 @@ export const MultiStepFormDynamic = () => {
   const renderStep = () => {
     if (step === totalSteps && isSuccess && submittedData) {
       const nomeQuestion = questions.find((q) => q.field_name === "nome");
-      const firstName = nomeQuestion ? submittedData[nomeQuestion.field_name]?.split(" ")[0] : "você";
+      const firstName = nomeQuestion
+        ? submittedData[nomeQuestion.field_name]?.split(" ")[0]
+        : "você";
 
       return (
         <div className="space-y-6 text-center">
           <div className="text-6xl">🎉</div>
+
           <div>
             <h2 className="text-3xl font-bold text-foreground mb-3">
               {settings?.success_title || "Obrigado"}, {firstName}!
             </h2>
+
             <p className="text-lg text-muted-foreground">
               {settings?.success_description || "Recebemos suas informações com sucesso!"}
             </p>
@@ -344,16 +356,25 @@ export const MultiStepFormDynamic = () => {
 
           {settings?.whatsapp_enabled && (
             <div className="bg-muted/30 rounded-lg p-8 mt-6">
-              <img src={whatsappIcon} alt="WhatsApp" className="w-16 h-16 mx-auto mb-4" />
+              <img
+                src={whatsappIcon}
+                alt="WhatsApp"
+                className="w-16 h-16 mx-auto mb-4"
+              />
+
               <h3 className="text-2xl font-semibold text-green-600 mb-4">WhatsApp</h3>
+
               <p className="text-base text-foreground leading-relaxed mb-4">
                 Em breve entraremos em contato com você através do WhatsApp.
               </p>
+
               <Button
                 onClick={() => {
-                  const phoneNumber = settings.whatsapp_number.replace(/\D/g, '');
-                  const message = encodeURIComponent(settings.whatsapp_message || 'Olá! Preenchi o formulário.');
-                  window.open(`https://wa.me/${phoneNumber}?text=${message}`, '_blank');
+                  const phoneNumber = settings.whatsapp_number.replace(/\D/g, "");
+                  const message = encodeURIComponent(
+                    settings.whatsapp_message || "Olá! Preenchi o formulário."
+                  );
+                  window.open(`https://wa.me/${phoneNumber}?text=${message}`, "_blank");
                 }}
                 className="w-full h-12 bg-green-600 hover:bg-green-700 text-white"
               >
@@ -373,7 +394,9 @@ export const MultiStepFormDynamic = () => {
 
         <div className="space-y-3">
           {currentQuestion.subtitle && (
-            <label className="block text-base font-medium text-foreground">{currentQuestion.subtitle}</label>
+            <label className="block text-base font-medium text-foreground">
+              {currentQuestion.subtitle}
+            </label>
           )}
 
           {currentQuestion.input_type === "select" && currentQuestion.options.length > 0 ? (
@@ -388,6 +411,7 @@ export const MultiStepFormDynamic = () => {
               <SelectTrigger className="h-12 text-base">
                 <SelectValue placeholder="Selecione uma opção" />
               </SelectTrigger>
+
               <SelectContent>
                 {currentQuestion.options.map((option) => (
                   <SelectItem key={option} value={option}>
@@ -400,12 +424,19 @@ export const MultiStepFormDynamic = () => {
             <Input
               key={`input-${currentQuestion.field_name}-${step}`}
               type="text"
-              placeholder={currentQuestion.input_placeholder || `Digite ${currentQuestion.question.toLowerCase()}`}
+              placeholder={
+                currentQuestion.input_placeholder ||
+                `Digite ${currentQuestion.question.toLowerCase()}`
+              }
               className="h-12 text-base"
               autoFocus
               autoComplete="off"
               value={form.watch(currentQuestion.field_name) || ""}
-              onChange={(e) => form.setValue(currentQuestion.field_name, e.target.value, { shouldValidate: true })}
+              onChange={(e) =>
+                form.setValue(currentQuestion.field_name, e.target.value, {
+                  shouldValidate: true,
+                })
+              }
               onKeyDown={handleKeyDown}
             />
           ) : currentQuestion.field_name.toLowerCase().includes("whatsapp") ||
@@ -421,7 +452,9 @@ export const MultiStepFormDynamic = () => {
               value={form.watch(currentQuestion.field_name) || "55 "}
               onChange={(e) => {
                 const formatted = formatWhatsApp(e.target.value);
-                form.setValue(currentQuestion.field_name, formatted, { shouldValidate: true });
+                form.setValue(currentQuestion.field_name, formatted, {
+                  shouldValidate: true,
+                });
               }}
               onKeyDown={handleKeyDown}
             />
@@ -437,21 +470,34 @@ export const MultiStepFormDynamic = () => {
               value={form.watch(currentQuestion.field_name) || ""}
               onChange={(e) => {
                 const formatted = formatPlaca(e.target.value);
-                form.setValue(currentQuestion.field_name, formatted, { shouldValidate: true });
+                form.setValue(currentQuestion.field_name, formatted, {
+                  shouldValidate: true,
+                });
               }}
               onKeyDown={handleKeyDown}
             />
           ) : (
             <Input
               key={`input-${currentQuestion.field_name}-${step}`}
-              type={currentQuestion.field_name.toLowerCase().includes("email") ? "email" : "text"}
-              placeholder={currentQuestion.input_placeholder || `Digite ${currentQuestion.question.toLowerCase()}`}
+              type={
+                currentQuestion.field_name.toLowerCase().includes("email")
+                  ? "email"
+                  : "text"
+              }
+              placeholder={
+                currentQuestion.input_placeholder ||
+                `Digite ${currentQuestion.question.toLowerCase()}`
+              }
               className="h-12 text-base"
               autoFocus
               autoComplete="off"
               maxLength={currentQuestion.max_length || undefined}
               value={form.watch(currentQuestion.field_name) || ""}
-              onChange={(e) => form.setValue(currentQuestion.field_name, e.target.value, { shouldValidate: true })}
+              onChange={(e) =>
+                form.setValue(currentQuestion.field_name, e.target.value, {
+                  shouldValidate: true,
+                })
+              }
               onKeyDown={handleKeyDown}
             />
           )}
@@ -482,7 +528,9 @@ export const MultiStepFormDynamic = () => {
       <div className="w-full max-w-2xl mx-auto p-6">
         <div className="bg-white rounded-2xl shadow-xl p-8 text-center">
           <p className="text-lg text-muted-foreground">Nenhuma pergunta configurada ainda.</p>
-          <p className="text-sm text-muted-foreground mt-2">Entre em contato conosco para mais informações.</p>
+          <p className="text-sm text-muted-foreground mt-2">
+            Entre em contato conosco para mais informações.
+          </p>
         </div>
       </div>
     );
@@ -497,8 +545,12 @@ export const MultiStepFormDynamic = () => {
               <span className="text-sm font-medium text-muted-foreground">
                 Etapa {step} de {questions.length}
               </span>
-              <span className="text-sm font-bold text-primary">{Math.round((step / questions.length) * 100)}%</span>
+
+              <span className="text-sm font-bold text-primary">
+                {Math.round((step / questions.length) * 100)}%
+              </span>
             </div>
+
             <Progress value={(step / questions.length) * 100} className="h-2" />
           </div>
         )}
@@ -522,7 +574,12 @@ export const MultiStepFormDynamic = () => {
               )}
 
               {step < questions.length ? (
-                <Button type="button" onClick={nextStep} className="flex-1 h-12" disabled={isSubmitting}>
+                <Button
+                  type="button"
+                  onClick={nextStep}
+                  className="flex-1 h-12"
+                  disabled={isSubmitting}
+                >
                   Próximo
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
