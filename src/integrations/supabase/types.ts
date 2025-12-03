@@ -62,6 +62,182 @@ export type Database = {
         }
         Relationships: []
       }
+      entidades: {
+        Row: {
+          cpf: string | null
+          created_at: string
+          dados_json: Json | null
+          email: string | null
+          id: string
+          nome: string | null
+          subdomain: string
+          telefone: string | null
+          updated_at: string
+        }
+        Insert: {
+          cpf?: string | null
+          created_at?: string
+          dados_json?: Json | null
+          email?: string | null
+          id?: string
+          nome?: string | null
+          subdomain?: string
+          telefone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          cpf?: string | null
+          created_at?: string
+          dados_json?: Json | null
+          email?: string | null
+          id?: string
+          nome?: string | null
+          subdomain?: string
+          telefone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      form_a_respostas: {
+        Row: {
+          created_at: string
+          dados_json: Json | null
+          entidade_id: string
+          form_name: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          dados_json?: Json | null
+          entidade_id: string
+          form_name?: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          dados_json?: Json | null
+          entidade_id?: string
+          form_name?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "form_a_respostas_entidade_id_fkey"
+            columns: ["entidade_id"]
+            isOneToOne: false
+            referencedRelation: "entidades"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      form_b_respostas: {
+        Row: {
+          created_at: string
+          dados_json: Json | null
+          entidade_id: string
+          form_name: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          dados_json?: Json | null
+          entidade_id: string
+          form_name?: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          dados_json?: Json | null
+          entidade_id?: string
+          form_name?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "form_b_respostas_entidade_id_fkey"
+            columns: ["entidade_id"]
+            isOneToOne: false
+            referencedRelation: "entidades"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      form_c_respostas: {
+        Row: {
+          created_at: string
+          dados_json: Json | null
+          entidade_id: string
+          form_name: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          dados_json?: Json | null
+          entidade_id: string
+          form_name?: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          dados_json?: Json | null
+          entidade_id?: string
+          form_name?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "form_c_respostas_entidade_id_fkey"
+            columns: ["entidade_id"]
+            isOneToOne: false
+            referencedRelation: "entidades"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      form_d_respostas: {
+        Row: {
+          created_at: string
+          dados_json: Json | null
+          entidade_id: string
+          form_name: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          dados_json?: Json | null
+          entidade_id: string
+          form_name?: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          dados_json?: Json | null
+          entidade_id?: string
+          form_name?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "form_d_respostas_entidade_id_fkey"
+            columns: ["entidade_id"]
+            isOneToOne: false
+            referencedRelation: "entidades"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       form_questions: {
         Row: {
           created_at: string
