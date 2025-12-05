@@ -164,11 +164,15 @@ export const MultiStepFormDynamic = () => {
         if (isRequired) {
           schemaFields[q.field_name] = z
             .string()
-            .regex(
-              /^[A-Z]{3}\d[A-Z]\d{2}$|^[A-Z]{3}\d{4}$/,
-              "Placa inválida. Use formato Mercosul (ABC1D23) ou antigo (ABC1234)"
+            .transform((val) => val.replace(/-/g, "")) // Remove máscara para validação
+            .refine(
+              (val) => /^[A-Z]{3}\d[A-Z]\d{2}$|^[A-Z]{3}\d{4}$/.test(val),
+              "Placa inválida. Use formato Mercosul (ABC-1D23) ou antigo (ABC-1234)"
             )
-            .length(7, "Placa deve ter exatamente 7 caracteres");
+            .refine(
+              (val) => val.length === 7,
+              "Placa deve ter exatamente 7 caracteres"
+            );
         } else {
           schemaFields[q.field_name] = z.string();
         }
@@ -253,7 +257,10 @@ export const MultiStepFormDynamic = () => {
   const formatPlaca = (value: string) => {
     let cleaned = value.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
     if (cleaned.length > 7) cleaned = cleaned.slice(0, 7);
-    return cleaned;
+    
+    // Aplica máscara visual: ABC-1D23 ou ABC-1234
+    if (cleaned.length <= 3) return cleaned;
+    return `${cleaned.slice(0, 3)}-${cleaned.slice(3)}`;
   };
 
   const nextStep = async () => {
@@ -369,6 +376,7 @@ export const MultiStepFormDynamic = () => {
               </p>
 
               <Button
+                type="button"
                 onClick={() => {
                   const phoneNumber = settings.whatsapp_number.replace(/\D/g, "");
                   const message = encodeURIComponent(
