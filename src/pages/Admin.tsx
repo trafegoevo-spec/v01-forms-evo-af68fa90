@@ -12,6 +12,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { AuthDialog } from "@/components/AuthDialog";
 import { LogoUploader } from "@/components/LogoUploader";
 import { Switch } from "@/components/ui/switch";
+interface ConditionalRule {
+  value: string;
+  action: "skip_to_step" | "success_page";
+  target_step?: number;
+  target_page?: string;
+}
+
+interface ConditionalLogic {
+  conditions: ConditionalRule[];
+}
+
 interface FormQuestion {
   id: string;
   step: number;
@@ -23,6 +34,19 @@ interface FormQuestion {
   max_length?: number;
   input_placeholder?: string;
   required?: boolean;
+  conditional_logic?: ConditionalLogic | null;
+}
+
+interface SuccessPage {
+  id: string;
+  subdomain: string;
+  page_key: string;
+  title: string;
+  subtitle: string;
+  description: string;
+  whatsapp_enabled: boolean;
+  whatsapp_number: string;
+  whatsapp_message: string;
 }
 interface AppSettings {
   id: string;
@@ -52,6 +76,8 @@ const Admin = () => {
   const [showAuthDialog, setShowAuthDialog] = useState(false);
   const [settings, setSettings] = useState<AppSettings | null>(null);
   const [settingsChanged, setSettingsChanged] = useState(false);
+  const [successPages, setSuccessPages] = useState<SuccessPage[]>([]);
+  const [successPagesChanged, setSuccessPagesChanged] = useState(false);
   const formName = import.meta.env.VITE_FORM_NAME || "default";
   useEffect(() => {
     if (!authLoading) {
@@ -65,6 +91,7 @@ const Admin = () => {
         setShowAuthDialog(false);
         loadQuestions();
         loadSettings();
+        loadSuccessPages();
       }
     }
   }, [user, isAdmin, authLoading, navigate]);
@@ -83,7 +110,8 @@ const Admin = () => {
         ...item,
         options: Array.isArray(item.options) ? item.options as string[] : [],
         input_type: (['select', 'text', 'password'].includes(item.input_type) ? item.input_type : 'text') as 'text' | 'select' | 'password',
-        required: item.required !== undefined ? item.required : true
+        required: item.required !== undefined ? item.required : true,
+        conditional_logic: item.conditional_logic as unknown as ConditionalLogic | null
       }));
       setQuestions(transformedData);
     } catch (error: any) {
@@ -94,6 +122,20 @@ const Admin = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadSuccessPages = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("success_pages")
+        .select("*")
+        .eq("subdomain", formName);
+
+      if (error) throw error;
+      setSuccessPages(data || []);
+    } catch (error: any) {
+      console.error("Erro ao carregar páginas de sucesso:", error);
     }
   };
   const loadSettings = async () => {
@@ -182,6 +224,120 @@ const Admin = () => {
     } : q));
     setHasUnsavedChanges(true);
   };
+
+  const addConditionalRule = (questionId: string) => {
+    const question = questions.find(q => q.id === questionId);
+    if (!question) return;
+    
+    const currentLogic = question.conditional_logic || { conditions: [] };
+    const newCondition: ConditionalRule = {
+      value: question.options[0] || "",
+      action: "skip_to_step",
+      target_step: question.step + 1
+    };
+    
+    updateQuestionLocal(questionId, {
+      conditional_logic: {
+        conditions: [...currentLogic.conditions, newCondition]
+      }
+    });
+  };
+
+  const updateConditionalRule = (questionId: string, index: number, updates: Partial<ConditionalRule>) => {
+    const question = questions.find(q => q.id === questionId);
+    if (!question?.conditional_logic) return;
+    
+    const newConditions = question.conditional_logic.conditions.map((c, i) => 
+      i === index ? { ...c, ...updates } : c
+    );
+    
+    updateQuestionLocal(questionId, {
+      conditional_logic: { conditions: newConditions }
+    });
+  };
+
+  const removeConditionalRule = (questionId: string, index: number) => {
+    const question = questions.find(q => q.id === questionId);
+    if (!question?.conditional_logic) return;
+    
+    const newConditions = question.conditional_logic.conditions.filter((_, i) => i !== index);
+    
+    updateQuestionLocal(questionId, {
+      conditional_logic: newConditions.length > 0 ? { conditions: newConditions } : null
+    });
+  };
+
+  const addSuccessPage = async () => {
+    const pageKey = `page_${Date.now()}`;
+    try {
+      const { error } = await supabase.from("success_pages").insert({
+        subdomain: formName,
+        page_key: pageKey,
+        title: "Nova Página",
+        subtitle: "Subtítulo",
+        description: "Descrição",
+        whatsapp_enabled: false,
+        whatsapp_number: "5531989236061",
+        whatsapp_message: "Olá!"
+      });
+      if (error) throw error;
+      toast({ title: "Página de sucesso criada!" });
+      loadSuccessPages();
+    } catch (error: any) {
+      toast({
+        title: "Erro ao criar página",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  };
+
+  const updateSuccessPage = (id: string, updates: Partial<SuccessPage>) => {
+    setSuccessPages(prev => prev.map(p => p.id === id ? { ...p, ...updates } : p));
+    setSuccessPagesChanged(true);
+  };
+
+  const saveSuccessPages = async () => {
+    try {
+      for (const page of successPages) {
+        const { error } = await supabase.from("success_pages").update({
+          page_key: page.page_key,
+          title: page.title,
+          subtitle: page.subtitle,
+          description: page.description,
+          whatsapp_enabled: page.whatsapp_enabled,
+          whatsapp_number: page.whatsapp_number,
+          whatsapp_message: page.whatsapp_message
+        }).eq("id", page.id);
+        if (error) throw error;
+      }
+      toast({ title: "Páginas de sucesso salvas!" });
+      setSuccessPagesChanged(false);
+    } catch (error: any) {
+      toast({
+        title: "Erro ao salvar",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  };
+
+  const deleteSuccessPage = async (id: string) => {
+    if (!confirm("Tem certeza que deseja excluir esta página?")) return;
+    try {
+      const { error } = await supabase.from("success_pages").delete().eq("id", id);
+      if (error) throw error;
+      toast({ title: "Página excluída!" });
+      loadSuccessPages();
+    } catch (error: any) {
+      toast({
+        title: "Erro ao excluir",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  };
+
   const saveAllChanges = async () => {
     try {
       for (const question of questions) {
@@ -195,7 +351,8 @@ const Admin = () => {
           options: question.options,
           max_length: question.max_length,
           input_placeholder: question.input_placeholder,
-          required: question.required !== undefined ? question.required : true
+          required: question.required !== undefined ? question.required : true,
+          conditional_logic: question.conditional_logic ? JSON.parse(JSON.stringify(question.conditional_logic)) : null
         }).eq("id", question.id);
         if (error) throw error;
       }
@@ -508,6 +665,107 @@ VITE_GTM_ID=GTM-XXXXXXX`}
                         </div>)}
                     </div>
                   </div>}
+
+                {/* Lógica Condicional - apenas para perguntas de múltipla escolha */}
+                {question.input_type === 'select' && question.options.length > 0 && (
+                  <div className="border-t pt-4 mt-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <div>
+                        <Label>Lógica Condicional</Label>
+                        <p className="text-sm text-muted-foreground">
+                          Configure ações baseadas na resposta do usuário
+                        </p>
+                      </div>
+                      <Button variant="outline" size="sm" onClick={() => addConditionalRule(question.id)}>
+                        <Plus className="mr-2 h-4 w-4" />
+                        Adicionar Regra
+                      </Button>
+                    </div>
+                    
+                    {question.conditional_logic?.conditions?.map((condition, condIndex) => (
+                      <div key={condIndex} className="flex flex-col gap-2 p-3 border rounded-lg mb-2 bg-muted/30">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-sm font-medium">Se responder</span>
+                          <Select
+                            value={condition.value}
+                            onValueChange={(value) => updateConditionalRule(question.id, condIndex, { value })}
+                          >
+                            <SelectTrigger className="w-40">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {question.options.map((opt) => (
+                                <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          
+                          <span className="text-sm font-medium">então</span>
+                          <Select
+                            value={condition.action}
+                            onValueChange={(value: "skip_to_step" | "success_page") => 
+                              updateConditionalRule(question.id, condIndex, { action: value })
+                            }
+                          >
+                            <SelectTrigger className="w-44">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="skip_to_step">Pular para passo</SelectItem>
+                              <SelectItem value="success_page">Ir para página de sucesso</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          
+                          {condition.action === "skip_to_step" && (
+                            <Input
+                              type="number"
+                              className="w-20"
+                              value={condition.target_step || ""}
+                              onChange={(e) => updateConditionalRule(question.id, condIndex, { 
+                                target_step: parseInt(e.target.value) || undefined 
+                              })}
+                              placeholder="Passo"
+                              min="1"
+                              max={questions.length}
+                            />
+                          )}
+                          
+                          {condition.action === "success_page" && (
+                            <Select
+                              value={condition.target_page || ""}
+                              onValueChange={(value) => updateConditionalRule(question.id, condIndex, { target_page: value })}
+                            >
+                              <SelectTrigger className="w-40">
+                                <SelectValue placeholder="Selecione" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {successPages.map((page) => (
+                                  <SelectItem key={page.id} value={page.page_key}>
+                                    {page.title}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          )}
+                          
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            onClick={() => removeConditionalRule(question.id, condIndex)}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                    
+                    {(!question.conditional_logic?.conditions || question.conditional_logic.conditions.length === 0) && (
+                      <p className="text-sm text-muted-foreground italic">
+                        Nenhuma regra condicional configurada. Por padrão, irá para o próximo passo.
+                      </p>
+                    )}
+                  </div>
+                )}
               </CardContent>
             </Card>)}
         </div>
@@ -581,6 +839,126 @@ VITE_GTM_ID=GTM-XXXXXXX`}
               </CardContent>
             </Card>
           </div>}
+
+        {/* Páginas de Sucesso Condicionais */}
+        <div className="mt-8">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-2xl font-bold">Páginas de Sucesso Condicionais</h2>
+            <Button onClick={addSuccessPage}>
+              <Plus className="mr-2 h-4 w-4" />
+              Nova Página
+            </Button>
+          </div>
+          <p className="text-sm text-muted-foreground mb-4">
+            Crie páginas de sucesso personalizadas para usar com a lógica condicional.
+          </p>
+          
+          {successPages.length === 0 ? (
+            <Card>
+              <CardContent className="py-8 text-center text-muted-foreground">
+                Nenhuma página de sucesso condicional criada ainda.
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-4">
+              {successPages.map((page) => (
+                <Card key={page.id}>
+                  <CardHeader>
+                    <CardTitle className="flex items-center justify-between">
+                      <span>Página: {page.page_key}</span>
+                      <Button variant="ghost" size="icon" onClick={() => deleteSuccessPage(page.id)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div>
+                      <Label>Identificador (page_key)</Label>
+                      <Input 
+                        value={page.page_key} 
+                        onChange={(e) => updateSuccessPage(page.id, { page_key: e.target.value })} 
+                        placeholder="identificador_unico"
+                      />
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Use este identificador nas regras condicionais
+                      </p>
+                    </div>
+                    
+                    <div>
+                      <Label>Título</Label>
+                      <Input 
+                        value={page.title} 
+                        onChange={(e) => updateSuccessPage(page.id, { title: e.target.value })} 
+                        placeholder="Obrigado"
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label>Descrição</Label>
+                      <Input 
+                        value={page.description} 
+                        onChange={(e) => updateSuccessPage(page.id, { description: e.target.value })} 
+                        placeholder="Mensagem de sucesso"
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label>Subtítulo</Label>
+                      <Input 
+                        value={page.subtitle} 
+                        onChange={(e) => updateSuccessPage(page.id, { subtitle: e.target.value })} 
+                        placeholder="Subtítulo"
+                      />
+                    </div>
+                    
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label>WhatsApp Habilitado</Label>
+                        <p className="text-sm text-muted-foreground">
+                          Exibir botão do WhatsApp nesta página
+                        </p>
+                      </div>
+                      <Switch 
+                        checked={page.whatsapp_enabled} 
+                        onCheckedChange={(checked) => updateSuccessPage(page.id, { whatsapp_enabled: checked })} 
+                      />
+                    </div>
+                    
+                    {page.whatsapp_enabled && (
+                      <>
+                        <div>
+                          <Label>Número WhatsApp</Label>
+                          <Input 
+                            value={page.whatsapp_number} 
+                            onChange={(e) => updateSuccessPage(page.id, { whatsapp_number: e.target.value })} 
+                            placeholder="5531989236061"
+                          />
+                        </div>
+                        
+                        <div>
+                          <Label>Mensagem WhatsApp</Label>
+                          <Input 
+                            value={page.whatsapp_message} 
+                            onChange={(e) => updateSuccessPage(page.id, { whatsapp_message: e.target.value })} 
+                            placeholder="Olá!"
+                          />
+                        </div>
+                      </>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+              
+              <Button 
+                onClick={saveSuccessPages} 
+                disabled={!successPagesChanged} 
+                className="w-full"
+              >
+                {successPagesChanged ? "Salvar Páginas de Sucesso" : "Páginas Salvas"}
+              </Button>
+            </div>
+          )}
+        </div>
 
         {questions.length > 0 && <div className="flex justify-end mt-6 sticky bottom-6">
             <Button onClick={saveAllChanges} size="lg" disabled={!hasUnsavedChanges} className="shadow-lg">

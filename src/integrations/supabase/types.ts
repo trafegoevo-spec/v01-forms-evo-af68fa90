@@ -240,6 +240,7 @@ export type Database = {
       }
       form_questions: {
         Row: {
+          conditional_logic: Json | null
           created_at: string
           field_name: string
           id: string
@@ -255,6 +256,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          conditional_logic?: Json | null
           created_at?: string
           field_name: string
           id?: string
@@ -270,6 +272,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          conditional_logic?: Json | null
           created_at?: string
           field_name?: string
           id?: string
@@ -343,6 +346,48 @@ export type Database = {
           full_name?: string | null
           id?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      success_pages: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          page_key: string
+          subdomain: string
+          subtitle: string
+          title: string
+          updated_at: string
+          whatsapp_enabled: boolean
+          whatsapp_message: string
+          whatsapp_number: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string
+          id?: string
+          page_key: string
+          subdomain?: string
+          subtitle?: string
+          title?: string
+          updated_at?: string
+          whatsapp_enabled?: boolean
+          whatsapp_message?: string
+          whatsapp_number?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          page_key?: string
+          subdomain?: string
+          subtitle?: string
+          title?: string
+          updated_at?: string
+          whatsapp_enabled?: boolean
+          whatsapp_message?: string
+          whatsapp_number?: string
         }
         Relationships: []
       }
