@@ -13,6 +13,17 @@ import { Loader2, ArrowRight, ArrowLeft } from "lucide-react";
 import whatsappIcon from "@/assets/whatsapp.png";
 import { Progress } from "@/components/ui/progress";
 
+interface ConditionalRule {
+  value: string;
+  action: "skip_to_step" | "success_page";
+  target_step?: number;
+  target_page?: string;
+}
+
+interface ConditionalLogic {
+  conditions: ConditionalRule[];
+}
+
 interface Question {
   id: string;
   step: number;
@@ -24,6 +35,18 @@ interface Question {
   max_length?: number;
   input_placeholder?: string;
   required?: boolean;
+  conditional_logic?: ConditionalLogic | null;
+}
+
+interface SuccessPage {
+  id: string;
+  page_key: string;
+  title: string;
+  subtitle: string;
+  description: string;
+  whatsapp_enabled: boolean;
+  whatsapp_number: string;
+  whatsapp_message: string;
 }
 
 export const MultiStepFormDynamic = () => {
@@ -35,6 +58,8 @@ export const MultiStepFormDynamic = () => {
   const [loading, setLoading] = useState(true);
   const [submittedData, setSubmittedData] = useState<any>(null);
   const [settings, setSettings] = useState<any>(null);
+  const [successPages, setSuccessPages] = useState<SuccessPage[]>([]);
+  const [activeSuccessPage, setActiveSuccessPage] = useState<SuccessPage | null>(null);
   const { toast } = useToast();
 
   const formName = import.meta.env.VITE_FORM_NAME || "default";
@@ -42,7 +67,22 @@ export const MultiStepFormDynamic = () => {
   useEffect(() => {
     loadQuestions();
     loadSettings();
+    loadSuccessPages();
   }, []);
+
+  const loadSuccessPages = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("success_pages")
+        .select("*")
+        .eq("subdomain", formName);
+
+      if (error) throw error;
+      setSuccessPages(data || []);
+    } catch (error: any) {
+      console.error("Erro ao carregar páginas de sucesso:", error);
+    }
+  };
 
   const loadQuestions = async () => {
     try {
@@ -61,6 +101,7 @@ export const MultiStepFormDynamic = () => {
           ? item.input_type
           : "text") as "text" | "select" | "password",
         required: item.required !== undefined ? item.required : true,
+        conditional_logic: item.conditional_logic as unknown as ConditionalLogic | null,
       }));
 
       setQuestions(transformedData);
@@ -263,6 +304,16 @@ export const MultiStepFormDynamic = () => {
     return `${cleaned.slice(0, 3)}-${cleaned.slice(3)}`;
   };
 
+  const handleConditionalLogic = (value: string) => {
+    if (!currentQuestion?.conditional_logic?.conditions) return null;
+    
+    const condition = currentQuestion.conditional_logic.conditions.find(
+      (c) => c.value === value
+    );
+    
+    return condition || null;
+  };
+
   const nextStep = async () => {
     if (!currentQuestion) return;
 
@@ -276,7 +327,32 @@ export const MultiStepFormDynamic = () => {
 
     const isValid = await form.trigger(currentQuestion.field_name);
 
-    if (isValid && step < totalSteps) setStep(step + 1);
+    if (isValid) {
+      // Check for conditional logic
+      const condition = handleConditionalLogic(value);
+      
+      if (condition) {
+        if (condition.action === "success_page" && condition.target_page) {
+          // Submit form and redirect to specific success page
+          const successPage = successPages.find(p => p.page_key === condition.target_page);
+          if (successPage) {
+            setActiveSuccessPage(successPage);
+          }
+          form.handleSubmit(onSubmit)();
+          return;
+        } else if (condition.action === "skip_to_step" && condition.target_step) {
+          // Skip to specific step
+          const targetStep = condition.target_step;
+          if (targetStep > 0 && targetStep <= questions.length) {
+            setStep(targetStep);
+            return;
+          }
+        }
+      }
+      
+      // Default: go to next step
+      if (step < totalSteps) setStep(step + 1);
+    }
   };
 
   const handleKeyDown = async (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -347,21 +423,24 @@ export const MultiStepFormDynamic = () => {
         ? submittedData[nomeQuestion.field_name]?.split(" ")[0]
         : "você";
 
+      // Use active success page if set, otherwise default settings
+      const successConfig = activeSuccessPage || settings;
+
       return (
         <div className="space-y-6 text-center">
           <div className="text-6xl">🎉</div>
 
           <div>
             <h2 className="text-3xl font-bold text-foreground mb-3">
-              {settings?.success_title || "Obrigado"}, {firstName}!
+              {successConfig?.success_title || successConfig?.title || "Obrigado"}, {firstName}!
             </h2>
 
             <p className="text-lg text-muted-foreground">
-              {settings?.success_description || "Recebemos suas informações com sucesso!"}
+              {successConfig?.success_description || successConfig?.description || "Recebemos suas informações com sucesso!"}
             </p>
           </div>
 
-          {settings?.whatsapp_enabled && (
+          {(successConfig?.whatsapp_enabled) && (
             <div className="bg-muted/30 rounded-lg p-8 mt-6">
               <img
                 src={whatsappIcon}
@@ -378,9 +457,9 @@ export const MultiStepFormDynamic = () => {
               <Button
                 type="button"
                 onClick={() => {
-                  const phoneNumber = settings.whatsapp_number.replace(/\D/g, "");
+                  const phoneNumber = (successConfig.whatsapp_number || "").replace(/\D/g, "");
                   const message = encodeURIComponent(
-                    settings.whatsapp_message || "Olá! Preenchi o formulário."
+                    successConfig.whatsapp_message || "Olá! Preenchi o formulário."
                   );
                   window.open(`https://wa.me/${phoneNumber}?text=${message}`, "_blank");
                 }}
@@ -413,6 +492,29 @@ export const MultiStepFormDynamic = () => {
               value={form.watch(currentQuestion.field_name)}
               onValueChange={async (value) => {
                 form.setValue(currentQuestion.field_name, value);
+                
+                // Check for conditional logic
+                const condition = currentQuestion.conditional_logic?.conditions?.find(
+                  (c) => c.value === value
+                );
+                
+                if (condition) {
+                  if (condition.action === "success_page" && condition.target_page) {
+                    // Submit form and redirect to specific success page
+                    const successPage = successPages.find(p => p.page_key === condition.target_page);
+                    if (successPage) {
+                      setActiveSuccessPage(successPage);
+                    }
+                    setTimeout(() => form.handleSubmit(onSubmit)(), 300);
+                    return;
+                  } else if (condition.action === "skip_to_step" && condition.target_step) {
+                    // Skip to specific step
+                    setTimeout(() => setStep(condition.target_step!), 300);
+                    return;
+                  }
+                }
+                
+                // Default: go to next step
                 if (step < questions.length) setTimeout(() => nextStep(), 300);
               }}
             >
