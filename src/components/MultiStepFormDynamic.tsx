@@ -440,23 +440,23 @@ export const MultiStepFormDynamic = () => {
             </p>
           </div>
 
-          {(successConfig?.whatsapp_enabled) && (
-            <div className="bg-muted/30 rounded-lg p-8 mt-6">
-              <img
-                src={whatsappIcon}
-                alt="WhatsApp"
-                className="w-16 h-16 mx-auto mb-4"
-              />
+          <div className="bg-muted/30 rounded-lg p-8 mt-6">
+            <img
+              src={whatsappIcon}
+              alt="WhatsApp"
+              className="w-16 h-16 mx-auto mb-4"
+            />
 
-              <h3 className="text-2xl font-semibold text-green-600 mb-4">WhatsApp</h3>
+            <p className="text-base text-foreground leading-relaxed mb-4">
+              {successConfig?.success_subtitle || successConfig?.subtitle || "Em breve entraremos em contato."}
+            </p>
 
-              <p className="text-base text-foreground leading-relaxed mb-4">
-                Em breve entraremos em contato com você através do WhatsApp.
-              </p>
-
+            {(successConfig?.whatsapp_enabled) && (
               <Button
                 type="button"
-                onClick={() => {
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
                   const phoneNumber = (successConfig.whatsapp_number || "").replace(/\D/g, "");
                   const message = encodeURIComponent(
                     successConfig.whatsapp_message || "Olá! Preenchi o formulário."
@@ -467,8 +467,8 @@ export const MultiStepFormDynamic = () => {
               >
                 Conversar no WhatsApp
               </Button>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       );
     }
