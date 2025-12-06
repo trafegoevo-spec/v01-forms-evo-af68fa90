@@ -732,13 +732,14 @@ VITE_GTM_ID=GTM-XXXXXXX`}
                           
                           {condition.action === "success_page" && (
                             <Select
-                              value={condition.target_page || ""}
+                              value={condition.target_page || "default"}
                               onValueChange={(value) => updateConditionalRule(question.id, condIndex, { target_page: value })}
                             >
-                              <SelectTrigger className="w-40">
+                              <SelectTrigger className="w-48">
                                 <SelectValue placeholder="Selecione" />
                               </SelectTrigger>
                               <SelectContent>
+                                <SelectItem value="default">Página Padrão</SelectItem>
                                 {successPages.map((page) => (
                                   <SelectItem key={page.id} value={page.page_key}>
                                     {page.title}
