@@ -458,11 +458,38 @@ export const MultiStepFormDynamic = () => {
     if (step > 1) setStep(step - 1);
   };
 
+  // Captura parâmetros UTM da URL
+  const getUtmParams = () => {
+    const utmKeys = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'];
+    const utmParams: Record<string, string> = {};
+    
+    utmKeys.forEach((key) => {
+      const value = searchParams.get(key);
+      if (value) {
+        utmParams[key] = value;
+      }
+    });
+    
+    // Também captura a URL completa de origem
+    if (typeof window !== "undefined") {
+      utmParams.page_url = window.location.href;
+      utmParams.page_referrer = document.referrer || "";
+    }
+    
+    return utmParams;
+  };
+
   const onSubmit = async (data: any) => {
     setIsSubmitting(true);
 
     try {
-      const leadData = { form_data: data };
+      const utmParams = getUtmParams();
+      const leadData = { 
+        form_data: {
+          ...data,
+          ...utmParams,
+        }
+      };
 
       const tableName = formName === "autoprotecta" ? "leads_autoprotecta" : "leads";
       const edgeFunctionName =
@@ -474,6 +501,7 @@ export const MultiStepFormDynamic = () => {
       const { error } = await supabase.functions.invoke(edgeFunctionName, {
         body: {
           ...data,
+          ...utmParams,
           form_name: formName,
           timestamp: new Date().toISOString(),
         },
@@ -487,6 +515,7 @@ export const MultiStepFormDynamic = () => {
         (window as any).dataLayer.push({
           event: "gtm.formSubmit",
           form_nome: formName,
+          ...utmParams,
           timestamp: new Date().toISOString(),
         });
       }
