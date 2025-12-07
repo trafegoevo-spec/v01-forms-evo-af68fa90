@@ -217,6 +217,76 @@ export const MultiStepFormDynamic = () => {
         } else {
           schemaFields[q.field_name] = z.string();
         }
+      } else if (q.field_name.toLowerCase().includes("cpf")) {
+        if (isRequired) {
+          schemaFields[q.field_name] = z
+            .string()
+            .refine(
+              (val) => {
+                const cleaned = val.replace(/\D/g, "");
+                return cleaned.length === 11;
+              },
+              "CPF deve ter 11 dígitos"
+            )
+            .refine(
+              (val) => {
+                const cleaned = val.replace(/\D/g, "");
+                // Verifica se todos os dígitos são iguais
+                if (/^(\d)\1+$/.test(cleaned)) return false;
+                // Validação do primeiro dígito verificador
+                let sum = 0;
+                for (let i = 0; i < 9; i++) sum += parseInt(cleaned[i]) * (10 - i);
+                let d1 = (sum * 10) % 11;
+                if (d1 === 10) d1 = 0;
+                if (d1 !== parseInt(cleaned[9])) return false;
+                // Validação do segundo dígito verificador
+                sum = 0;
+                for (let i = 0; i < 10; i++) sum += parseInt(cleaned[i]) * (11 - i);
+                let d2 = (sum * 10) % 11;
+                if (d2 === 10) d2 = 0;
+                return d2 === parseInt(cleaned[10]);
+              },
+              "CPF inválido"
+            );
+        } else {
+          schemaFields[q.field_name] = z.string();
+        }
+      } else if (q.field_name.toLowerCase().includes("cnpj")) {
+        if (isRequired) {
+          schemaFields[q.field_name] = z
+            .string()
+            .refine(
+              (val) => {
+                const cleaned = val.replace(/\D/g, "");
+                return cleaned.length === 14;
+              },
+              "CNPJ deve ter 14 dígitos"
+            )
+            .refine(
+              (val) => {
+                const cleaned = val.replace(/\D/g, "");
+                // Verifica se todos os dígitos são iguais
+                if (/^(\d)\1+$/.test(cleaned)) return false;
+                // Validação do primeiro dígito verificador
+                const weights1 = [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+                let sum = 0;
+                for (let i = 0; i < 12; i++) sum += parseInt(cleaned[i]) * weights1[i];
+                let d1 = sum % 11;
+                d1 = d1 < 2 ? 0 : 11 - d1;
+                if (d1 !== parseInt(cleaned[12])) return false;
+                // Validação do segundo dígito verificador
+                const weights2 = [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+                sum = 0;
+                for (let i = 0; i < 13; i++) sum += parseInt(cleaned[i]) * weights2[i];
+                let d2 = sum % 11;
+                d2 = d2 < 2 ? 0 : 11 - d2;
+                return d2 === parseInt(cleaned[13]);
+              },
+              "CNPJ inválido"
+            );
+        } else {
+          schemaFields[q.field_name] = z.string();
+        }
       } else if (q.field_name.toLowerCase().includes("email")) {
         if (isRequired) {
           schemaFields[q.field_name] = z.string().email("Email inválido").max(255);
@@ -302,6 +372,27 @@ export const MultiStepFormDynamic = () => {
     // Aplica máscara visual: ABC-1D23 ou ABC-1234
     if (cleaned.length <= 3) return cleaned;
     return `${cleaned.slice(0, 3)}-${cleaned.slice(3)}`;
+  };
+
+  const formatCPF = (value: string) => {
+    let cleaned = value.replace(/\D/g, "");
+    if (cleaned.length > 11) cleaned = cleaned.slice(0, 11);
+    
+    if (cleaned.length <= 3) return cleaned;
+    if (cleaned.length <= 6) return `${cleaned.slice(0, 3)}.${cleaned.slice(3)}`;
+    if (cleaned.length <= 9) return `${cleaned.slice(0, 3)}.${cleaned.slice(3, 6)}.${cleaned.slice(6)}`;
+    return `${cleaned.slice(0, 3)}.${cleaned.slice(3, 6)}.${cleaned.slice(6, 9)}-${cleaned.slice(9)}`;
+  };
+
+  const formatCNPJ = (value: string) => {
+    let cleaned = value.replace(/\D/g, "");
+    if (cleaned.length > 14) cleaned = cleaned.slice(0, 14);
+    
+    if (cleaned.length <= 2) return cleaned;
+    if (cleaned.length <= 5) return `${cleaned.slice(0, 2)}.${cleaned.slice(2)}`;
+    if (cleaned.length <= 8) return `${cleaned.slice(0, 2)}.${cleaned.slice(2, 5)}.${cleaned.slice(5)}`;
+    if (cleaned.length <= 12) return `${cleaned.slice(0, 2)}.${cleaned.slice(2, 5)}.${cleaned.slice(5, 8)}/${cleaned.slice(8)}`;
+    return `${cleaned.slice(0, 2)}.${cleaned.slice(2, 5)}.${cleaned.slice(5, 8)}/${cleaned.slice(8, 12)}-${cleaned.slice(12)}`;
   };
 
   const handleConditionalLogic = (value: string) => {
@@ -572,14 +663,50 @@ export const MultiStepFormDynamic = () => {
             <Input
               key={`input-${currentQuestion.field_name}-${step}`}
               type="text"
-              placeholder={currentQuestion.input_placeholder || "ABC1D23"}
+              placeholder={currentQuestion.input_placeholder || "ABC-1D23"}
               className="h-12 text-base uppercase"
               autoFocus
               autoComplete="off"
-              maxLength={7}
+              maxLength={8}
               value={form.watch(currentQuestion.field_name) || ""}
               onChange={(e) => {
                 const formatted = formatPlaca(e.target.value);
+                form.setValue(currentQuestion.field_name, formatted, {
+                  shouldValidate: true,
+                });
+              }}
+              onKeyDown={handleKeyDown}
+            />
+          ) : currentQuestion.field_name.toLowerCase().includes("cpf") ? (
+            <Input
+              key={`input-${currentQuestion.field_name}-${step}`}
+              type="text"
+              placeholder={currentQuestion.input_placeholder || "000.000.000-00"}
+              className="h-12 text-base"
+              autoFocus
+              autoComplete="off"
+              maxLength={14}
+              value={form.watch(currentQuestion.field_name) || ""}
+              onChange={(e) => {
+                const formatted = formatCPF(e.target.value);
+                form.setValue(currentQuestion.field_name, formatted, {
+                  shouldValidate: true,
+                });
+              }}
+              onKeyDown={handleKeyDown}
+            />
+          ) : currentQuestion.field_name.toLowerCase().includes("cnpj") ? (
+            <Input
+              key={`input-${currentQuestion.field_name}-${step}`}
+              type="text"
+              placeholder={currentQuestion.input_placeholder || "00.000.000/0000-00"}
+              className="h-12 text-base"
+              autoFocus
+              autoComplete="off"
+              maxLength={18}
+              value={form.watch(currentQuestion.field_name) || ""}
+              onChange={(e) => {
+                const formatted = formatCNPJ(e.target.value);
                 form.setValue(currentQuestion.field_name, formatted, {
                   shouldValidate: true,
                 });
