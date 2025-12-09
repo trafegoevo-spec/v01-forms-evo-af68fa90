@@ -31,7 +31,7 @@ interface Question {
   subtitle?: string;
   options: string[];
   field_name: string;
-  input_type?: "text" | "select" | "password";
+  input_type?: "text" | "select" | "password" | "buttons";
   max_length?: number;
   input_placeholder?: string;
   required?: boolean;
@@ -606,7 +606,50 @@ export const MultiStepFormDynamic = () => {
             </label>
           )}
 
-          {currentQuestion.input_type === "select" && currentQuestion.options.length > 0 ? (
+          {currentQuestion.input_type === "buttons" && currentQuestion.options.length > 0 ? (
+            <div className="grid gap-3">
+              {currentQuestion.options.map((option) => {
+                const isSelected = form.watch(currentQuestion.field_name) === option;
+                return (
+                  <Button
+                    key={option}
+                    type="button"
+                    variant={isSelected ? "default" : "outline"}
+                    className={`h-auto min-h-[48px] text-base py-3 px-4 whitespace-normal text-left justify-start ${
+                      isSelected ? "" : "hover:bg-muted"
+                    }`}
+                    onClick={async () => {
+                      form.setValue(currentQuestion.field_name, option);
+                      
+                      // Check for conditional logic
+                      const condition = currentQuestion.conditional_logic?.conditions?.find(
+                        (c) => c.value === option
+                      );
+                      
+                      if (condition) {
+                        if (condition.action === "success_page" && condition.target_page) {
+                          const successPage = successPages.find(p => p.page_key === condition.target_page);
+                          if (successPage) {
+                            setActiveSuccessPage(successPage);
+                          }
+                          setTimeout(() => form.handleSubmit(onSubmit)(), 300);
+                          return;
+                        } else if (condition.action === "skip_to_step" && condition.target_step) {
+                          setTimeout(() => setStep(condition.target_step!), 300);
+                          return;
+                        }
+                      }
+                      
+                      // Default: go to next step
+                      if (step < questions.length) setTimeout(() => nextStep(), 300);
+                    }}
+                  >
+                    {option}
+                  </Button>
+                );
+              })}
+            </div>
+          ) : currentQuestion.input_type === "select" && currentQuestion.options.length > 0 ? (
             <Select
               key={`select-${currentQuestion.field_name}-${step}`}
               value={form.watch(currentQuestion.field_name)}
