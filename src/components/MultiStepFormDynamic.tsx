@@ -780,8 +780,8 @@ export const MultiStepFormDynamic = () => {
 
   if (loading) {
     return (
-      <div className="w-full max-w-2xl mx-auto p-6">
-        <div className="bg-white rounded-2xl shadow-xl p-8 text-center">
+      <div className="w-full max-w-2xl mx-auto px-4 py-6">
+        <div className="text-center">
           <Loader2 className="h-8 w-8 animate-spin mx-auto" />
           <p className="mt-2 text-muted-foreground">Carregando formulário...</p>
         </div>
@@ -791,8 +791,8 @@ export const MultiStepFormDynamic = () => {
 
   if (questions.length === 0) {
     return (
-      <div className="w-full max-w-2xl mx-auto p-6">
-        <div className="bg-white rounded-2xl shadow-xl p-8 text-center">
+      <div className="w-full max-w-2xl mx-auto px-4 py-6">
+        <div className="text-center">
           <p className="text-lg text-muted-foreground">Nenhuma pergunta configurada ainda.</p>
           <p className="text-sm text-muted-foreground mt-2">
             Entre em contato conosco para mais informações.
@@ -803,68 +803,66 @@ export const MultiStepFormDynamic = () => {
   }
 
   return (
-    <div className="w-full max-w-2xl mx-auto p-6">
-      <div className="bg-white rounded-2xl shadow-xl p-8">
+    <div className="w-full max-w-2xl mx-auto px-4 py-6">
+      {step < totalSteps && (
+        <div className="mb-8">
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-sm font-medium text-muted-foreground">
+              Etapa {step} de {questions.length}
+            </span>
+
+            <span className="text-sm font-bold text-primary">
+              {Math.round((step / questions.length) * 100)}%
+            </span>
+          </div>
+
+          <Progress value={(step / questions.length) * 100} className="h-2" />
+        </div>
+      )}
+
+      <form onSubmit={form.handleSubmit(onSubmit)}>
+        <div className="min-h-[200px] mb-4">{renderStep()}</div>
+
         {step < totalSteps && (
-          <div className="mb-8">
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-sm font-medium text-muted-foreground">
-                Etapa {step} de {questions.length}
-              </span>
+          <div className="flex gap-3">
+            {step > 1 && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={prevStep}
+                className="flex-1 h-12"
+                disabled={isSubmitting}
+              >
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Voltar
+              </Button>
+            )}
 
-              <span className="text-sm font-bold text-primary">
-                {Math.round((step / questions.length) * 100)}%
-              </span>
-            </div>
-
-            <Progress value={(step / questions.length) * 100} className="h-2" />
+            {step < questions.length ? (
+              <Button
+                type="button"
+                onClick={nextStep}
+                className="flex-1 h-12"
+                disabled={isSubmitting}
+              >
+                Próximo
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            ) : (
+              <Button type="submit" className="flex-1 h-12" disabled={isSubmitting}>
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Enviando...
+                  </>
+                ) : (
+                  "Finalizar"
+                )}
+              </Button>
+            )}
           </div>
         )}
-
-        <form onSubmit={form.handleSubmit(onSubmit)}>
-          <div className="min-h-[200px] mb-4">{renderStep()}</div>
-
-          {step < totalSteps && (
-            <div className="flex gap-3">
-              {step > 1 && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={prevStep}
-                  className="flex-1 h-12"
-                  disabled={isSubmitting}
-                >
-                  <ArrowLeft className="mr-2 h-4 w-4" />
-                  Voltar
-                </Button>
-              )}
-
-              {step < questions.length ? (
-                <Button
-                  type="button"
-                  onClick={nextStep}
-                  className="flex-1 h-12"
-                  disabled={isSubmitting}
-                >
-                  Próximo
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              ) : (
-                <Button type="submit" className="flex-1 h-12" disabled={isSubmitting}>
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Enviando...
-                    </>
-                  ) : (
-                    "Finalizar"
-                  )}
-                </Button>
-              )}
-            </div>
-          )}
-        </form>
-      </div>
+      </form>
     </div>
   );
 };
