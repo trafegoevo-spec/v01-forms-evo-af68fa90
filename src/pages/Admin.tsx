@@ -58,6 +58,10 @@ interface AppSettings {
   form_name: string;
   whatsapp_enabled: boolean;
   subdomain: string;
+  cover_enabled: boolean;
+  cover_title: string;
+  cover_subtitle: string;
+  cover_cta_text: string;
 }
 const Admin = () => {
   const {
@@ -155,7 +159,11 @@ const Admin = () => {
             whatsapp_message: 'Olá! Acabei de enviar meus dados no formulário.',
             success_title: 'Obrigado',
             success_description: 'Recebemos suas informações com sucesso!',
-            success_subtitle: 'Em breve entraremos em contato.'
+            success_subtitle: 'Em breve entraremos em contato.',
+            cover_enabled: false,
+            cover_title: 'Bem-vindo',
+            cover_subtitle: 'Preencha o formulário e entre em contato conosco',
+            cover_cta_text: 'Começar'
           };
           const {
             data: newData,
@@ -193,7 +201,11 @@ const Admin = () => {
         success_description: settings.success_description,
         success_subtitle: settings.success_subtitle,
         form_name: settings.form_name,
-        whatsapp_enabled: settings.whatsapp_enabled
+        whatsapp_enabled: settings.whatsapp_enabled,
+        cover_enabled: settings.cover_enabled,
+        cover_title: settings.cover_title,
+        cover_subtitle: settings.cover_subtitle,
+        cover_cta_text: settings.cover_cta_text
       }).eq("id", settings.id);
       if (error) throw error;
       toast({
@@ -553,6 +565,60 @@ VITE_GTM_ID=GTM-XXXXXXX`}
 
         {/* Logo Upload */}
         <LogoUploader />
+
+        {/* Cover Page Settings */}
+        {settings && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle>Página de Capa (Landing Page)</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label htmlFor="cover-enabled">Ativar página de capa</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Exibe uma página inicial antes do formulário
+                  </p>
+                </div>
+                <Switch 
+                  id="cover-enabled"
+                  checked={settings.cover_enabled} 
+                  onCheckedChange={(checked) => updateSettings({ cover_enabled: checked })} 
+                />
+              </div>
+
+              <div>
+                <Label>Título da Capa</Label>
+                <Input 
+                  value={settings.cover_title} 
+                  onChange={(e) => updateSettings({ cover_title: e.target.value })} 
+                  placeholder="Bem-vindo"
+                  disabled={!settings.cover_enabled}
+                />
+              </div>
+
+              <div>
+                <Label>Subtítulo da Capa</Label>
+                <Input 
+                  value={settings.cover_subtitle} 
+                  onChange={(e) => updateSettings({ cover_subtitle: e.target.value })} 
+                  placeholder="Preencha o formulário e entre em contato conosco"
+                  disabled={!settings.cover_enabled}
+                />
+              </div>
+
+              <div>
+                <Label>Texto do Botão (CTA)</Label>
+                <Input 
+                  value={settings.cover_cta_text} 
+                  onChange={(e) => updateSettings({ cover_cta_text: e.target.value })} 
+                  placeholder="Começar"
+                  disabled={!settings.cover_enabled}
+                />
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-3xl font-bold">Editar Questionário</h1>

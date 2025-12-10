@@ -16,6 +16,10 @@ export type Database = {
     Tables: {
       app_settings: {
         Row: {
+          cover_cta_text: string
+          cover_enabled: boolean
+          cover_subtitle: string
+          cover_title: string
           created_at: string
           form_name: string
           gtm_id: string | null
@@ -31,6 +35,10 @@ export type Database = {
           whatsapp_number: string
         }
         Insert: {
+          cover_cta_text?: string
+          cover_enabled?: boolean
+          cover_subtitle?: string
+          cover_title?: string
           created_at?: string
           form_name?: string
           gtm_id?: string | null
@@ -46,6 +54,10 @@ export type Database = {
           whatsapp_number?: string
         }
         Update: {
+          cover_cta_text?: string
+          cover_enabled?: boolean
+          cover_subtitle?: string
+          cover_title?: string
           created_at?: string
           form_name?: string
           gtm_id?: string | null

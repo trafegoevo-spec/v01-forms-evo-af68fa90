@@ -1,16 +1,30 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { MultiStepFormDynamic } from "@/components/MultiStepFormDynamic";
 import { LogoDisplay } from "@/components/LogoDisplay";
+import { CoverPage } from "@/components/CoverPage";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 import { Settings } from "lucide-react";
+
+interface CoverSettings {
+  cover_enabled: boolean;
+  cover_title: string;
+  cover_subtitle: string;
+  cover_cta_text: string;
+}
 
 const Index = () => {
   const { user, isAdmin, loading } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const preview = searchParams.get("preview");
+  const formName = import.meta.env.VITE_FORM_NAME || "default";
+  
+  const [showCover, setShowCover] = useState(true);
+  const [coverSettings, setCoverSettings] = useState<CoverSettings | null>(null);
+  const [loadingCover, setLoadingCover] = useState(true);
 
   useEffect(() => {
     // Redirect admin users to /admin after login, unless they're previewing
@@ -18,6 +32,88 @@ const Index = () => {
       navigate("/admin");
     }
   }, [user, isAdmin, loading, navigate, preview]);
+
+  useEffect(() => {
+    const loadCoverSettings = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("app_settings")
+          .select("cover_enabled, cover_title, cover_subtitle, cover_cta_text")
+          .eq("subdomain", formName)
+          .single();
+
+        if (error) {
+          // If no settings exist, use defaults
+          if (error.code === 'PGRST116') {
+            setCoverSettings({
+              cover_enabled: false,
+              cover_title: "Bem-vindo",
+              cover_subtitle: "Preencha o formulário e entre em contato conosco",
+              cover_cta_text: "Começar"
+            });
+            setShowCover(false);
+          } else {
+            console.error("Error loading cover settings:", error);
+          }
+        } else {
+          setCoverSettings({
+            cover_enabled: data.cover_enabled,
+            cover_title: data.cover_title,
+            cover_subtitle: data.cover_subtitle,
+            cover_cta_text: data.cover_cta_text
+          });
+          setShowCover(data.cover_enabled);
+        }
+      } catch (error) {
+        console.error("Error loading cover settings:", error);
+      } finally {
+        setLoadingCover(false);
+      }
+    };
+
+    loadCoverSettings();
+  }, [formName]);
+
+  const handleStartForm = () => {
+    setShowCover(false);
+  };
+
+  if (loadingCover) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center">
+        <p className="text-muted-foreground">Carregando...</p>
+      </div>
+    );
+  }
+
+  // Show cover page if enabled and not dismissed
+  if (coverSettings?.cover_enabled && showCover) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+        {/* Logo Display on Cover */}
+        <div className="absolute top-6 left-0 right-0 z-20">
+          <LogoDisplay />
+        </div>
+        
+        {/* Admin button on cover */}
+        {isAdmin && (
+          <div className="absolute top-6 right-6 z-20">
+            <Button variant="outline" size="sm" onClick={() => navigate("/admin")}>
+              <Settings className="mr-2 h-4 w-4" />
+              Admin
+            </Button>
+          </div>
+        )}
+        
+        <CoverPage
+          title={coverSettings.cover_title}
+          subtitle={coverSettings.cover_subtitle}
+          ctaText={coverSettings.cover_cta_text}
+          onStart={handleStartForm}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
