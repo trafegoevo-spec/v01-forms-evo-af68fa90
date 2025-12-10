@@ -7,11 +7,20 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Eye, Plus, Trash2, ArrowUp, ArrowDown, X } from "lucide-react";
+import { Eye, Plus, Trash2, ArrowUp, ArrowDown, X, Users } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AuthDialog } from "@/components/AuthDialog";
 import { LogoUploader } from "@/components/LogoUploader";
 import { Switch } from "@/components/ui/switch";
+
+interface WhatsAppQueueItem {
+  id: string;
+  subdomain: string;
+  phone_number: string;
+  display_name: string | null;
+  position: number;
+  is_active: boolean;
+}
 interface ConditionalRule {
   value: string;
   action: "skip_to_step" | "success_page";
@@ -82,6 +91,9 @@ const Admin = () => {
   const [settingsChanged, setSettingsChanged] = useState(false);
   const [successPages, setSuccessPages] = useState<SuccessPage[]>([]);
   const [successPagesChanged, setSuccessPagesChanged] = useState(false);
+  const [whatsappQueue, setWhatsappQueue] = useState<WhatsAppQueueItem[]>([]);
+  const [whatsappQueueChanged, setWhatsappQueueChanged] = useState(false);
+  const [currentQueuePosition, setCurrentQueuePosition] = useState(1);
   const formName = import.meta.env.VITE_FORM_NAME || "default";
   useEffect(() => {
     if (!authLoading) {
@@ -92,10 +104,11 @@ const Admin = () => {
         navigate("/");
       } else if (user && isAdmin) {
         // User is authenticated and is admin - close dialog and load questions
-        setShowAuthDialog(false);
+      setShowAuthDialog(false);
         loadQuestions();
         loadSettings();
         loadSuccessPages();
+        loadWhatsappQueue();
       }
     }
   }, [user, isAdmin, authLoading, navigate]);
@@ -140,6 +153,113 @@ const Admin = () => {
       setSuccessPages(data || []);
     } catch (error: any) {
       console.error("Erro ao carregar páginas de sucesso:", error);
+    }
+  };
+
+  const loadWhatsappQueue = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("whatsapp_queue")
+        .select("*")
+        .eq("subdomain", formName)
+        .order("position", { ascending: true });
+
+      if (error) throw error;
+      setWhatsappQueue(data || []);
+
+      // Load current position
+      const { data: stateData } = await supabase
+        .from("whatsapp_queue_state")
+        .select("current_position")
+        .eq("subdomain", formName)
+        .single();
+
+      if (stateData) {
+        setCurrentQueuePosition(stateData.current_position);
+      }
+    } catch (error: any) {
+      console.error("Erro ao carregar fila de WhatsApp:", error);
+    }
+  };
+
+  const addWhatsappQueueItem = async () => {
+    if (whatsappQueue.length >= 5) {
+      toast({
+        title: "Limite atingido",
+        description: "Você pode adicionar no máximo 5 números na fila.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const newPosition = whatsappQueue.length > 0 
+      ? Math.max(...whatsappQueue.map(q => q.position)) + 1 
+      : 1;
+
+    try {
+      const { error } = await supabase.from("whatsapp_queue").insert({
+        subdomain: formName,
+        phone_number: "5531999999999",
+        display_name: `Vendedor ${newPosition}`,
+        position: newPosition,
+        is_active: true
+      });
+
+      if (error) throw error;
+      toast({ title: "Número adicionado à fila!" });
+      loadWhatsappQueue();
+    } catch (error: any) {
+      toast({
+        title: "Erro ao adicionar",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  };
+
+  const updateWhatsappQueueItem = (id: string, updates: Partial<WhatsAppQueueItem>) => {
+    setWhatsappQueue(prev => prev.map(item => 
+      item.id === id ? { ...item, ...updates } : item
+    ));
+    setWhatsappQueueChanged(true);
+  };
+
+  const saveWhatsappQueue = async () => {
+    try {
+      for (const item of whatsappQueue) {
+        const { error } = await supabase.from("whatsapp_queue").update({
+          phone_number: item.phone_number,
+          display_name: item.display_name,
+          is_active: item.is_active
+        }).eq("id", item.id);
+        
+        if (error) throw error;
+      }
+      toast({ title: "Fila de WhatsApp salva!" });
+      setWhatsappQueueChanged(false);
+    } catch (error: any) {
+      toast({
+        title: "Erro ao salvar",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  };
+
+  const deleteWhatsappQueueItem = async (id: string) => {
+    if (!confirm("Tem certeza que deseja remover este número da fila?")) return;
+    
+    try {
+      const { error } = await supabase.from("whatsapp_queue").delete().eq("id", id);
+      if (error) throw error;
+      toast({ title: "Número removido!" });
+      loadWhatsappQueue();
+    } catch (error: any) {
+      toast({
+        title: "Erro ao remover",
+        description: error.message,
+        variant: "destructive"
+      });
     }
   };
   const loadSettings = async () => {
@@ -906,6 +1026,117 @@ VITE_GTM_ID=GTM-XXXXXXX`}
               </CardContent>
             </Card>
           </div>}
+
+        {/* Fila de WhatsApp - Rotação */}
+        <div className="mt-8">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-2xl font-bold flex items-center gap-2">
+                <Users className="h-6 w-6" />
+                Fila de WhatsApp (Rotação)
+              </h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                Configure até 5 números que serão usados em rotação. Cada lead será direcionado para o próximo número da fila.
+              </p>
+            </div>
+            <Button onClick={addWhatsappQueueItem} disabled={whatsappQueue.length >= 5}>
+              <Plus className="mr-2 h-4 w-4" />
+              Adicionar Número
+            </Button>
+          </div>
+
+          {whatsappQueue.length === 0 ? (
+            <Card>
+              <CardContent className="py-8 text-center text-muted-foreground">
+                <p>Nenhum número na fila. Será usado o número configurado em "Configurações Gerais".</p>
+                <Button onClick={addWhatsappQueueItem} className="mt-4">
+                  <Plus className="mr-2 h-4 w-4" />
+                  Adicionar Primeiro Número
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-4">
+              <div className="bg-muted/50 p-3 rounded-lg text-sm">
+                <span className="font-medium">Próximo na fila:</span>{" "}
+                {(() => {
+                  const activeItems = whatsappQueue.filter(q => q.is_active);
+                  const currentItem = activeItems.find(q => q.position === currentQueuePosition) 
+                    || activeItems[0];
+                  return currentItem 
+                    ? `${currentItem.display_name || "Sem nome"} (${currentItem.phone_number})`
+                    : "Nenhum número ativo";
+                })()}
+              </div>
+
+              {whatsappQueue.map((item, index) => (
+                <Card key={item.id} className={!item.is_active ? "opacity-60" : ""}>
+                  <CardContent className="pt-4">
+                    <div className="flex items-start gap-4">
+                      <div className="flex flex-col items-center justify-center bg-primary/10 rounded-lg p-3 min-w-[60px]">
+                        <span className="text-xs text-muted-foreground">Posição</span>
+                        <span className="text-2xl font-bold text-primary">{index + 1}</span>
+                      </div>
+                      
+                      <div className="flex-1 space-y-3">
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <Label>Nome do Vendedor</Label>
+                            <Input 
+                              value={item.display_name || ""} 
+                              onChange={(e) => updateWhatsappQueueItem(item.id, { display_name: e.target.value })}
+                              placeholder="Ex: Vendedor 1, Maria"
+                            />
+                          </div>
+                          <div>
+                            <Label>Número WhatsApp</Label>
+                            <Input 
+                              value={item.phone_number} 
+                              onChange={(e) => updateWhatsappQueueItem(item.id, { phone_number: e.target.value })}
+                              placeholder="5531999999999"
+                            />
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Switch 
+                              checked={item.is_active} 
+                              onCheckedChange={(checked) => updateWhatsappQueueItem(item.id, { is_active: checked })}
+                            />
+                            <Label className="text-sm">
+                              {item.is_active ? "Ativo" : "Inativo (pulado na rotação)"}
+                            </Label>
+                          </div>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => deleteWhatsappQueueItem(item.id)}
+                          >
+                            <Trash2 className="h-4 w-4 mr-1" />
+                            Remover
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+
+              <Button 
+                onClick={saveWhatsappQueue} 
+                disabled={!whatsappQueueChanged} 
+                className="w-full"
+              >
+                {whatsappQueueChanged ? "Salvar Fila de WhatsApp" : "Fila Salva"}
+              </Button>
+              
+              <p className="text-xs text-muted-foreground text-center">
+                A cada novo lead, o sistema redireciona para o próximo número ativo da fila automaticamente.
+              </p>
+            </div>
+          )}
+        </div>
 
         {/* Páginas de Sucesso Condicionais */}
         <div className="mt-8">

@@ -22,7 +22,8 @@ serve(async (req) => {
     flattened.origem ??= "formulario";
     flattened.timestamp ??= new Date().toISOString();
 
-    // Cria cliente Supabase
+    const subdomain = "educa";
+
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
@@ -33,12 +34,67 @@ serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Extrai campos fixos (estrutura v0)
+    // Extrai campos fixos
     const nome = flattened.nome || flattened.name || null;
     const telefoneRaw = flattened.whatsapp || flattened.telefone || flattened.phone || "";
     const telefone = telefoneRaw ? parseInt(String(telefoneRaw).replace(/\D/g, ""), 10) : null;
     const email = flattened.email || null;
     const temEmail = email && String(email).trim() !== "";
+
+    // === LÓGICA DE ROTAÇÃO DE WHATSAPP ===
+    let whatsappRedirecionado: string | null = null;
+    let vendedorNome: string | null = null;
+
+    const { data: queueItems } = await supabase
+      .from("whatsapp_queue")
+      .select("*")
+      .eq("subdomain", subdomain)
+      .eq("is_active", true)
+      .order("position", { ascending: true });
+
+    if (queueItems && queueItems.length > 0) {
+      let { data: queueState } = await supabase
+        .from("whatsapp_queue_state")
+        .select("*")
+        .eq("subdomain", subdomain)
+        .single();
+
+      if (!queueState) {
+        const { data: newState } = await supabase
+          .from("whatsapp_queue_state")
+          .insert({ subdomain, current_position: 1 })
+          .select()
+          .single();
+        queueState = newState;
+      }
+
+      const currentPosition = queueState?.current_position || 1;
+
+      let selectedItem = queueItems.find(q => q.position >= currentPosition);
+      if (!selectedItem) {
+        selectedItem = queueItems[0];
+      }
+
+      if (selectedItem) {
+        whatsappRedirecionado = selectedItem.phone_number;
+        vendedorNome = selectedItem.display_name;
+        console.log(`📱 WhatsApp selecionado: ${vendedorNome} (${whatsappRedirecionado})`);
+
+        const currentIndex = queueItems.findIndex(q => q.id === selectedItem.id);
+        const nextIndex = (currentIndex + 1) % queueItems.length;
+        const nextPosition = queueItems[nextIndex].position;
+
+        await supabase
+          .from("whatsapp_queue_state")
+          .update({ current_position: nextPosition, updated_at: new Date().toISOString() })
+          .eq("subdomain", subdomain);
+      }
+    }
+
+    if (whatsappRedirecionado) {
+      flattened.whatsapp_redirecionado = whatsappRedirecionado;
+      flattened.vendedor_nome = vendedorNome;
+    }
 
     // Salva na tabela forma_respostas
     const { data: insertedData, error: dbError } = await supabase
@@ -50,7 +106,7 @@ serve(async (req) => {
         pergunta_fixa_3: temEmail,
         dados_json: flattened,
         versao_formulario: "v1",
-        subdomain: "educa",
+        subdomain: subdomain,
       }])
       .select()
       .single();
@@ -61,11 +117,10 @@ serve(async (req) => {
       console.log("✅ Salvo com ID:", insertedData?.id);
     }
 
-    // Busca webhook das configurações ou usa variável de ambiente
     const { data: settings } = await supabase
       .from("app_settings")
       .select("webhook_url")
-      .eq("subdomain", "educa")
+      .eq("subdomain", subdomain)
       .single();
 
     const webhookUrl = settings?.webhook_url || Deno.env.get("EDUCA_URL");
@@ -76,15 +131,24 @@ serve(async (req) => {
         success: true,
         message: "Dados salvos — configure webhook",
         database_id: insertedData?.id,
+        whatsapp_redirecionado: whatsappRedirecionado,
+        vendedor_nome: vendedorNome,
       });
     }
 
     console.log("📤 Enviando para webhook:", webhookUrl);
 
+    const webhookPayload = {
+      ...flattened,
+      data_cadastro: new Date().toISOString(),
+      whatsapp_redirecionado: whatsappRedirecionado,
+      vendedor_nome: vendedorNome,
+    };
+
     const resp = await fetch(webhookUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...flattened, data_cadastro: new Date().toISOString() }),
+      body: JSON.stringify(webhookPayload),
       signal: AbortSignal.timeout(10000),
     });
 
@@ -95,6 +159,8 @@ serve(async (req) => {
         success: true,
         warning: "Salvo, mas erro no webhook",
         database_id: insertedData?.id,
+        whatsapp_redirecionado: whatsappRedirecionado,
+        vendedor_nome: vendedorNome,
       });
     }
 
@@ -104,6 +170,8 @@ serve(async (req) => {
       success: true,
       message: "Dados salvos e enviados",
       database_id: insertedData?.id,
+      whatsapp_redirecionado: whatsappRedirecionado,
+      vendedor_nome: vendedorNome,
     });
 
   } catch (err) {
