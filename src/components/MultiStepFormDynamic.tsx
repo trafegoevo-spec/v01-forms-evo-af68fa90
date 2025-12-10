@@ -485,43 +485,12 @@ export const MultiStepFormDynamic = () => {
     try {
       const utmParams = getUtmParams();
       
-      // Extrai campos fixos para a estrutura v0
-      const nomeField = questions.find(q => q.field_name.toLowerCase().includes("nome"));
-      const telefoneField = questions.find(q => 
-        q.field_name.toLowerCase().includes("whatsapp") || 
-        q.field_name.toLowerCase().includes("telefone")
-      );
-      const emailField = questions.find(q => q.field_name.toLowerCase().includes("email"));
-      
-      // Prepara telefone como BIGINT (apenas números)
-      const telefoneValue = telefoneField ? data[telefoneField.field_name] : null;
-      const telefoneLimpo = telefoneValue ? parseInt(telefoneValue.replace(/\D/g, ""), 10) : null;
-      
-      // Verifica se tem email preenchido
-      const emailValue = emailField ? data[emailField.field_name] : null;
-      const temEmail = emailValue && emailValue.trim() !== "";
-      
-      // Estrutura forma_respostas (v0)
-      const formaRespostasData = {
-        pergunta_fixa_1: nomeField ? data[nomeField.field_name] : null,
-        pergunta_fixa_2: telefoneLimpo,
-        pergunta_fixa_3: temEmail,
-        dados_json: {
-          ...data,
-          ...utmParams,
-        },
-        versao_formulario: "1.0",
-        subdomain: formName,
-      };
-
+      // Seleciona edge function baseado no form_name
       const edgeFunctionName =
         formName === "autoprotecta" ? "enviar-conversao-autoprotecta" : 
         formName === "educa" ? "enviar-conversao-educa" : "enviar-conversao";
 
-      // Insere na tabela forma_respostas
-      const { error: dbError } = await supabase.from("forma_respostas").insert([formaRespostasData]);
-      if (dbError) throw dbError;
-
+      // Envia para edge function (que salva no banco E envia para webhook)
       const { error } = await supabase.functions.invoke(edgeFunctionName, {
         body: {
           ...data,
