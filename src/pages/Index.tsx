@@ -95,16 +95,6 @@ const Index = () => {
           <LogoDisplay />
         </div>
         
-        {/* Admin button on cover */}
-        {isAdmin && (
-          <div className="absolute top-6 right-6 z-20">
-            <Button variant="outline" size="sm" onClick={() => navigate("/admin")}>
-              <Settings className="mr-2 h-4 w-4" />
-              Admin
-            </Button>
-          </div>
-        )}
-        
         <CoverPage
           title={coverSettings.cover_title}
           subtitle={coverSettings.cover_subtitle}
@@ -120,15 +110,10 @@ const Index = () => {
       {/* Logo Display */}
       <LogoDisplay />
 
-      {/* Admin button */}
-      {isAdmin && (
-        <div className="container mx-auto px-4 flex justify-end gap-2 mb-4">
-          <Button variant="outline" onClick={() => navigate("/admin")}>
-            <Settings className="mr-2 h-4 w-4" />
-            Admin
-          </Button>
-        </div>
-      )}
+      {/* Multi-Step Form */}
+      <main className="container mx-auto px-4 pb-12">
+        <MultiStepFormDynamic />
+      </main>
 
       {/* Multi-Step Form */}
       <main className="container mx-auto px-4 pb-12">
