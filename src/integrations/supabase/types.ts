@@ -468,6 +468,57 @@ export type Database = {
         }
         Relationships: []
       }
+      whatsapp_queue: {
+        Row: {
+          created_at: string
+          display_name: string | null
+          id: string
+          is_active: boolean
+          phone_number: string
+          position: number
+          subdomain: string
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          is_active?: boolean
+          phone_number: string
+          position: number
+          subdomain?: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          is_active?: boolean
+          phone_number?: string
+          position?: number
+          subdomain?: string
+        }
+        Relationships: []
+      }
+      whatsapp_queue_state: {
+        Row: {
+          current_position: number
+          id: string
+          subdomain: string
+          updated_at: string
+        }
+        Insert: {
+          current_position?: number
+          id?: string
+          subdomain: string
+          updated_at?: string
+        }
+        Update: {
+          current_position?: number
+          id?: string
+          subdomain?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
