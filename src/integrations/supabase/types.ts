@@ -301,6 +301,53 @@ export type Database = {
         }
         Relationships: []
       }
+      forma_respostas: {
+        Row: {
+          created_at: string
+          dados_json: Json | null
+          entidade_id: string | null
+          id: string
+          pergunta_fixa_1: string | null
+          pergunta_fixa_2: number | null
+          pergunta_fixa_3: boolean | null
+          subdomain: string
+          updated_at: string
+          versao_formulario: string | null
+        }
+        Insert: {
+          created_at?: string
+          dados_json?: Json | null
+          entidade_id?: string | null
+          id?: string
+          pergunta_fixa_1?: string | null
+          pergunta_fixa_2?: number | null
+          pergunta_fixa_3?: boolean | null
+          subdomain?: string
+          updated_at?: string
+          versao_formulario?: string | null
+        }
+        Update: {
+          created_at?: string
+          dados_json?: Json | null
+          entidade_id?: string | null
+          id?: string
+          pergunta_fixa_1?: string | null
+          pergunta_fixa_2?: number | null
+          pergunta_fixa_3?: boolean | null
+          subdomain?: string
+          updated_at?: string
+          versao_formulario?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "forma_respostas_entidade_id_fkey"
+            columns: ["entidade_id"]
+            isOneToOne: false
+            referencedRelation: "entidades"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leads: {
         Row: {
           created_at: string
