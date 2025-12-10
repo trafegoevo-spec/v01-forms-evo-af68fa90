@@ -60,6 +60,7 @@ export const MultiStepFormDynamic = () => {
   const [settings, setSettings] = useState<any>(null);
   const [successPages, setSuccessPages] = useState<SuccessPage[]>([]);
   const [activeSuccessPage, setActiveSuccessPage] = useState<SuccessPage | null>(null);
+  const [rotatedWhatsApp, setRotatedWhatsApp] = useState<{ number: string; name: string } | null>(null);
   const { toast } = useToast();
 
   const formName = import.meta.env.VITE_FORM_NAME || "default";
@@ -491,7 +492,7 @@ export const MultiStepFormDynamic = () => {
         formName === "educa" ? "enviar-conversao-educa" : "enviar-conversao";
 
       // Envia para edge function (que salva no banco E envia para webhook)
-      const { error } = await supabase.functions.invoke(edgeFunctionName, {
+      const { data: responseData, error } = await supabase.functions.invoke(edgeFunctionName, {
         body: {
           ...data,
           ...utmParams,
@@ -501,6 +502,14 @@ export const MultiStepFormDynamic = () => {
       });
 
       if (error) console.error("Webhook error:", error);
+
+      // Captura o número rotacionado retornado pela edge function
+      if (responseData?.whatsapp_redirecionado) {
+        setRotatedWhatsApp({
+          number: responseData.whatsapp_redirecionado,
+          name: responseData.vendedor_nome || "",
+        });
+      }
 
       if (typeof window !== "undefined") {
         (window as any).dataLayer = (window as any).dataLayer || [];
@@ -570,7 +579,10 @@ export const MultiStepFormDynamic = () => {
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
-                  const phoneNumber = (successConfig.whatsapp_number || "").replace(/\D/g, "");
+                  // Usa número rotacionado se disponível, senão usa o padrão
+                  const phoneNumber = rotatedWhatsApp?.number 
+                    ? rotatedWhatsApp.number.replace(/\D/g, "")
+                    : (successConfig.whatsapp_number || "").replace(/\D/g, "");
                   const message = encodeURIComponent(
                     successConfig.whatsapp_message || "Olá! Preenchi o formulário."
                   );
