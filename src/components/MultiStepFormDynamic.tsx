@@ -523,7 +523,9 @@ export const MultiStepFormDynamic = () => {
         });
       }
 
-      if (typeof window !== "undefined") {
+      // GTM event só dispara quando realmente é o último step (botão Finalizar)
+      const isLastStep = step === uniqueSteps.length;
+      if (isLastStep && typeof window !== "undefined") {
         (window as any).dataLayer = (window as any).dataLayer || [];
 
         (window as any).dataLayer.push({
