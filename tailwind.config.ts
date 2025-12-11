@@ -120,7 +120,7 @@ export default {
   		},
   		fontFamily: {
   			sans: [
-  				'Lato',
+  				'Outfit',
   				'ui-sans-serif',
   				'system-ui',
   				'sans-serif',
