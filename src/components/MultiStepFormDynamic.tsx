@@ -508,7 +508,7 @@ export const MultiStepFormDynamic = () => {
     };
     return <div key={question.id} className="space-y-4">
         <div>
-          <h2 className="text-2xl font-bold text-foreground text-justify md:text-4xl">{question.question}</h2>
+          <h2 className="font-bold text-foreground text-justify md:text-4xl text-3xl">{question.question}</h2>
           {question.subtitle && <label className="block text-base font-medium text-muted-foreground mt-1">
               {question.subtitle}
             </label>}
@@ -625,7 +625,7 @@ export const MultiStepFormDynamic = () => {
         </div>
       </div>;
   }
-  return <div className="w-full max-w-2xl mx-auto px-4 py-6">
+  return <div className="w-full max-w-2xl mx-auto py-6 px-[5px]">
       {step < totalSteps && <div className="mb-8">
           <div className="flex justify-between items-center mb-2">
             <span className="text-sm font-medium text-muted-foreground">
