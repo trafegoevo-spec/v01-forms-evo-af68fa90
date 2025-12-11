@@ -625,7 +625,7 @@ export const MultiStepFormDynamic = () => {
         </div>
       </div>;
   }
-  return <div className="w-full max-w-2xl mx-auto py-6 px-[5px]">
+  return <div className="w-full max-w-2xl mx-auto px-[5px] py-[20px]">
       {step < totalSteps && <div className="mb-8">
           <div className="flex justify-between items-center mb-2">
             <span className="text-sm font-medium text-muted-foreground">
