@@ -111,7 +111,7 @@ const Index = () => {
 
       {/* Multi-Step Form */}
       <main className="container mx-auto px-4 pb-12">
-        <MultiStepFormDynamic className="px-[20px]" />
+        <MultiStepFormDynamic />
       </main>
 
       {/* Footer */}
