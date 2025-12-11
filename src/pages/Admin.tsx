@@ -39,7 +39,7 @@ interface FormQuestion {
   subtitle?: string;
   options: string[];
   field_name: string;
-  input_type?: 'text' | 'select' | 'password';
+  input_type?: 'text' | 'select' | 'password' | 'buttons';
   max_length?: number;
   input_placeholder?: string;
   required?: boolean;
@@ -126,7 +126,7 @@ const Admin = () => {
       const transformedData = (data || []).map(item => ({
         ...item,
         options: Array.isArray(item.options) ? item.options as string[] : [],
-        input_type: (['select', 'text', 'password'].includes(item.input_type) ? item.input_type : 'text') as 'text' | 'select' | 'password',
+        input_type: (['select', 'text', 'password', 'buttons'].includes(item.input_type) ? item.input_type : 'text') as 'text' | 'select' | 'password' | 'buttons',
         required: item.required !== undefined ? item.required : true,
         conditional_logic: item.conditional_logic as unknown as ConditionalLogic | null
       }));
@@ -476,6 +476,7 @@ const Admin = () => {
         const {
           error
         } = await supabase.from("form_questions").update({
+          step: question.step,
           question: question.question,
           subtitle: question.subtitle,
           field_name: question.field_name,
@@ -752,7 +753,16 @@ VITE_GTM_ID=GTM-XXXXXXX`}
           {questions.map(question => <Card key={question.id}>
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
-                  <span>Passo {question.step}</span>
+                  <div className="flex items-center gap-3">
+                    <span>Etapa</span>
+                    <Input
+                      type="number"
+                      min="1"
+                      value={question.step}
+                      onChange={(e) => updateQuestionLocal(question.id, { step: parseInt(e.target.value) || 1 })}
+                      className="w-16 h-8"
+                    />
+                  </div>
                   <div className="flex gap-2">
                     <Button variant="ghost" size="icon" onClick={() => moveQuestion(question.id, "up")} disabled={questions.findIndex(q => q.id === question.id) === 0}>
                       <ArrowUp className="h-4 w-4" />
@@ -788,14 +798,14 @@ VITE_GTM_ID=GTM-XXXXXXX`}
               })} />
                 </div>
 
-                {question.input_type !== 'select' && question.input_type !== 'password' && <div>
+                {question.input_type !== 'select' && question.input_type !== 'password' && question.input_type !== 'buttons' && <div>
                     <Label>Texto do Campo de Resposta</Label>
                     <Input value={question.input_placeholder || ""} onChange={e => updateQuestionLocal(question.id, {
                 input_placeholder: e.target.value
               })} placeholder="Ex: Digite qual é o seu nome completo?" />
                   </div>}
 
-                {question.input_type !== 'select' && <div>
+                {question.input_type !== 'select' && question.input_type !== 'buttons' && <div>
                     <Label>Limite de Caracteres (opcional)</Label>
                     <Input type="number" value={question.max_length || ""} onChange={e => updateQuestionLocal(question.id, {
                 max_length: e.target.value ? parseInt(e.target.value) : undefined
@@ -804,7 +814,7 @@ VITE_GTM_ID=GTM-XXXXXXX`}
 
                 <div>
                   <Label>Tipo de Resposta</Label>
-                  <Select value={question.input_type || 'text'} onValueChange={(value: 'text' | 'select' | 'password') => {
+                  <Select value={question.input_type || 'text'} onValueChange={(value: 'text' | 'select' | 'password' | 'buttons') => {
                 updateQuestionLocal(question.id, {
                   input_type: value
                 });
@@ -815,7 +825,8 @@ VITE_GTM_ID=GTM-XXXXXXX`}
                     <SelectContent>
                       <SelectItem value="text">Resposta Escrita</SelectItem>
                       <SelectItem value="password">Campo Oculto</SelectItem>
-                      <SelectItem value="select">Múltipla Escolha</SelectItem>
+                      <SelectItem value="select">Múltipla Escolha (Dropdown)</SelectItem>
+                      <SelectItem value="buttons">Botões Clicáveis</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -834,7 +845,7 @@ VITE_GTM_ID=GTM-XXXXXXX`}
                   />
                 </div>
 
-                {question.input_type === 'select' && <div>
+                {(question.input_type === 'select' || question.input_type === 'buttons') && <div>
                     <div className="flex items-center justify-between mb-2">
                       <Label>Opções de Escolha</Label>
                       <Button variant="outline" size="sm" onClick={() => addOption(question.id)}>
@@ -853,7 +864,7 @@ VITE_GTM_ID=GTM-XXXXXXX`}
                   </div>}
 
                 {/* Lógica Condicional - apenas para perguntas de múltipla escolha */}
-                {question.input_type === 'select' && question.options.length > 0 && (
+                {(question.input_type === 'select' || question.input_type === 'buttons') && question.options.length > 0 && (
                   <div className="border-t pt-4 mt-4">
                     <div className="flex items-center justify-between mb-3">
                       <div>

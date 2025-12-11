@@ -98,9 +98,9 @@ export const MultiStepFormDynamic = () => {
       const transformedData = (data || []).map((item) => ({
         ...item,
         options: Array.isArray(item.options) ? (item.options as string[]) : [],
-        input_type: (["select", "text", "password"].includes(item.input_type)
+        input_type: (["select", "text", "password", "buttons"].includes(item.input_type)
           ? item.input_type
-          : "text") as "text" | "select" | "password",
+          : "text") as "text" | "select" | "password" | "buttons",
         required: item.required !== undefined ? item.required : true,
         conditional_logic: item.conditional_logic as unknown as ConditionalLogic | null,
       }));
@@ -352,8 +352,11 @@ export const MultiStepFormDynamic = () => {
     mode: "onChange",
   });
 
-  const totalSteps = questions.length + 1;
-  const currentQuestion = questions[step - 1];
+  // Calculate unique steps for multi-question per step support
+  const uniqueSteps = [...new Set(questions.map(q => q.step))].sort((a, b) => a - b);
+  const totalSteps = uniqueSteps.length + 1; // +1 for success page
+  const currentStepNumber = uniqueSteps[step - 1];
+  const currentQuestions = questions.filter(q => q.step === currentStepNumber);
 
   const formatWhatsApp = (value: string) => {
     let cleaned = value.replace(/\D/g, "");
@@ -396,10 +399,10 @@ export const MultiStepFormDynamic = () => {
     return `${cleaned.slice(0, 2)}.${cleaned.slice(2, 5)}.${cleaned.slice(5, 8)}/${cleaned.slice(8, 12)}-${cleaned.slice(12)}`;
   };
 
-  const handleConditionalLogic = (value: string) => {
-    if (!currentQuestion?.conditional_logic?.conditions) return null;
+  const handleConditionalLogic = (question: Question, value: string) => {
+    if (!question?.conditional_logic?.conditions) return null;
     
-    const condition = currentQuestion.conditional_logic.conditions.find(
+    const condition = question.conditional_logic.conditions.find(
       (c) => c.value === value
     );
     
@@ -407,25 +410,34 @@ export const MultiStepFormDynamic = () => {
   };
 
   const nextStep = async () => {
-    if (!currentQuestion) return;
+    if (!currentQuestions || currentQuestions.length === 0) return;
 
-    const isRequired = currentQuestion.required !== false;
-    const value = form.watch(currentQuestion.field_name);
+    // Validate all questions in current step
+    let allValid = true;
+    for (const question of currentQuestions) {
+      const isRequired = question.required !== false;
+      const value = form.watch(question.field_name);
 
-    if (!isRequired && (!value || value.trim() === '' || value === '55 ')) {
-      if (step < totalSteps) setStep(step + 1);
-      return;
+      // Skip validation for optional empty fields
+      if (!isRequired && (!value || value.trim() === '' || value === '55 ')) {
+        continue;
+      }
+
+      const isValid = await form.trigger(question.field_name);
+      if (!isValid) {
+        allValid = false;
+      }
     }
 
-    const isValid = await form.trigger(currentQuestion.field_name);
+    if (!allValid) return;
 
-    if (isValid) {
-      // Check for conditional logic
-      const condition = handleConditionalLogic(value);
+    // Check for conditional logic on any question in this step (use first match)
+    for (const question of currentQuestions) {
+      const value = form.watch(question.field_name);
+      const condition = handleConditionalLogic(question, value);
       
       if (condition) {
         if (condition.action === "success_page" && condition.target_page) {
-          // Submit form and redirect to specific success page
           const successPage = successPages.find(p => p.page_key === condition.target_page);
           if (successPage) {
             setActiveSuccessPage(successPage);
@@ -433,24 +445,24 @@ export const MultiStepFormDynamic = () => {
           form.handleSubmit(onSubmit)();
           return;
         } else if (condition.action === "skip_to_step" && condition.target_step) {
-          // Skip to specific step
-          const targetStep = condition.target_step;
-          if (targetStep > 0 && targetStep <= questions.length) {
-            setStep(targetStep);
+          // Find which step index corresponds to target_step
+          const targetIndex = uniqueSteps.findIndex(s => s === condition.target_step);
+          if (targetIndex !== -1) {
+            setStep(targetIndex + 1);
             return;
           }
         }
       }
-      
-      // Default: go to next step
-      if (step < totalSteps) setStep(step + 1);
     }
+    
+    // Default: go to next step
+    if (step < totalSteps) setStep(step + 1);
   };
 
   const handleKeyDown = async (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
       e.preventDefault();
-      if (step < questions.length) await nextStep();
+      if (step < uniqueSteps.length) await nextStep();
       else form.handleSubmit(onSubmit)();
     }
   };
@@ -538,6 +550,219 @@ export const MultiStepFormDynamic = () => {
     }
   };
 
+  const renderQuestionInput = (question: Question, isFirst: boolean) => {
+    const handleButtonClick = async (option: string) => {
+      form.setValue(question.field_name, option);
+      
+      // Check for conditional logic
+      const condition = question.conditional_logic?.conditions?.find(
+        (c) => c.value === option
+      );
+      
+      if (condition) {
+        if (condition.action === "success_page" && condition.target_page) {
+          const successPage = successPages.find(p => p.page_key === condition.target_page);
+          if (successPage) {
+            setActiveSuccessPage(successPage);
+          }
+          setTimeout(() => form.handleSubmit(onSubmit)(), 300);
+          return;
+        } else if (condition.action === "skip_to_step" && condition.target_step) {
+          const targetIndex = uniqueSteps.findIndex(s => s === condition.target_step);
+          if (targetIndex !== -1) {
+            setTimeout(() => setStep(targetIndex + 1), 300);
+            return;
+          }
+        }
+      }
+      
+      // Only auto-advance if this is the only question in the step
+      if (currentQuestions.length === 1 && step < uniqueSteps.length) {
+        setTimeout(() => nextStep(), 300);
+      }
+    };
+
+    const handleSelectChange = async (value: string) => {
+      form.setValue(question.field_name, value);
+      
+      // Check for conditional logic
+      const condition = question.conditional_logic?.conditions?.find(
+        (c) => c.value === value
+      );
+      
+      if (condition) {
+        if (condition.action === "success_page" && condition.target_page) {
+          const successPage = successPages.find(p => p.page_key === condition.target_page);
+          if (successPage) {
+            setActiveSuccessPage(successPage);
+          }
+          setTimeout(() => form.handleSubmit(onSubmit)(), 300);
+          return;
+        } else if (condition.action === "skip_to_step" && condition.target_step) {
+          const targetIndex = uniqueSteps.findIndex(s => s === condition.target_step);
+          if (targetIndex !== -1) {
+            setTimeout(() => setStep(targetIndex + 1), 300);
+            return;
+          }
+        }
+      }
+      
+      // Only auto-advance if this is the only question in the step
+      if (currentQuestions.length === 1 && step < uniqueSteps.length) {
+        setTimeout(() => nextStep(), 300);
+      }
+    };
+
+    return (
+      <div key={question.id} className="space-y-4">
+        <div>
+          <h2 className="text-2xl md:text-3xl font-bold text-foreground">{question.question}</h2>
+          {question.subtitle && (
+            <label className="block text-base font-medium text-muted-foreground mt-1">
+              {question.subtitle}
+            </label>
+          )}
+        </div>
+
+        <div className="space-y-2">
+          {question.input_type === "buttons" && question.options.length > 0 ? (
+            <div className="grid gap-2">
+              {question.options.map((option) => {
+                const isSelected = form.watch(question.field_name) === option;
+                return (
+                  <Button
+                    key={option}
+                    type="button"
+                    variant={isSelected ? "default" : "outline"}
+                    className={`h-auto min-h-[44px] text-base py-2 px-4 whitespace-normal text-left justify-start ${
+                      isSelected ? "" : "hover:bg-muted"
+                    }`}
+                    onClick={() => handleButtonClick(option)}
+                  >
+                    {option}
+                  </Button>
+                );
+              })}
+            </div>
+          ) : question.input_type === "select" && question.options.length > 0 ? (
+            <Select
+              key={`select-${question.field_name}-${step}`}
+              value={form.watch(question.field_name)}
+              onValueChange={handleSelectChange}
+            >
+              <SelectTrigger className="h-12 text-base">
+                <SelectValue placeholder="Selecione uma opção" />
+              </SelectTrigger>
+              <SelectContent>
+                {question.options.map((option) => (
+                  <SelectItem key={option} value={option}>
+                    {option}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : question.input_type === "password" ? (
+            <Input
+              key={`input-${question.field_name}-${step}`}
+              type="text"
+              placeholder={question.input_placeholder || `Digite ${question.question.toLowerCase()}`}
+              className="h-12 text-base"
+              autoFocus={isFirst}
+              autoComplete="off"
+              value={form.watch(question.field_name) || ""}
+              onChange={(e) => form.setValue(question.field_name, e.target.value, { shouldValidate: true })}
+              onKeyDown={handleKeyDown}
+            />
+          ) : question.field_name.toLowerCase().includes("whatsapp") ||
+            question.field_name.toLowerCase().includes("telefone") ? (
+            <Input
+              key={`input-${question.field_name}-${step}`}
+              type="tel"
+              placeholder={question.input_placeholder || "55 (99) 99999-9999"}
+              className="h-12 text-base"
+              autoFocus={isFirst}
+              autoComplete="off"
+              maxLength={question.max_length || 19}
+              value={form.watch(question.field_name) || "55 "}
+              onChange={(e) => {
+                const formatted = formatWhatsApp(e.target.value);
+                form.setValue(question.field_name, formatted, { shouldValidate: true });
+              }}
+              onKeyDown={handleKeyDown}
+            />
+          ) : question.field_name.toLowerCase().includes("placa") ? (
+            <Input
+              key={`input-${question.field_name}-${step}`}
+              type="text"
+              placeholder={question.input_placeholder || "ABC-1D23"}
+              className="h-12 text-base uppercase"
+              autoFocus={isFirst}
+              autoComplete="off"
+              maxLength={8}
+              value={form.watch(question.field_name) || ""}
+              onChange={(e) => {
+                const formatted = formatPlaca(e.target.value);
+                form.setValue(question.field_name, formatted, { shouldValidate: true });
+              }}
+              onKeyDown={handleKeyDown}
+            />
+          ) : question.field_name.toLowerCase().includes("cpf") ? (
+            <Input
+              key={`input-${question.field_name}-${step}`}
+              type="text"
+              placeholder={question.input_placeholder || "000.000.000-00"}
+              className="h-12 text-base"
+              autoFocus={isFirst}
+              autoComplete="off"
+              maxLength={14}
+              value={form.watch(question.field_name) || ""}
+              onChange={(e) => {
+                const formatted = formatCPF(e.target.value);
+                form.setValue(question.field_name, formatted, { shouldValidate: true });
+              }}
+              onKeyDown={handleKeyDown}
+            />
+          ) : question.field_name.toLowerCase().includes("cnpj") ? (
+            <Input
+              key={`input-${question.field_name}-${step}`}
+              type="text"
+              placeholder={question.input_placeholder || "00.000.000/0000-00"}
+              className="h-12 text-base"
+              autoFocus={isFirst}
+              autoComplete="off"
+              maxLength={18}
+              value={form.watch(question.field_name) || ""}
+              onChange={(e) => {
+                const formatted = formatCNPJ(e.target.value);
+                form.setValue(question.field_name, formatted, { shouldValidate: true });
+              }}
+              onKeyDown={handleKeyDown}
+            />
+          ) : (
+            <Input
+              key={`input-${question.field_name}-${step}`}
+              type={question.field_name.toLowerCase().includes("email") ? "email" : "text"}
+              placeholder={question.input_placeholder || `Digite ${question.question.toLowerCase()}`}
+              className="h-12 text-base"
+              autoFocus={isFirst}
+              autoComplete="off"
+              maxLength={question.max_length || undefined}
+              value={form.watch(question.field_name) || ""}
+              onChange={(e) => form.setValue(question.field_name, e.target.value, { shouldValidate: true })}
+              onKeyDown={handleKeyDown}
+            />
+          )}
+
+          {form.formState.errors[question.field_name] && (
+            <p className="text-destructive text-sm mt-1">
+              {form.formState.errors[question.field_name]?.message as string}
+            </p>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   const renderStep = () => {
     if (step === totalSteps && isSuccess && submittedData) {
       const nomeQuestion = questions.find((q) => q.field_name === "nome");
@@ -579,7 +804,6 @@ export const MultiStepFormDynamic = () => {
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
-                  // Usa número rotacionado se disponível, senão usa o padrão
                   const phoneNumber = rotatedWhatsApp?.number 
                     ? rotatedWhatsApp.number.replace(/\D/g, "")
                     : (successConfig.whatsapp_number || "").replace(/\D/g, "");
@@ -598,230 +822,11 @@ export const MultiStepFormDynamic = () => {
       );
     }
 
-    if (!currentQuestion) return null;
+    if (!currentQuestions || currentQuestions.length === 0) return null;
 
     return (
-      <div className="space-y-6">
-        <h2 className="text-4xl font-bold text-foreground">{currentQuestion.question}</h2>
-
-        <div className="space-y-3">
-          {currentQuestion.subtitle && (
-            <label className="block text-base font-medium text-foreground">
-              {currentQuestion.subtitle}
-            </label>
-          )}
-
-          {currentQuestion.input_type === "buttons" && currentQuestion.options.length > 0 ? (
-            <div className="grid gap-3">
-              {currentQuestion.options.map((option) => {
-                const isSelected = form.watch(currentQuestion.field_name) === option;
-                return (
-                  <Button
-                    key={option}
-                    type="button"
-                    variant={isSelected ? "default" : "outline"}
-                    className={`h-auto min-h-[48px] text-base py-3 px-4 whitespace-normal text-left justify-start ${
-                      isSelected ? "" : "hover:bg-muted"
-                    }`}
-                    onClick={async () => {
-                      form.setValue(currentQuestion.field_name, option);
-                      
-                      // Check for conditional logic
-                      const condition = currentQuestion.conditional_logic?.conditions?.find(
-                        (c) => c.value === option
-                      );
-                      
-                      if (condition) {
-                        if (condition.action === "success_page" && condition.target_page) {
-                          const successPage = successPages.find(p => p.page_key === condition.target_page);
-                          if (successPage) {
-                            setActiveSuccessPage(successPage);
-                          }
-                          setTimeout(() => form.handleSubmit(onSubmit)(), 300);
-                          return;
-                        } else if (condition.action === "skip_to_step" && condition.target_step) {
-                          setTimeout(() => setStep(condition.target_step!), 300);
-                          return;
-                        }
-                      }
-                      
-                      // Default: go to next step
-                      if (step < questions.length) setTimeout(() => nextStep(), 300);
-                    }}
-                  >
-                    {option}
-                  </Button>
-                );
-              })}
-            </div>
-          ) : currentQuestion.input_type === "select" && currentQuestion.options.length > 0 ? (
-            <Select
-              key={`select-${currentQuestion.field_name}-${step}`}
-              value={form.watch(currentQuestion.field_name)}
-              onValueChange={async (value) => {
-                form.setValue(currentQuestion.field_name, value);
-                
-                // Check for conditional logic
-                const condition = currentQuestion.conditional_logic?.conditions?.find(
-                  (c) => c.value === value
-                );
-                
-                if (condition) {
-                  if (condition.action === "success_page" && condition.target_page) {
-                    // Submit form and redirect to specific success page
-                    const successPage = successPages.find(p => p.page_key === condition.target_page);
-                    if (successPage) {
-                      setActiveSuccessPage(successPage);
-                    }
-                    setTimeout(() => form.handleSubmit(onSubmit)(), 300);
-                    return;
-                  } else if (condition.action === "skip_to_step" && condition.target_step) {
-                    // Skip to specific step
-                    setTimeout(() => setStep(condition.target_step!), 300);
-                    return;
-                  }
-                }
-                
-                // Default: go to next step
-                if (step < questions.length) setTimeout(() => nextStep(), 300);
-              }}
-            >
-              <SelectTrigger className="h-12 text-base">
-                <SelectValue placeholder="Selecione uma opção" />
-              </SelectTrigger>
-
-              <SelectContent>
-                {currentQuestion.options.map((option) => (
-                  <SelectItem key={option} value={option}>
-                    {option}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          ) : currentQuestion.input_type === "password" ? (
-            <Input
-              key={`input-${currentQuestion.field_name}-${step}`}
-              type="text"
-              placeholder={
-                currentQuestion.input_placeholder ||
-                `Digite ${currentQuestion.question.toLowerCase()}`
-              }
-              className="h-12 text-base"
-              autoFocus
-              autoComplete="off"
-              value={form.watch(currentQuestion.field_name) || ""}
-              onChange={(e) =>
-                form.setValue(currentQuestion.field_name, e.target.value, {
-                  shouldValidate: true,
-                })
-              }
-              onKeyDown={handleKeyDown}
-            />
-          ) : currentQuestion.field_name.toLowerCase().includes("whatsapp") ||
-            currentQuestion.field_name.toLowerCase().includes("telefone") ? (
-            <Input
-              key={`input-${currentQuestion.field_name}-${step}`}
-              type="tel"
-              placeholder={currentQuestion.input_placeholder || "55 (99) 99999-9999"}
-              className="h-12 text-base"
-              autoFocus
-              autoComplete="off"
-              maxLength={currentQuestion.max_length || 19}
-              value={form.watch(currentQuestion.field_name) || "55 "}
-              onChange={(e) => {
-                const formatted = formatWhatsApp(e.target.value);
-                form.setValue(currentQuestion.field_name, formatted, {
-                  shouldValidate: true,
-                });
-              }}
-              onKeyDown={handleKeyDown}
-            />
-          ) : currentQuestion.field_name.toLowerCase().includes("placa") ? (
-            <Input
-              key={`input-${currentQuestion.field_name}-${step}`}
-              type="text"
-              placeholder={currentQuestion.input_placeholder || "ABC-1D23"}
-              className="h-12 text-base uppercase"
-              autoFocus
-              autoComplete="off"
-              maxLength={8}
-              value={form.watch(currentQuestion.field_name) || ""}
-              onChange={(e) => {
-                const formatted = formatPlaca(e.target.value);
-                form.setValue(currentQuestion.field_name, formatted, {
-                  shouldValidate: true,
-                });
-              }}
-              onKeyDown={handleKeyDown}
-            />
-          ) : currentQuestion.field_name.toLowerCase().includes("cpf") ? (
-            <Input
-              key={`input-${currentQuestion.field_name}-${step}`}
-              type="text"
-              placeholder={currentQuestion.input_placeholder || "000.000.000-00"}
-              className="h-12 text-base"
-              autoFocus
-              autoComplete="off"
-              maxLength={14}
-              value={form.watch(currentQuestion.field_name) || ""}
-              onChange={(e) => {
-                const formatted = formatCPF(e.target.value);
-                form.setValue(currentQuestion.field_name, formatted, {
-                  shouldValidate: true,
-                });
-              }}
-              onKeyDown={handleKeyDown}
-            />
-          ) : currentQuestion.field_name.toLowerCase().includes("cnpj") ? (
-            <Input
-              key={`input-${currentQuestion.field_name}-${step}`}
-              type="text"
-              placeholder={currentQuestion.input_placeholder || "00.000.000/0000-00"}
-              className="h-12 text-base"
-              autoFocus
-              autoComplete="off"
-              maxLength={18}
-              value={form.watch(currentQuestion.field_name) || ""}
-              onChange={(e) => {
-                const formatted = formatCNPJ(e.target.value);
-                form.setValue(currentQuestion.field_name, formatted, {
-                  shouldValidate: true,
-                });
-              }}
-              onKeyDown={handleKeyDown}
-            />
-          ) : (
-            <Input
-              key={`input-${currentQuestion.field_name}-${step}`}
-              type={
-                currentQuestion.field_name.toLowerCase().includes("email")
-                  ? "email"
-                  : "text"
-              }
-              placeholder={
-                currentQuestion.input_placeholder ||
-                `Digite ${currentQuestion.question.toLowerCase()}`
-              }
-              className="h-12 text-base"
-              autoFocus
-              autoComplete="off"
-              maxLength={currentQuestion.max_length || undefined}
-              value={form.watch(currentQuestion.field_name) || ""}
-              onChange={(e) =>
-                form.setValue(currentQuestion.field_name, e.target.value, {
-                  shouldValidate: true,
-                })
-              }
-              onKeyDown={handleKeyDown}
-            />
-          )}
-
-          {form.formState.errors[currentQuestion.field_name] && (
-            <p className="text-destructive text-sm mt-1">
-              {form.formState.errors[currentQuestion.field_name]?.message as string}
-            </p>
-          )}
-        </div>
+      <div className="space-y-8">
+        {currentQuestions.map((question, index) => renderQuestionInput(question, index === 0))}
       </div>
     );
   };
@@ -856,15 +861,15 @@ export const MultiStepFormDynamic = () => {
         <div className="mb-8">
           <div className="flex justify-between items-center mb-2">
             <span className="text-sm font-medium text-muted-foreground">
-              Etapa {step} de {questions.length}
+              Etapa {step} de {uniqueSteps.length}
             </span>
 
             <span className="text-sm font-bold text-primary">
-              {Math.round((step / questions.length) * 100)}%
+              {Math.round((step / uniqueSteps.length) * 100)}%
             </span>
           </div>
 
-          <Progress value={(step / questions.length) * 100} className="h-2" />
+          <Progress value={(step / uniqueSteps.length) * 100} className="h-2" />
         </div>
       )}
 
@@ -886,7 +891,7 @@ export const MultiStepFormDynamic = () => {
               </Button>
             )}
 
-            {step < questions.length ? (
+            {step < uniqueSteps.length ? (
               <Button
                 type="button"
                 onClick={nextStep}
