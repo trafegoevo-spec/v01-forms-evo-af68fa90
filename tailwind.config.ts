@@ -120,7 +120,7 @@ export default {
   		},
   		fontFamily: {
   			sans: [
-  				'Inter',
+  				'Figtree',
   				'ui-sans-serif',
   				'system-ui',
   				'sans-serif',
