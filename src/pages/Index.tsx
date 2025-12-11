@@ -7,41 +7,38 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Settings } from "lucide-react";
-
 interface CoverSettings {
   cover_enabled: boolean;
   cover_title: string;
   cover_subtitle: string;
   cover_cta_text: string;
 }
-
 const Index = () => {
-  const { user, isAdmin, loading } = useAuth();
+  const {
+    user,
+    isAdmin,
+    loading
+  } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const preview = searchParams.get("preview");
   const formName = import.meta.env.VITE_FORM_NAME || "default";
-  
   const [showCover, setShowCover] = useState(true);
   const [coverSettings, setCoverSettings] = useState<CoverSettings | null>(null);
   const [loadingCover, setLoadingCover] = useState(true);
-
   useEffect(() => {
     // Redirect admin users to /admin after login, unless they're previewing
     if (!loading && user && isAdmin && preview !== "true") {
       navigate("/admin");
     }
   }, [user, isAdmin, loading, navigate, preview]);
-
   useEffect(() => {
     const loadCoverSettings = async () => {
       try {
-        const { data, error } = await supabase
-          .from("app_settings")
-          .select("cover_enabled, cover_title, cover_subtitle, cover_cta_text")
-          .eq("subdomain", formName)
-          .single();
-
+        const {
+          data,
+          error
+        } = await supabase.from("app_settings").select("cover_enabled, cover_title, cover_subtitle, cover_cta_text").eq("subdomain", formName).single();
         if (error) {
           // If no settings exist, use defaults
           if (error.code === 'PGRST116') {
@@ -70,77 +67,57 @@ const Index = () => {
         setLoadingCover(false);
       }
     };
-
     loadCoverSettings();
   }, [formName]);
-
   const handleStartForm = () => {
     setShowCover(false);
   };
-
   if (loadingCover) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center">
+    return <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center">
         <p className="text-muted-foreground">Carregando...</p>
-      </div>
-    );
+      </div>;
   }
 
   // Show cover page if enabled and not dismissed
   if (coverSettings?.cover_enabled && showCover) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+    return <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
         {/* Logo Display on Cover */}
         <div className="absolute top-6 left-0 right-0 z-20">
           <LogoDisplay />
         </div>
         
         {/* Admin button on cover */}
-        {isAdmin && (
-          <div className="absolute top-6 right-6 z-20">
+        {isAdmin && <div className="absolute top-6 right-6 z-20">
             <Button variant="outline" size="sm" onClick={() => navigate("/admin")}>
               <Settings className="mr-2 h-4 w-4" />
               Admin
             </Button>
-          </div>
-        )}
+          </div>}
         
-        <CoverPage
-          title={coverSettings.cover_title}
-          subtitle={coverSettings.cover_subtitle}
-          ctaText={coverSettings.cover_cta_text}
-          onStart={handleStartForm}
-        />
-      </div>
-    );
+        <CoverPage title={coverSettings.cover_title} subtitle={coverSettings.cover_subtitle} ctaText={coverSettings.cover_cta_text} onStart={handleStartForm} />
+      </div>;
   }
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+  return <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       {/* Logo Display */}
       <LogoDisplay />
 
       {/* Admin button */}
-      {isAdmin && (
-        <div className="container mx-auto px-4 flex justify-end gap-2 mb-4">
+      {isAdmin && <div className="container mx-auto px-4 flex justify-end gap-2 mb-4">
           <Button variant="outline" onClick={() => navigate("/admin")}>
             <Settings className="mr-2 h-4 w-4" />
             Admin
           </Button>
-        </div>
-      )}
+        </div>}
 
       {/* Multi-Step Form */}
       <main className="container mx-auto px-4 pb-12">
-        <MultiStepFormDynamic />
+        <MultiStepFormDynamic className="px-[20px]" />
       </main>
 
       {/* Footer */}
       <footer className="py-6 text-center text-sm text-muted-foreground">
         <p>© EVO Marketing & Tecnologia 2024. Otimize seus resultados de vendas.</p>
       </footer>
-    </div>
-  );
+    </div>;
 };
-
 export default Index;
