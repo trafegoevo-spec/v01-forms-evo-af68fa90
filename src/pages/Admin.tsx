@@ -71,6 +71,7 @@ interface AppSettings {
   cover_title: string;
   cover_subtitle: string;
   cover_cta_text: string;
+  cover_image_url: string | null;
 }
 const Admin = () => {
   const {
@@ -267,37 +268,38 @@ const Admin = () => {
       const {
         data,
         error
-      } = await supabase.from("app_settings").select("*").eq("subdomain", formName).single();
-      if (error) {
+      } = await supabase.from("app_settings").select("*").eq("subdomain", formName).maybeSingle();
+      
+      if (error) throw error;
+      
+      if (!data) {
         // Se não existir, criar configurações padrão
-        if (error.code === 'PGRST116') {
-          const defaultSettings = {
-            subdomain: formName,
-            form_name: formName,
-            whatsapp_enabled: true,
-            whatsapp_number: '5531989236061',
-            whatsapp_message: 'Olá! Acabei de enviar meus dados no formulário.',
-            success_title: 'Obrigado',
-            success_description: 'Recebemos suas informações com sucesso!',
-            success_subtitle: 'Em breve entraremos em contato.',
-            cover_enabled: false,
-            cover_title: 'Bem-vindo',
-            cover_subtitle: 'Preencha o formulário e entre em contato conosco',
-            cover_cta_text: 'Começar'
-          };
-          const {
-            data: newData,
-            error: insertError
-          } = await supabase.from("app_settings").insert([defaultSettings]).select().single();
-          if (insertError) throw insertError;
-          setSettings(newData);
-          toast({
-            title: "Configurações criadas",
-            description: "Configurações padrão foram criadas automaticamente."
-          });
-          return;
-        }
-        throw error;
+        const defaultSettings = {
+          subdomain: formName,
+          form_name: formName,
+          whatsapp_enabled: true,
+          whatsapp_number: '5531989236061',
+          whatsapp_message: 'Olá! Acabei de enviar meus dados no formulário.',
+          success_title: 'Obrigado',
+          success_description: 'Recebemos suas informações com sucesso!',
+          success_subtitle: 'Em breve entraremos em contato.',
+          cover_enabled: false,
+          cover_title: 'Bem-vindo',
+          cover_subtitle: 'Preencha o formulário e entre em contato conosco',
+          cover_cta_text: 'Começar',
+          cover_image_url: null
+        };
+        const {
+          data: newData,
+          error: insertError
+        } = await supabase.from("app_settings").insert([defaultSettings]).select().single();
+        if (insertError) throw insertError;
+        setSettings(newData);
+        toast({
+          title: "Configurações criadas",
+          description: "Configurações padrão foram criadas automaticamente."
+        });
+        return;
       }
       setSettings(data);
     } catch (error: any) {
@@ -325,7 +327,8 @@ const Admin = () => {
         cover_enabled: settings.cover_enabled,
         cover_title: settings.cover_title,
         cover_subtitle: settings.cover_subtitle,
-        cover_cta_text: settings.cover_cta_text
+        cover_cta_text: settings.cover_cta_text,
+        cover_image_url: settings.cover_image_url
       }).eq("id", settings.id);
       if (error) throw error;
       toast({
@@ -736,6 +739,19 @@ VITE_GTM_ID=GTM-XXXXXXX`}
                   placeholder="Começar"
                   disabled={!settings.cover_enabled}
                 />
+              </div>
+
+              <div>
+                <Label>URL da Imagem da Capa</Label>
+                <Input 
+                  value={settings.cover_image_url || ""} 
+                  onChange={(e) => updateSettings({ cover_image_url: e.target.value || null })} 
+                  placeholder="https://exemplo.com/imagem.jpg"
+                  disabled={!settings.cover_enabled}
+                />
+                <p className="text-sm text-muted-foreground mt-1">
+                  Cole a URL de uma imagem externa para exibir na capa
+                </p>
               </div>
             </CardContent>
           </Card>

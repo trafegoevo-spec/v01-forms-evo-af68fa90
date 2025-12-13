@@ -18,6 +18,7 @@ export type Database = {
         Row: {
           cover_cta_text: string
           cover_enabled: boolean
+          cover_image_url: string | null
           cover_subtitle: string
           cover_title: string
           created_at: string
@@ -37,6 +38,7 @@ export type Database = {
         Insert: {
           cover_cta_text?: string
           cover_enabled?: boolean
+          cover_image_url?: string | null
           cover_subtitle?: string
           cover_title?: string
           created_at?: string
@@ -56,6 +58,7 @@ export type Database = {
         Update: {
           cover_cta_text?: string
           cover_enabled?: boolean
+          cover_image_url?: string | null
           cover_subtitle?: string
           cover_title?: string
           created_at?: string
