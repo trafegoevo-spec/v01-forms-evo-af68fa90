@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { ArrowRight, CheckCircle2 } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 
 interface CoverPageProps {
   title: string;
@@ -36,14 +36,13 @@ export const CoverPage = ({ title, subtitle, ctaText, onStart, imageUrl }: Cover
           </h1>
           
           {/* Bullet Points List */}
-          <ul className="space-y-4 mb-10 opacity-0 animate-[slideUp_0.8s_ease-out_0.4s_forwards]">
+          <ul className="space-y-3 mb-10 opacity-0 animate-[slideUp_0.8s_ease-out_0.4s_forwards]">
             {bulletPoints.map((point, index) => (
               <li 
                 key={index}
-                className="flex items-start gap-3 text-lg md:text-xl text-muted-foreground"
+                className="text-lg md:text-xl text-muted-foreground leading-relaxed"
               >
-                <CheckCircle2 className="h-6 w-6 text-primary flex-shrink-0 mt-0.5" />
-                <span className="leading-relaxed">{point}</span>
+                • {point}
               </li>
             ))}
           </ul>
@@ -66,7 +65,7 @@ export const CoverPage = ({ title, subtitle, ctaText, onStart, imageUrl }: Cover
       <div className="relative z-10 flex-1 flex items-center justify-center p-6 lg:p-12 opacity-0 animate-[slideUp_0.8s_ease-out_0.3s_forwards]">
         <div className="relative w-full max-w-md lg:max-w-lg xl:max-w-xl">
           {/* Image container with aspect ratio */}
-          <div className="aspect-square lg:aspect-[4/5] rounded-2xl overflow-hidden shadow-2xl bg-muted">
+          <div className="aspect-[4/5] rounded-2xl overflow-hidden shadow-2xl bg-muted">
             {imageUrl ? (
               <img 
                 src={imageUrl} 
