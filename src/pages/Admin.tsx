@@ -11,6 +11,7 @@ import { Eye, Plus, Trash2, ArrowUp, ArrowDown, X, Users } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AuthDialog } from "@/components/AuthDialog";
 import { LogoUploader } from "@/components/LogoUploader";
+import { CoverImageUploader } from "@/components/CoverImageUploader";
 import { Switch } from "@/components/ui/switch";
 
 interface WhatsAppQueueItem {
@@ -742,16 +743,14 @@ VITE_GTM_ID=GTM-XXXXXXX`}
               </div>
 
               <div>
-                <Label>URL da Imagem da Capa</Label>
-                <Input 
-                  value={settings.cover_image_url || ""} 
-                  onChange={(e) => updateSettings({ cover_image_url: e.target.value || null })} 
-                  placeholder="https://exemplo.com/imagem.jpg"
-                  disabled={!settings.cover_enabled}
-                />
-                <p className="text-sm text-muted-foreground mt-1">
-                  Cole a URL de uma imagem externa para exibir na capa
-                </p>
+                <Label>Imagem da Capa</Label>
+                <div className="mt-2">
+                  <CoverImageUploader
+                    currentImageUrl={settings.cover_image_url}
+                    onImageChange={(url) => updateSettings({ cover_image_url: url })}
+                    disabled={!settings.cover_enabled}
+                  />
+                </div>
               </div>
             </CardContent>
           </Card>
