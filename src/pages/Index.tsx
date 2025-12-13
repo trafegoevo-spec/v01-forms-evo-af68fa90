@@ -12,6 +12,7 @@ interface CoverSettings {
   cover_title: string;
   cover_subtitle: string;
   cover_cta_text: string;
+  cover_image_url: string | null;
 }
 const Index = () => {
   const {
@@ -38,26 +39,35 @@ const Index = () => {
         const {
           data,
           error
-        } = await supabase.from("app_settings").select("cover_enabled, cover_title, cover_subtitle, cover_cta_text").eq("subdomain", formName).single();
+        } = await supabase.from("app_settings").select("cover_enabled, cover_title, cover_subtitle, cover_cta_text, cover_image_url").eq("subdomain", formName).maybeSingle();
+        
         if (error) {
-          // If no settings exist, use defaults
-          if (error.code === 'PGRST116') {
-            setCoverSettings({
-              cover_enabled: false,
-              cover_title: "Bem-vindo",
-              cover_subtitle: "Preencha o formulário e entre em contato conosco",
-              cover_cta_text: "Começar"
-            });
-            setShowCover(false);
-          } else {
-            console.error("Error loading cover settings:", error);
-          }
+          console.error("Error loading cover settings:", error);
+          setCoverSettings({
+            cover_enabled: false,
+            cover_title: "Bem-vindo",
+            cover_subtitle: "Preencha o formulário e entre em contato conosco",
+            cover_cta_text: "Começar",
+            cover_image_url: null
+          });
+          setShowCover(false);
+        } else if (!data) {
+          // No settings exist, use defaults
+          setCoverSettings({
+            cover_enabled: false,
+            cover_title: "Bem-vindo",
+            cover_subtitle: "Preencha o formulário e entre em contato conosco",
+            cover_cta_text: "Começar",
+            cover_image_url: null
+          });
+          setShowCover(false);
         } else {
           setCoverSettings({
             cover_enabled: data.cover_enabled,
             cover_title: data.cover_title,
             cover_subtitle: data.cover_subtitle,
-            cover_cta_text: data.cover_cta_text
+            cover_cta_text: data.cover_cta_text,
+            cover_image_url: data.cover_image_url
           });
           setShowCover(data.cover_enabled);
         }
@@ -80,12 +90,7 @@ const Index = () => {
 
   // Show cover page if enabled and not dismissed
   if (coverSettings?.cover_enabled && showCover) {
-    return <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
-        {/* Logo Display on Cover */}
-        <div className="absolute top-6 left-0 right-0 z-20">
-          <LogoDisplay />
-        </div>
-        
+    return <div className="min-h-screen bg-background">
         {/* Admin button on cover */}
         {isAdmin && <div className="absolute top-6 right-6 z-20">
             <Button variant="outline" size="sm" onClick={() => navigate("/admin")}>
@@ -94,7 +99,13 @@ const Index = () => {
             </Button>
           </div>}
         
-        <CoverPage title={coverSettings.cover_title} subtitle={coverSettings.cover_subtitle} ctaText={coverSettings.cover_cta_text} onStart={handleStartForm} />
+        <CoverPage 
+          title={coverSettings.cover_title} 
+          subtitle={coverSettings.cover_subtitle} 
+          ctaText={coverSettings.cover_cta_text} 
+          onStart={handleStartForm} 
+          imageUrl={coverSettings.cover_image_url || undefined}
+        />
       </div>;
   }
   return <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
