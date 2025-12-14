@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Eye, Plus, Trash2, ArrowUp, ArrowDown, X, Users } from "lucide-react";
+import { Eye, Plus, Trash2, ArrowUp, ArrowDown, X, Users, CheckCircle, Star, Shield, Zap, Heart, Award, ThumbsUp, Clock, Target } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AuthDialog } from "@/components/AuthDialog";
 import { LogoUploader } from "@/components/LogoUploader";
@@ -58,6 +58,11 @@ interface SuccessPage {
   whatsapp_number: string;
   whatsapp_message: string;
 }
+interface CoverTopic {
+  icon: string;
+  text: string;
+}
+
 interface AppSettings {
   id: string;
   whatsapp_number: string;
@@ -73,7 +78,20 @@ interface AppSettings {
   cover_subtitle: string;
   cover_cta_text: string;
   cover_image_url: string | null;
+  cover_topics: CoverTopic[];
 }
+
+const AVAILABLE_ICONS = [
+  { name: "CheckCircle", label: "Check", Icon: CheckCircle },
+  { name: "Star", label: "Estrela", Icon: Star },
+  { name: "Shield", label: "Escudo", Icon: Shield },
+  { name: "Zap", label: "Raio", Icon: Zap },
+  { name: "Heart", label: "Coração", Icon: Heart },
+  { name: "Award", label: "Prêmio", Icon: Award },
+  { name: "ThumbsUp", label: "Positivo", Icon: ThumbsUp },
+  { name: "Clock", label: "Relógio", Icon: Clock },
+  { name: "Target", label: "Alvo", Icon: Target },
+];
 const Admin = () => {
   const {
     user,
@@ -275,6 +293,11 @@ const Admin = () => {
       
       if (!data) {
         // Se não existir, criar configurações padrão
+        const defaultTopics: CoverTopic[] = [
+          { icon: "CheckCircle", text: "Tópico 1" },
+          { icon: "CheckCircle", text: "Tópico 2" },
+          { icon: "CheckCircle", text: "Tópico 3" }
+        ];
         const defaultSettings = {
           subdomain: formName,
           form_name: formName,
@@ -288,21 +311,33 @@ const Admin = () => {
           cover_title: 'Bem-vindo',
           cover_subtitle: 'Preencha o formulário e entre em contato conosco',
           cover_cta_text: 'Começar',
-          cover_image_url: null
+          cover_image_url: null,
+          cover_topics: JSON.parse(JSON.stringify(defaultTopics))
         };
         const {
           data: newData,
           error: insertError
         } = await supabase.from("app_settings").insert([defaultSettings]).select().single();
         if (insertError) throw insertError;
-        setSettings(newData);
+        const parsedTopics = Array.isArray(newData.cover_topics) 
+          ? (newData.cover_topics as unknown as CoverTopic[])
+          : defaultTopics;
+        setSettings({ ...newData, cover_topics: parsedTopics } as AppSettings);
         toast({
           title: "Configurações criadas",
           description: "Configurações padrão foram criadas automaticamente."
         });
         return;
       }
-      setSettings(data);
+      const defaultTopics: CoverTopic[] = [
+        { icon: "CheckCircle", text: "Tópico 1" },
+        { icon: "CheckCircle", text: "Tópico 2" },
+        { icon: "CheckCircle", text: "Tópico 3" }
+      ];
+      const parsedTopics = Array.isArray(data.cover_topics) 
+        ? (data.cover_topics as unknown as CoverTopic[])
+        : defaultTopics;
+      setSettings({ ...data, cover_topics: parsedTopics } as AppSettings);
     } catch (error: any) {
       console.error("Erro ao carregar configurações:", error);
       toast({
@@ -329,7 +364,8 @@ const Admin = () => {
         cover_title: settings.cover_title,
         cover_subtitle: settings.cover_subtitle,
         cover_cta_text: settings.cover_cta_text,
-        cover_image_url: settings.cover_image_url
+        cover_image_url: settings.cover_image_url,
+        cover_topics: JSON.parse(JSON.stringify(settings.cover_topics))
       }).eq("id", settings.id);
       if (error) throw error;
       toast({
@@ -740,6 +776,86 @@ VITE_GTM_ID=GTM-XXXXXXX`}
                   placeholder="Começar"
                   disabled={!settings.cover_enabled}
                 />
+              </div>
+
+              {/* Topic Editor */}
+              <div className="space-y-3">
+                <Label>Tópicos (até 3)</Label>
+                <p className="text-sm text-muted-foreground">Configure os tópicos que aparecem abaixo do subtítulo</p>
+                {settings.cover_topics.map((topic, index) => (
+                  <div key={index} className="flex items-center gap-2">
+                    <Select
+                      value={topic.icon}
+                      onValueChange={(value) => {
+                        const newTopics = [...settings.cover_topics];
+                        newTopics[index] = { ...newTopics[index], icon: value };
+                        updateSettings({ cover_topics: newTopics });
+                      }}
+                      disabled={!settings.cover_enabled}
+                    >
+                      <SelectTrigger className="w-32">
+                        <SelectValue>
+                          {(() => {
+                            const iconItem = AVAILABLE_ICONS.find(i => i.name === topic.icon);
+                            if (iconItem) {
+                              const IconComp = iconItem.Icon;
+                              return <div className="flex items-center gap-2"><IconComp className="h-4 w-4" />{iconItem.label}</div>;
+                            }
+                            return topic.icon;
+                          })()}
+                        </SelectValue>
+                      </SelectTrigger>
+                      <SelectContent>
+                        {AVAILABLE_ICONS.map((iconItem) => (
+                          <SelectItem key={iconItem.name} value={iconItem.name}>
+                            <div className="flex items-center gap-2">
+                              <iconItem.Icon className="h-4 w-4" />
+                              {iconItem.label}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Input 
+                      value={topic.text} 
+                      onChange={(e) => {
+                        const newTopics = [...settings.cover_topics];
+                        newTopics[index] = { ...newTopics[index], text: e.target.value };
+                        updateSettings({ cover_topics: newTopics });
+                      }} 
+                      placeholder={`Tópico ${index + 1}`}
+                      disabled={!settings.cover_enabled}
+                      className="flex-1"
+                    />
+                    {settings.cover_topics.length > 1 && (
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        onClick={() => {
+                          const newTopics = settings.cover_topics.filter((_, i) => i !== index);
+                          updateSettings({ cover_topics: newTopics });
+                        }}
+                        disabled={!settings.cover_enabled}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                ))}
+                {settings.cover_topics.length < 3 && (
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => {
+                      const newTopics = [...settings.cover_topics, { icon: "CheckCircle", text: "" }];
+                      updateSettings({ cover_topics: newTopics });
+                    }}
+                    disabled={!settings.cover_enabled}
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    Adicionar Tópico
+                  </Button>
+                )}
               </div>
 
               <div>

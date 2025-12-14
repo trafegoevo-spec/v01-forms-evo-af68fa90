@@ -21,6 +21,7 @@ export type Database = {
           cover_image_url: string | null
           cover_subtitle: string
           cover_title: string
+          cover_topics: Json | null
           created_at: string
           form_name: string
           gtm_id: string | null
@@ -41,6 +42,7 @@ export type Database = {
           cover_image_url?: string | null
           cover_subtitle?: string
           cover_title?: string
+          cover_topics?: Json | null
           created_at?: string
           form_name?: string
           gtm_id?: string | null
@@ -61,6 +63,7 @@ export type Database = {
           cover_image_url?: string | null
           cover_subtitle?: string
           cover_title?: string
+          cover_topics?: Json | null
           created_at?: string
           form_name?: string
           gtm_id?: string | null
