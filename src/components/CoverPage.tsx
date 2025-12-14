@@ -1,20 +1,33 @@
 import { Button } from "@/components/ui/button";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, CheckCircle, Star, Shield, Zap, Heart, Award, ThumbsUp, Clock, Target } from "lucide-react";
+
+export interface CoverTopic {
+  icon: string;
+  text: string;
+}
 
 interface CoverPageProps {
   title: string;
   subtitle: string;
+  topics: CoverTopic[];
   ctaText: string;
   onStart: () => void;
   imageUrl?: string;
 }
 
-export const CoverPage = ({ title, subtitle, ctaText, onStart, imageUrl }: CoverPageProps) => {
-  // Parse subtitle into bullet points (split by newline or semicolon)
-  const bulletPoints = subtitle
-    .split(/[;\n]/)
-    .map(point => point.trim())
-    .filter(point => point.length > 0);
+const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
+  CheckCircle,
+  Star,
+  Shield,
+  Zap,
+  Heart,
+  Award,
+  ThumbsUp,
+  Clock,
+  Target,
+};
+
+export const CoverPage = ({ title, subtitle, topics, ctaText, onStart, imageUrl }: CoverPageProps) => {
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row relative overflow-hidden bg-background">
@@ -30,22 +43,33 @@ export const CoverPage = ({ title, subtitle, ctaText, onStart, imageUrl }: Cover
         <div className="max-w-xl mx-auto lg:mx-0">
           {/* Title */}
           <h1 
-            className="text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold text-foreground mb-8 leading-tight opacity-0 animate-[slideUp_0.8s_ease-out_0.2s_forwards]"
+            className="text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold text-foreground mb-4 leading-tight opacity-0 animate-[slideUp_0.8s_ease-out_0.2s_forwards]"
           >
             {title}
           </h1>
           
-          {/* Bullet Points List */}
-          <ul className="space-y-3 mb-10 opacity-0 animate-[slideUp_0.8s_ease-out_0.4s_forwards]">
-            {bulletPoints.map((point, index) => (
-              <li 
-                key={index}
-                className="text-lg md:text-xl text-muted-foreground leading-relaxed"
-              >
-                • {point}
-              </li>
-            ))}
-          </ul>
+          {/* Subtitle */}
+          <p className="text-lg md:text-xl text-muted-foreground mb-8 opacity-0 animate-[slideUp_0.8s_ease-out_0.3s_forwards]">
+            {subtitle}
+          </p>
+          
+          {/* Topics with Icons */}
+          {topics.length > 0 && (
+            <div className="flex flex-wrap items-center gap-4 mb-10 opacity-0 animate-[slideUp_0.8s_ease-out_0.4s_forwards]">
+              {topics.map((topic, index) => {
+                const IconComponent = iconMap[topic.icon] || CheckCircle;
+                return (
+                  <div key={index} className="flex items-center gap-2">
+                    <IconComponent className="h-5 w-5 text-primary" />
+                    <span className="text-muted-foreground">{topic.text}</span>
+                    {index < topics.length - 1 && (
+                      <span className="text-muted-foreground/50 ml-2">|</span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
           
           {/* CTA Button */}
           <div className="opacity-0 animate-[slideUp_0.8s_ease-out_0.6s_forwards]">

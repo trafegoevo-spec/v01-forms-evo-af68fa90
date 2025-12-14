@@ -2,17 +2,19 @@ import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { MultiStepFormDynamic } from "@/components/MultiStepFormDynamic";
 import { LogoDisplay } from "@/components/LogoDisplay";
-import { CoverPage } from "@/components/CoverPage";
+import { CoverPage, CoverTopic } from "@/components/CoverPage";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Settings } from "lucide-react";
+
 interface CoverSettings {
   cover_enabled: boolean;
   cover_title: string;
   cover_subtitle: string;
   cover_cta_text: string;
   cover_image_url: string | null;
+  cover_topics: CoverTopic[];
 }
 const Index = () => {
   const {
@@ -39,8 +41,14 @@ const Index = () => {
         const {
           data,
           error
-        } = await supabase.from("app_settings").select("cover_enabled, cover_title, cover_subtitle, cover_cta_text, cover_image_url").eq("subdomain", formName).maybeSingle();
+        } = await supabase.from("app_settings").select("cover_enabled, cover_title, cover_subtitle, cover_cta_text, cover_image_url, cover_topics").eq("subdomain", formName).maybeSingle();
         
+        const defaultTopics: CoverTopic[] = [
+          { icon: "CheckCircle", text: "Tópico 1" },
+          { icon: "CheckCircle", text: "Tópico 2" },
+          { icon: "CheckCircle", text: "Tópico 3" }
+        ];
+
         if (error) {
           console.error("Error loading cover settings:", error);
           setCoverSettings({
@@ -48,26 +56,31 @@ const Index = () => {
             cover_title: "Bem-vindo",
             cover_subtitle: "Preencha o formulário e entre em contato conosco",
             cover_cta_text: "Começar",
-            cover_image_url: null
+            cover_image_url: null,
+            cover_topics: defaultTopics
           });
           setShowCover(false);
         } else if (!data) {
-          // No settings exist, use defaults
           setCoverSettings({
             cover_enabled: false,
             cover_title: "Bem-vindo",
             cover_subtitle: "Preencha o formulário e entre em contato conosco",
             cover_cta_text: "Começar",
-            cover_image_url: null
+            cover_image_url: null,
+            cover_topics: defaultTopics
           });
           setShowCover(false);
         } else {
+          const topics = Array.isArray(data.cover_topics) 
+            ? (data.cover_topics as unknown as CoverTopic[])
+            : defaultTopics;
           setCoverSettings({
             cover_enabled: data.cover_enabled,
             cover_title: data.cover_title,
             cover_subtitle: data.cover_subtitle,
             cover_cta_text: data.cover_cta_text,
-            cover_image_url: data.cover_image_url
+            cover_image_url: data.cover_image_url,
+            cover_topics: topics
           });
           setShowCover(data.cover_enabled);
         }
@@ -101,7 +114,8 @@ const Index = () => {
         
         <CoverPage 
           title={coverSettings.cover_title} 
-          subtitle={coverSettings.cover_subtitle} 
+          subtitle={coverSettings.cover_subtitle}
+          topics={coverSettings.cover_topics}
           ctaText={coverSettings.cover_cta_text} 
           onStart={handleStartForm} 
           imageUrl={coverSettings.cover_image_url || undefined}
