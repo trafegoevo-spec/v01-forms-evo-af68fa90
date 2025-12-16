@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Eye, Plus, Trash2, ArrowUp, ArrowDown, X, Users, CheckCircle, Star, Shield, Zap, Heart, Award, ThumbsUp, Clock, Target } from "lucide-react";
+import { Eye, Plus, Trash2, ArrowUp, ArrowDown, X, Users, CheckCircle, Star, Shield, Zap, Heart, Award, ThumbsUp, Clock, Target, BarChart3 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AuthDialog } from "@/components/AuthDialog";
 import { LogoUploader } from "@/components/LogoUploader";
@@ -687,10 +687,16 @@ const Admin = () => {
   return <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-6">
       <div className="max-w-4xl mx-auto">
         <div className="flex items-center justify-between mb-6">
-          <Button variant="ghost" onClick={() => navigate("/?preview=true")}>
-            <Eye className="mr-2 h-4 w-4" />
-            Visualizar Formulário
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" onClick={() => navigate("/?preview=true")}>
+              <Eye className="mr-2 h-4 w-4" />
+              Visualizar Formulário
+            </Button>
+            <Button variant="ghost" onClick={() => navigate("/relatorio")}>
+              <BarChart3 className="mr-2 h-4 w-4" />
+              Ver Relatório
+            </Button>
+          </div>
           <Button variant="outline" onClick={signOut}>
             Sair
           </Button>

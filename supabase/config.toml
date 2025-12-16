@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.enviar-conversao-educa]
 verify_jwt = false
+
+[functions.salvar-parcial]
+verify_jwt = false
