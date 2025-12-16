@@ -1,5 +1,5 @@
 // Arquivo corrigido: MultiStepFormDynamic.tsx
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -63,6 +63,93 @@ export const MultiStepFormDynamic = () => {
     toast
   } = useToast();
   const formName = import.meta.env.VITE_FORM_NAME || "default";
+  
+  // Generate unique session ID for analytics tracking
+  const sessionId = useMemo(() => crypto.randomUUID(), []);
+  
+  // Track form start (only once)
+  useEffect(() => {
+    const storageKey = `form_session_${formName}`;
+    const existingSession = sessionStorage.getItem(storageKey);
+    
+    // Only track if this is a new session
+    if (!existingSession) {
+      sessionStorage.setItem(storageKey, JSON.stringify({
+        sessionId,
+        startedAt: new Date().toISOString(),
+        stepReached: 1,
+        partialData: {}
+      }));
+      
+      // Send form_started event to analytics
+      supabase.from("form_analytics").insert({
+        session_id: sessionId,
+        subdomain: formName,
+        event_type: "form_started",
+        step_reached: 1
+      }).then(({ error }) => {
+        if (error) console.error("Error tracking form start:", error);
+      });
+    }
+  }, [sessionId, formName]);
+  
+  // Update localStorage on step changes (no Supabase request)
+  useEffect(() => {
+    const storageKey = `form_session_${formName}`;
+    const cached = sessionStorage.getItem(storageKey);
+    if (cached && !isSuccess) {
+      try {
+        const data = JSON.parse(cached);
+        data.stepReached = step;
+        data.partialData = form.getValues();
+        sessionStorage.setItem(storageKey, JSON.stringify(data));
+      } catch (e) {
+        console.error("Error updating session storage:", e);
+      }
+    }
+  }, [step, formName, isSuccess]);
+  
+  // Send partial data on page unload (using sendBeacon for reliability)
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      const storageKey = `form_session_${formName}`;
+      const cached = sessionStorage.getItem(storageKey);
+      
+      if (cached && !isSuccess) {
+        try {
+          const data = JSON.parse(cached);
+          const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+          
+          navigator.sendBeacon(
+            `${supabaseUrl}/functions/v1/salvar-parcial`,
+            JSON.stringify({
+              sessionId: data.sessionId,
+              subdomain: formName,
+              stepReached: data.stepReached,
+              partialData: data.partialData
+            })
+          );
+        } catch (e) {
+          console.error("Error sending partial data:", e);
+        }
+      }
+    };
+    
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [formName, isSuccess]);
+  
+  // Track WhatsApp click
+  const trackWhatsAppClick = useCallback(() => {
+    supabase.from("form_analytics").insert({
+      session_id: sessionId,
+      subdomain: formName,
+      event_type: "whatsapp_clicked"
+    }).then(({ error }) => {
+      if (error) console.error("Error tracking WhatsApp click:", error);
+    });
+  }, [sessionId, formName]);
+  
   useEffect(() => {
     loadQuestions();
     loadSettings();
@@ -437,6 +524,20 @@ export const MultiStepFormDynamic = () => {
           timestamp: new Date().toISOString()
         });
       }
+      
+      // Track form_completed event
+      supabase.from("form_analytics").insert({
+        session_id: sessionId,
+        subdomain: formName,
+        event_type: "form_completed",
+        step_reached: uniqueSteps.length
+      }).then(({ error }) => {
+        if (error) console.error("Error tracking form completion:", error);
+      });
+      
+      // Clear session storage on success
+      sessionStorage.removeItem(`form_session_${formName}`);
+      
       setSubmittedData(data);
       setIsSuccess(true);
       setStep(totalSteps);
@@ -593,6 +694,7 @@ export const MultiStepFormDynamic = () => {
             {successConfig?.whatsapp_enabled && <Button type="button" onClick={e => {
             e.preventDefault();
             e.stopPropagation();
+            trackWhatsAppClick();
             const phoneNumber = rotatedWhatsApp?.number ? rotatedWhatsApp.number.replace(/\D/g, "") : (successConfig.whatsapp_number || "").replace(/\D/g, "");
             const message = encodeURIComponent(successConfig.whatsapp_message || "Olá! Preenchi o formulário.");
             window.open(`https://wa.me/${phoneNumber}?text=${message}`, "_blank");

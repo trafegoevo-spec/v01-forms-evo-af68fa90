@@ -151,6 +151,39 @@ export type Database = {
           },
         ]
       }
+      form_analytics: {
+        Row: {
+          created_at: string
+          event_type: string
+          id: string
+          partial_data: Json | null
+          session_id: string
+          step_reached: number | null
+          subdomain: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          id?: string
+          partial_data?: Json | null
+          session_id: string
+          step_reached?: number | null
+          subdomain?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          partial_data?: Json | null
+          session_id?: string
+          step_reached?: number | null
+          subdomain?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       form_b_respostas: {
         Row: {
           created_at: string
