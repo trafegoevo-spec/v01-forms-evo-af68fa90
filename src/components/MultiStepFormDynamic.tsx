@@ -1,5 +1,5 @@
 // Arquivo corrigido: MultiStepFormDynamic.tsx
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -63,6 +63,9 @@ export const MultiStepFormDynamic = () => {
     toast
   } = useToast();
   const formName = import.meta.env.VITE_FORM_NAME || "default";
+  
+  // Ref to track if this is a final submit (Finalizar button) vs conditional logic
+  const isFinalSubmitRef = useRef(false);
   
   // Generate unique session ID for analytics tracking
   const sessionId = useMemo(() => crypto.randomUUID(), []);
@@ -439,6 +442,7 @@ export const MultiStepFormDynamic = () => {
           if (successPage) {
             setActiveSuccessPage(successPage);
           }
+          isFinalSubmitRef.current = false; // Conditional logic, NOT final submit
           form.handleSubmit(onSubmit)();
           return;
         } else if (condition.action === "skip_to_step" && condition.target_step) {
@@ -458,7 +462,12 @@ export const MultiStepFormDynamic = () => {
   const handleKeyDown = async (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
       e.preventDefault();
-      if (step < uniqueSteps.length) await nextStep();else form.handleSubmit(onSubmit)();
+      if (step < uniqueSteps.length) {
+        await nextStep();
+      } else {
+        isFinalSubmitRef.current = true; // Enter on last step = final submit
+        form.handleSubmit(onSubmit)();
+      }
     }
   };
   const prevStep = () => {
@@ -513,9 +522,8 @@ export const MultiStepFormDynamic = () => {
         });
       }
 
-      // GTM event só dispara quando realmente é o último step (botão Finalizar)
-      const isLastStep = step === uniqueSteps.length;
-      if (isLastStep && typeof window !== "undefined") {
+      // GTM event APENAS quando isFinalSubmitRef=true (botão Finalizar clicado)
+      if (isFinalSubmitRef.current && typeof window !== "undefined") {
         (window as any).dataLayer = (window as any).dataLayer || [];
         (window as any).dataLayer.push({
           event: "gtm.formSubmit",
@@ -524,6 +532,9 @@ export const MultiStepFormDynamic = () => {
           timestamp: new Date().toISOString()
         });
       }
+      
+      // Reset ref after use
+      isFinalSubmitRef.current = false;
       
       // Track form_completed event
       supabase.from("form_analytics").insert({
@@ -564,6 +575,7 @@ export const MultiStepFormDynamic = () => {
           if (successPage) {
             setActiveSuccessPage(successPage);
           }
+          isFinalSubmitRef.current = false; // Conditional logic, NOT final submit
           setTimeout(() => form.handleSubmit(onSubmit)(), 300);
           return;
         } else if (condition.action === "skip_to_step" && condition.target_step) {
@@ -591,6 +603,7 @@ export const MultiStepFormDynamic = () => {
           if (successPage) {
             setActiveSuccessPage(successPage);
           }
+          isFinalSubmitRef.current = false; // Conditional logic, NOT final submit
           setTimeout(() => form.handleSubmit(onSubmit)(), 300);
           return;
         } else if (condition.action === "skip_to_step" && condition.target_step) {
@@ -742,7 +755,10 @@ export const MultiStepFormDynamic = () => {
           <Progress value={step / uniqueSteps.length * 100} className="h-2" />
         </div>}
 
-      <form onSubmit={form.handleSubmit(onSubmit)}>
+      <form onSubmit={(e) => {
+        isFinalSubmitRef.current = true; // Finalizar button = final submit
+        form.handleSubmit(onSubmit)(e);
+      }}>
         <div className="min-h-[200px] mb-4">{renderStep()}</div>
 
         {step < totalSteps && <div className="flex gap-3">
