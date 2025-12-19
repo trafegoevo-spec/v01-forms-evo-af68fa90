@@ -64,8 +64,8 @@ export const MultiStepFormDynamic = () => {
   } = useToast();
   const formName = import.meta.env.VITE_FORM_NAME || "default";
   
-  // Ref to track if this is a final submit (Finalizar button) vs conditional logic
-  const isFinalSubmitRef = useRef(false);
+  // Flag to track if GTM should fire (only on real final submit)
+  const shouldFireGtmRef = useRef(false);
   
   // Generate unique session ID for analytics tracking
   const sessionId = useMemo(() => crypto.randomUUID(), []);
@@ -442,7 +442,7 @@ export const MultiStepFormDynamic = () => {
           if (successPage) {
             setActiveSuccessPage(successPage);
           }
-          isFinalSubmitRef.current = false; // Conditional logic, NOT final submit
+          shouldFireGtmRef.current = false; // Conditional logic, NOT final submit
           form.handleSubmit(onSubmit)();
           return;
         } else if (condition.action === "skip_to_step" && condition.target_step) {
@@ -465,7 +465,7 @@ export const MultiStepFormDynamic = () => {
       if (step < uniqueSteps.length) {
         await nextStep();
       } else {
-        isFinalSubmitRef.current = true; // Enter on last step = final submit
+        shouldFireGtmRef.current = true; // Enter on last step = final submit
         form.handleSubmit(onSubmit)();
       }
     }
@@ -522,8 +522,8 @@ export const MultiStepFormDynamic = () => {
         });
       }
 
-      // GTM event APENAS quando isFinalSubmitRef=true (botão Finalizar clicado)
-      if (isFinalSubmitRef.current && typeof window !== "undefined") {
+      // GTM event APENAS quando shouldFireGtmRef=true (botão Finalizar clicado)
+      if (shouldFireGtmRef.current && typeof window !== "undefined") {
         (window as any).dataLayer = (window as any).dataLayer || [];
         (window as any).dataLayer.push({
           event: "gtm.formSubmit",
@@ -534,7 +534,7 @@ export const MultiStepFormDynamic = () => {
       }
       
       // Reset ref after use
-      isFinalSubmitRef.current = false;
+      shouldFireGtmRef.current = false;
       
       // Track form_completed event
       supabase.from("form_analytics").insert({
@@ -575,7 +575,7 @@ export const MultiStepFormDynamic = () => {
           if (successPage) {
             setActiveSuccessPage(successPage);
           }
-          isFinalSubmitRef.current = false; // Conditional logic, NOT final submit
+          shouldFireGtmRef.current = false; // Conditional logic, NOT final submit
           setTimeout(() => form.handleSubmit(onSubmit)(), 300);
           return;
         } else if (condition.action === "skip_to_step" && condition.target_step) {
@@ -603,7 +603,7 @@ export const MultiStepFormDynamic = () => {
           if (successPage) {
             setActiveSuccessPage(successPage);
           }
-          isFinalSubmitRef.current = false; // Conditional logic, NOT final submit
+          shouldFireGtmRef.current = false; // Conditional logic, NOT final submit
           setTimeout(() => form.handleSubmit(onSubmit)(), 300);
           return;
         } else if (condition.action === "skip_to_step" && condition.target_step) {
@@ -755,10 +755,7 @@ export const MultiStepFormDynamic = () => {
           <Progress value={step / uniqueSteps.length * 100} className="h-2" />
         </div>}
 
-      <form onSubmit={(e) => {
-        isFinalSubmitRef.current = true; // Finalizar button = final submit
-        form.handleSubmit(onSubmit)(e);
-      }}>
+      <form onSubmit={(e) => e.preventDefault()}>
         <div className="min-h-[200px] mb-4">{renderStep()}</div>
 
         {step < totalSteps && <div className="flex gap-3">
@@ -770,7 +767,10 @@ export const MultiStepFormDynamic = () => {
             {step < uniqueSteps.length ? <Button type="button" onClick={nextStep} disabled={isSubmitting} className="flex-1 h-12 text-base font-sans">
                 Próximo
                 <ArrowRight className="ml-2 h-4 w-4" />
-              </Button> : <Button type="submit" className="flex-1 h-12" disabled={isSubmitting}>
+              </Button> : <Button type="button" onClick={() => {
+                shouldFireGtmRef.current = true; // Finalizar button = final submit
+                form.handleSubmit(onSubmit)();
+              }} className="flex-1 h-12" disabled={isSubmitting}>
                 {isSubmitting ? <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Enviando...
