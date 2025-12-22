@@ -756,24 +756,66 @@ export const MultiStepFormDynamic = () => {
       <form onSubmit={e => e.preventDefault()}>
         <div className="min-h-[200px] mb-4">{renderStep()}</div>
 
-        {step < totalSteps && <div className="flex gap-3">
-            {step > 1 && <Button type="button" variant="outline" onClick={prevStep} className="flex-1 h-12" disabled={isSubmitting}>
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Voltar
-              </Button>}
+        {step < totalSteps && <div className="flex items-center gap-3">
+            {step > 1 && (
+              <button 
+                type="button" 
+                onClick={prevStep} 
+                disabled={isSubmitting}
+                className="p-2 text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+                aria-label="Voltar"
+              >
+                <ArrowLeft className="h-6 w-6" />
+              </button>
+            )}
 
-            {step < uniqueSteps.length ? <Button type="button" onClick={nextStep} disabled={isSubmitting} className="flex-1 h-12 text-base font-sans">
-                Próximo
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button> : <Button type="button" onClick={() => {
-          shouldFireGtmRef.current = true; // Finalizar button = final submit
-          form.handleSubmit(onSubmit)();
-        }} className="flex-1 h-12" disabled={isSubmitting}>
-                {isSubmitting ? <>
+            {step < uniqueSteps.length ? (
+              <Button 
+                type="button" 
+                onClick={nextStep} 
+                disabled={isSubmitting || !currentQuestions.every(q => {
+                  const value = form.watch(q.field_name);
+                  const isRequired = q.required !== false;
+                  if (!isRequired) return true;
+                  if (!value || value.trim() === '' || value === '55 ') return false;
+                  const fieldState = form.getFieldState(q.field_name);
+                  return !fieldState.invalid;
+                })} 
+                className="flex-1 h-14 text-base font-semibold rounded-2xl"
+              >
+                Continuar
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
+            ) : (
+              <Button 
+                type="button" 
+                onClick={() => {
+                  shouldFireGtmRef.current = true;
+                  form.handleSubmit(onSubmit)();
+                }} 
+                className="flex-1 h-14 text-base font-semibold rounded-2xl" 
+                disabled={isSubmitting || !currentQuestions.every(q => {
+                  const value = form.watch(q.field_name);
+                  const isRequired = q.required !== false;
+                  if (!isRequired) return true;
+                  if (!value || value.trim() === '' || value === '55 ') return false;
+                  const fieldState = form.getFieldState(q.field_name);
+                  return !fieldState.invalid;
+                })}
+              >
+                {isSubmitting ? (
+                  <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Enviando...
-                  </> : "Finalizar"}
-              </Button>}
+                  </>
+                ) : (
+                  <>
+                    Finalizar
+                    <ArrowRight className="ml-2 h-5 w-5" />
+                  </>
+                )}
+              </Button>
+            )}
           </div>}
       </form>
     </div>;
