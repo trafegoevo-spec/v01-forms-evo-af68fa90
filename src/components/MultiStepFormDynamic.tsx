@@ -742,7 +742,7 @@ export const MultiStepFormDynamic = () => {
       {step < totalSteps && <div className="mb-8">
           <div className="flex justify-between items-center mb-2">
             <span className="text-sm font-extrabold text-primary">
-              Etapa {step} de {uniqueSteps.length}
+              {step} de {uniqueSteps.length}
             </span>
 
             <span className="text-sm font-bold text-primary">
