@@ -63,18 +63,18 @@ export const MultiStepFormDynamic = () => {
     toast
   } = useToast();
   const formName = import.meta.env.VITE_FORM_NAME || "default";
-  
+
   // Flag to track if GTM should fire (only on real final submit)
   const shouldFireGtmRef = useRef(false);
-  
+
   // Generate unique session ID for analytics tracking
   const sessionId = useMemo(() => crypto.randomUUID(), []);
-  
+
   // Track form start (only once)
   useEffect(() => {
     const storageKey = `form_session_${formName}`;
     const existingSession = sessionStorage.getItem(storageKey);
-    
+
     // Only track if this is a new session
     if (!existingSession) {
       sessionStorage.setItem(storageKey, JSON.stringify({
@@ -83,19 +83,21 @@ export const MultiStepFormDynamic = () => {
         stepReached: 1,
         partialData: {}
       }));
-      
+
       // Send form_started event to analytics
       supabase.from("form_analytics").insert({
         session_id: sessionId,
         subdomain: formName,
         event_type: "form_started",
         step_reached: 1
-      }).then(({ error }) => {
+      }).then(({
+        error
+      }) => {
         if (error) console.error("Error tracking form start:", error);
       });
     }
   }, [sessionId, formName]);
-  
+
   // Update localStorage on step changes (no Supabase request)
   useEffect(() => {
     const storageKey = `form_session_${formName}`;
@@ -111,48 +113,43 @@ export const MultiStepFormDynamic = () => {
       }
     }
   }, [step, formName, isSuccess]);
-  
+
   // Send partial data on page unload (using sendBeacon for reliability)
   useEffect(() => {
     const handleBeforeUnload = () => {
       const storageKey = `form_session_${formName}`;
       const cached = sessionStorage.getItem(storageKey);
-      
       if (cached && !isSuccess) {
         try {
           const data = JSON.parse(cached);
           const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-          
-          navigator.sendBeacon(
-            `${supabaseUrl}/functions/v1/salvar-parcial`,
-            JSON.stringify({
-              sessionId: data.sessionId,
-              subdomain: formName,
-              stepReached: data.stepReached,
-              partialData: data.partialData
-            })
-          );
+          navigator.sendBeacon(`${supabaseUrl}/functions/v1/salvar-parcial`, JSON.stringify({
+            sessionId: data.sessionId,
+            subdomain: formName,
+            stepReached: data.stepReached,
+            partialData: data.partialData
+          }));
         } catch (e) {
           console.error("Error sending partial data:", e);
         }
       }
     };
-    
     window.addEventListener("beforeunload", handleBeforeUnload);
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, [formName, isSuccess]);
-  
+
   // Track WhatsApp click
   const trackWhatsAppClick = useCallback(() => {
     supabase.from("form_analytics").insert({
       session_id: sessionId,
       subdomain: formName,
       event_type: "whatsapp_clicked"
-    }).then(({ error }) => {
+    }).then(({
+      error
+    }) => {
       if (error) console.error("Error tracking WhatsApp click:", error);
     });
   }, [sessionId, formName]);
-  
   useEffect(() => {
     loadQuestions();
     loadSettings();
@@ -532,23 +529,24 @@ export const MultiStepFormDynamic = () => {
           timestamp: new Date().toISOString()
         });
       }
-      
+
       // Reset ref after use
       shouldFireGtmRef.current = false;
-      
+
       // Track form_completed event
       supabase.from("form_analytics").insert({
         session_id: sessionId,
         subdomain: formName,
         event_type: "form_completed",
         step_reached: uniqueSteps.length
-      }).then(({ error }) => {
+      }).then(({
+        error
+      }) => {
         if (error) console.error("Error tracking form completion:", error);
       });
-      
+
       // Clear session storage on success
       sessionStorage.removeItem(`form_session_${formName}`);
-      
       setSubmittedData(data);
       setIsSuccess(true);
       setStep(totalSteps);
@@ -743,7 +741,7 @@ export const MultiStepFormDynamic = () => {
   return <div className="w-full max-w-2xl mx-auto px-[5px] py-[20px]">
       {step < totalSteps && <div className="mb-8">
           <div className="flex justify-between items-center mb-2">
-            <span className="text-sm font-medium text-muted-foreground">
+            <span className="text-sm text-muted font-extrabold">
               Etapa {step} de {uniqueSteps.length}
             </span>
 
@@ -755,7 +753,7 @@ export const MultiStepFormDynamic = () => {
           <Progress value={step / uniqueSteps.length * 100} className="h-2" />
         </div>}
 
-      <form onSubmit={(e) => e.preventDefault()}>
+      <form onSubmit={e => e.preventDefault()}>
         <div className="min-h-[200px] mb-4">{renderStep()}</div>
 
         {step < totalSteps && <div className="flex gap-3">
@@ -768,9 +766,9 @@ export const MultiStepFormDynamic = () => {
                 Próximo
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button> : <Button type="button" onClick={() => {
-                shouldFireGtmRef.current = true; // Finalizar button = final submit
-                form.handleSubmit(onSubmit)();
-              }} className="flex-1 h-12" disabled={isSubmitting}>
+          shouldFireGtmRef.current = true; // Finalizar button = final submit
+          form.handleSubmit(onSubmit)();
+        }} className="flex-1 h-12" disabled={isSubmitting}>
                 {isSubmitting ? <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Enviando...
