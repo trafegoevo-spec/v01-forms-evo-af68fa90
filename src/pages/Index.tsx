@@ -118,7 +118,6 @@ const Index = () => {
           topics={coverSettings.cover_topics}
           ctaText={coverSettings.cover_cta_text} 
           onStart={handleStartForm} 
-          imageUrl={coverSettings.cover_image_url || undefined}
         />
       </div>;
   }
