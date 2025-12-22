@@ -18,7 +18,7 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    --background: 0 0% 96%;
+    --background: 0 0% 98%;
     --foreground: 0 0% 9%;
 
     --card: 0 0% 98%;
@@ -248,8 +248,7 @@ All colors MUST be HSL.
 }
 
 .typeform-input:focus {
-  @apply ring-2 ring-primary/30 border-primary shadow-lg;
-  transform: translateY(-2px);
+  @apply border-primary shadow-sm outline-none ring-0;
 }
 
 /* Button hover effects */

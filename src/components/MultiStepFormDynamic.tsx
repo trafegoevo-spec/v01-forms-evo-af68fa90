@@ -623,10 +623,10 @@ export const MultiStepFormDynamic = () => {
     const errorMessage = form.formState.errors[question.field_name]?.message as string;
     
     // Underline-style input classes (like Typeform reference)
-    const inputClasses = "h-14 text-2xl md:text-3xl bg-transparent border-0 border-b-2 border-primary rounded-none px-0 focus:outline-none focus:ring-0 focus:border-primary placeholder:text-muted-foreground/40 transition-all duration-300";
+    const inputClasses = "h-14 text-2xl md:text-3xl bg-transparent border-0 border-b-2 border-muted rounded-none px-0 focus:outline-none focus:ring-0 focus:border-primary placeholder:text-muted-foreground/40 transition-all duration-300";
     
     return (
-      <div key={question.id} className="space-y-8 opacity-0 animate-slide-up">
+      <div key={question.id} className="space-y-4 opacity-0 animate-slide-up">
         {/* Step number indicator */}
         <div className="flex items-center gap-2 text-primary font-medium">
           <span className="text-lg">{step}.</span>
@@ -646,7 +646,7 @@ export const MultiStepFormDynamic = () => {
         </div>
 
         {/* Input field */}
-        <div className="space-y-4">
+        <div className="space-y-3">
           {question.input_type === "buttons" && question.options.length > 0 ? (
             <div className="grid gap-3">
               {question.options.map((option, idx) => {
@@ -902,7 +902,7 @@ export const MultiStepFormDynamic = () => {
     if (!currentQuestions || currentQuestions.length === 0) return null;
     
     return (
-      <div className="space-y-8" key={`step-${step}`}>
+      <div className="space-y-6" key={`step-${step}`}>
         {currentQuestions.map((question, index) => renderQuestionInput(question, index === 0))}
       </div>
     );
@@ -942,10 +942,10 @@ export const MultiStepFormDynamic = () => {
       )}
 
       {/* Main form content - centered vertically */}
-      <div className="flex-1 flex items-center justify-center px-6 py-12">
+      <div className="flex-1 flex items-center justify-center px-6 py-6 md:py-10">
         <div className="w-full max-w-xl">
           <form onSubmit={(e) => e.preventDefault()}>
-            <div className="min-h-[320px] mb-10">
+            <div className="mb-6">
               {renderStep()}
             </div>
 
