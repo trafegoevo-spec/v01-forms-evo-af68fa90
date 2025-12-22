@@ -743,37 +743,40 @@ export const MultiStepFormDynamic = () => {
 
       // Use active success page if set, otherwise default settings
       const successConfig = activeSuccessPage || settings;
-      return <div className="space-y-6 text-center">
-          <div className="text-6xl">🎉</div>
-
+      return <div className="space-y-6 text-center py-8">
           <div>
-            <h2 className="text-3xl font-bold text-foreground mb-3">
-              {successConfig?.success_title || successConfig?.title || "Obrigado"}, {firstName}!
+            <h2 className="text-3xl font-bold text-foreground mb-4">
+              Obrigado, {firstName}
             </h2>
 
-            <p className="text-lg text-muted-foreground">
-              {successConfig?.success_description || successConfig?.description || "Recebemos suas informações com sucesso!"}
+            <p className="text-lg text-muted-foreground leading-relaxed">
+              Recebemos suas informações com sucesso. Agora vamos continuar a conversa no WhatsApp para te ajudar ainda melhor.
             </p>
           </div>
 
-          <div className="bg-muted/30 rounded-lg p-8 mt-6">
-            <img src={whatsappIcon} alt="WhatsApp" className="w-16 h-16 mx-auto mb-4" />
-
-            <p className="text-base text-foreground leading-relaxed mb-4">
-              {successConfig?.success_subtitle || successConfig?.subtitle || "Em breve entraremos em contato."}
-            </p>
-
-            {successConfig?.whatsapp_enabled && <Button type="button" onClick={e => {
-            e.preventDefault();
-            e.stopPropagation();
-            trackWhatsAppClick();
-            const phoneNumber = rotatedWhatsApp?.number ? rotatedWhatsApp.number.replace(/\D/g, "") : (successConfig.whatsapp_number || "").replace(/\D/g, "");
-            const message = encodeURIComponent(successConfig.whatsapp_message || "Olá! Preenchi o formulário.");
-            window.open(`https://wa.me/${phoneNumber}?text=${message}`, "_blank");
-          }} className="w-full h-12 bg-green-600 hover:bg-green-700 text-white">
-                Conversar no WhatsApp
-              </Button>}
-          </div>
+          {successConfig?.whatsapp_enabled && (
+            <div className="mt-8">
+              <Button 
+                type="button" 
+                onClick={e => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  trackWhatsAppClick();
+                  const phoneNumber = rotatedWhatsApp?.number ? rotatedWhatsApp.number.replace(/\D/g, "") : (successConfig.whatsapp_number || "").replace(/\D/g, "");
+                  const message = encodeURIComponent(successConfig.whatsapp_message || "Olá! Preenchi o formulário.");
+                  window.open(`https://wa.me/${phoneNumber}?text=${message}`, "_blank");
+                }} 
+                className="w-full h-14 bg-green-600 hover:bg-green-700 text-white text-base font-semibold rounded-2xl"
+              >
+                <img src={whatsappIcon} alt="WhatsApp" className="w-6 h-6 mr-2" />
+                Continuar conversa no WhatsApp
+              </Button>
+              
+              <p className="text-sm text-muted-foreground mt-3">
+                Você será redirecionado para o WhatsApp.
+              </p>
+            </div>
+          )}
         </div>;
     }
     if (!currentQuestions || currentQuestions.length === 0) return null;
