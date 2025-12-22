@@ -908,12 +908,22 @@ export const MultiStepFormDynamic = () => {
   }
 
   return (
-    <div className="w-full max-w-2xl mx-auto px-6 py-8">
-      {/* Barra de progresso discreta */}
+    <div className="w-full max-w-2xl mx-auto px-6 py-8" style={{ backgroundColor: '#F7F7F7' }}>
+      {/* Barra de progresso com % e etapa */}
       {step < totalSteps && (
-        <div className="mb-10">
-          {/* Progress bar minimalista */}
-          <div className="h-1 bg-muted rounded-full overflow-hidden">
+        <div className="mb-6">
+          {/* Indicador de etapa e porcentagem */}
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium text-muted-foreground">
+              Etapa {step} de {uniqueSteps.length}
+            </span>
+            <span className="text-sm font-medium text-primary">
+              {progressPercentage}%
+            </span>
+          </div>
+          
+          {/* Progress bar */}
+          <div className="h-2 bg-muted rounded-full overflow-hidden">
             <div 
               className="h-full bg-primary transition-all duration-500 ease-out rounded-full"
               style={{ width: `${progressPercentage}%` }}
@@ -921,8 +931,8 @@ export const MultiStepFormDynamic = () => {
           </div>
           
           {/* Mensagem de encorajamento */}
-          <div className={`mt-4 text-center transition-all duration-300 ${showEncouragement ? 'opacity-100' : 'opacity-0'}`}>
-            <p className="text-primary font-medium">
+          <div className={`mt-3 text-center transition-all duration-300 ${showEncouragement ? 'opacity-100' : 'opacity-0'}`}>
+            <p className="text-primary font-medium text-sm">
               {getEncouragementMessage(step, uniqueSteps.length)}
             </p>
           </div>
@@ -957,10 +967,10 @@ export const MultiStepFormDynamic = () => {
                 type="button"
                 onClick={nextStep}
                 disabled={isSubmitting || isTransitioning}
-                className="h-14 px-8 text-base font-medium rounded-xl"
+                className="h-16 px-10 text-lg font-semibold rounded-xl min-w-[180px]"
               >
                 Continuar
-                <ArrowRight className="ml-2 h-4 w-4" />
+                <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             ) : (
               <Button
@@ -969,12 +979,12 @@ export const MultiStepFormDynamic = () => {
                   shouldFireGtmRef.current = true;
                   form.handleSubmit(onSubmit)();
                 }}
-                className="h-14 px-8 text-base font-medium rounded-xl"
+                className="h-16 px-10 text-lg font-semibold rounded-xl min-w-[180px]"
                 disabled={isSubmitting}
               >
                 {isSubmitting ? (
                   <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                     Enviando...
                   </>
                 ) : (
