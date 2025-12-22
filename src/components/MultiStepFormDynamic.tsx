@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, ArrowRight, ArrowLeft } from "lucide-react";
+import { Loader2, ArrowRight, ArrowLeft, Check, X } from "lucide-react";
 import whatsappIcon from "@/assets/whatsapp.png";
 import { Progress } from "@/components/ui/progress";
 interface ConditionalRule {
@@ -618,15 +618,35 @@ export const MultiStepFormDynamic = () => {
         setTimeout(() => nextStep(), 300);
       }
     };
-    return <div key={question.id} className="space-y-4">
+    const fieldValue = form.watch(question.field_name);
+    const fieldState = form.getFieldState(question.field_name, form.formState);
+    const isRequired = question.required !== false;
+    const hasValue = fieldValue && fieldValue.trim() !== '' && fieldValue !== '55 ';
+    const isValid = hasValue && !fieldState.invalid;
+    const isInvalid = hasValue && fieldState.invalid;
+
+    // Get validation feedback message
+    const getValidationFeedback = () => {
+      const fieldName = question.field_name.toLowerCase();
+      if (fieldName.includes("cpf")) return { valid: "CPF válido!", invalid: "CPF inválido" };
+      if (fieldName.includes("cnpj")) return { valid: "CNPJ válido!", invalid: "CNPJ inválido" };
+      if (fieldName.includes("email")) return { valid: "Email válido!", invalid: "Email inválido" };
+      if (fieldName.includes("whatsapp") || fieldName.includes("telefone")) return { valid: "Telefone válido!", invalid: "Telefone inválido" };
+      if (fieldName.includes("placa")) return { valid: "Placa válida!", invalid: "Placa inválida" };
+      return { valid: "Campo válido!", invalid: "Campo inválido" };
+    };
+
+    const feedback = getValidationFeedback();
+
+    return <div key={question.id} className="space-y-2">
         <div>
           <h2 className="font-bold text-foreground md:text-4xl text-3xl text-left">{question.question}</h2>
-          {question.subtitle && <label className="block font-medium text-muted-foreground mt-2 text-base">
+          {question.subtitle && <label className="block font-medium text-muted-foreground mt-1 text-base">
               {question.subtitle}
             </label>}
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-1">
           {question.input_type === "buttons" && question.options.length > 0 ? <div className="grid gap-2">
               {question.options.map(option => {
             const isSelected = form.watch(question.field_name) === option;
@@ -635,7 +655,7 @@ export const MultiStepFormDynamic = () => {
                   </Button>;
           })}
             </div> : question.input_type === "select" && question.options.length > 0 ? <Select key={`select-${question.field_name}-${step}`} value={form.watch(question.field_name)} onValueChange={handleSelectChange}>
-              <SelectTrigger className="h-12 text-base">
+              <SelectTrigger className="h-14 text-base rounded-xl border-2">
                 <SelectValue placeholder="Selecione uma opção" />
               </SelectTrigger>
               <SelectContent>
@@ -643,35 +663,76 @@ export const MultiStepFormDynamic = () => {
                     {option}
                   </SelectItem>)}
               </SelectContent>
-            </Select> : question.input_type === "password" ? <Input key={`input-${question.field_name}-${step}`} type="text" placeholder={question.input_placeholder || `Digite ${question.question.toLowerCase()}`} className="h-12 text-base" autoFocus={isFirst} autoComplete="off" value={form.watch(question.field_name) || ""} onChange={e => form.setValue(question.field_name, e.target.value, {
+            </Select> : question.input_type === "password" ? <div className="relative">
+              <Input key={`input-${question.field_name}-${step}`} type="text" placeholder={question.input_placeholder || `Digite ${question.question.toLowerCase()}`} className={`h-14 text-base rounded-xl border-2 pr-12 ${isValid ? 'border-green-500' : isInvalid ? 'border-destructive' : ''}`} autoFocus={isFirst} autoComplete="off" value={form.watch(question.field_name) || ""} onChange={e => form.setValue(question.field_name, e.target.value, {
           shouldValidate: true
-        })} onKeyDown={handleKeyDown} /> : question.field_name.toLowerCase().includes("whatsapp") || question.field_name.toLowerCase().includes("telefone") ? <Input key={`input-${question.field_name}-${step}`} type="tel" placeholder={question.input_placeholder || "55 (99) 99999-9999"} className="h-12 text-base" autoFocus={isFirst} autoComplete="off" maxLength={question.max_length || 19} value={form.watch(question.field_name) || "55 "} onChange={e => {
+        })} onKeyDown={handleKeyDown} />
+              {isValid && <div className="absolute right-3 top-1/2 -translate-y-1/2 bg-green-500 rounded-full p-1">
+                <Check className="h-4 w-4 text-white" />
+              </div>}
+            </div> : question.field_name.toLowerCase().includes("whatsapp") || question.field_name.toLowerCase().includes("telefone") ? <div className="relative">
+              <Input key={`input-${question.field_name}-${step}`} type="tel" placeholder={question.input_placeholder || "55 (99) 99999-9999"} className={`h-14 text-base rounded-xl border-2 pr-12 ${isValid ? 'border-green-500' : isInvalid ? 'border-destructive' : ''}`} autoFocus={isFirst} autoComplete="off" maxLength={question.max_length || 19} value={form.watch(question.field_name) || "55 "} onChange={e => {
           const formatted = formatWhatsApp(e.target.value);
           form.setValue(question.field_name, formatted, {
             shouldValidate: true
           });
-        }} onKeyDown={handleKeyDown} /> : question.field_name.toLowerCase().includes("placa") ? <Input key={`input-${question.field_name}-${step}`} type="text" placeholder={question.input_placeholder || "ABC-1D23"} className="h-12 text-base uppercase" autoFocus={isFirst} autoComplete="off" maxLength={8} value={form.watch(question.field_name) || ""} onChange={e => {
+        }} onKeyDown={handleKeyDown} />
+              {isValid && <div className="absolute right-3 top-1/2 -translate-y-1/2 bg-green-500 rounded-full p-1">
+                <Check className="h-4 w-4 text-white" />
+              </div>}
+            </div> : question.field_name.toLowerCase().includes("placa") ? <div className="relative">
+              <Input key={`input-${question.field_name}-${step}`} type="text" placeholder={question.input_placeholder || "ABC-1D23"} className={`h-14 text-base uppercase rounded-xl border-2 pr-12 ${isValid ? 'border-green-500' : isInvalid ? 'border-destructive' : ''}`} autoFocus={isFirst} autoComplete="off" maxLength={8} value={form.watch(question.field_name) || ""} onChange={e => {
           const formatted = formatPlaca(e.target.value);
           form.setValue(question.field_name, formatted, {
             shouldValidate: true
           });
-        }} onKeyDown={handleKeyDown} /> : question.field_name.toLowerCase().includes("cpf") ? <Input key={`input-${question.field_name}-${step}`} type="text" placeholder={question.input_placeholder || "000.000.000-00"} className="h-12 text-base" autoFocus={isFirst} autoComplete="off" maxLength={14} value={form.watch(question.field_name) || ""} onChange={e => {
+        }} onKeyDown={handleKeyDown} />
+              {isValid && <div className="absolute right-3 top-1/2 -translate-y-1/2 bg-green-500 rounded-full p-1">
+                <Check className="h-4 w-4 text-white" />
+              </div>}
+            </div> : question.field_name.toLowerCase().includes("cpf") ? <div className="relative">
+              <Input key={`input-${question.field_name}-${step}`} type="text" placeholder={question.input_placeholder || "000.000.000-00"} className={`h-14 text-base rounded-xl border-2 pr-12 ${isValid ? 'border-green-500' : isInvalid ? 'border-destructive' : ''}`} autoFocus={isFirst} autoComplete="off" maxLength={14} value={form.watch(question.field_name) || ""} onChange={e => {
           const formatted = formatCPF(e.target.value);
           form.setValue(question.field_name, formatted, {
             shouldValidate: true
           });
-        }} onKeyDown={handleKeyDown} /> : question.field_name.toLowerCase().includes("cnpj") ? <Input key={`input-${question.field_name}-${step}`} type="text" placeholder={question.input_placeholder || "00.000.000/0000-00"} className="h-12 text-base" autoFocus={isFirst} autoComplete="off" maxLength={18} value={form.watch(question.field_name) || ""} onChange={e => {
+        }} onKeyDown={handleKeyDown} />
+              {isValid && <div className="absolute right-3 top-1/2 -translate-y-1/2 bg-green-500 rounded-full p-1">
+                <Check className="h-4 w-4 text-white" />
+              </div>}
+            </div> : question.field_name.toLowerCase().includes("cnpj") ? <div className="relative">
+              <Input key={`input-${question.field_name}-${step}`} type="text" placeholder={question.input_placeholder || "00.000.000/0000-00"} className={`h-14 text-base rounded-xl border-2 pr-12 ${isValid ? 'border-green-500' : isInvalid ? 'border-destructive' : ''}`} autoFocus={isFirst} autoComplete="off" maxLength={18} value={form.watch(question.field_name) || ""} onChange={e => {
           const formatted = formatCNPJ(e.target.value);
           form.setValue(question.field_name, formatted, {
             shouldValidate: true
           });
-        }} onKeyDown={handleKeyDown} /> : <Input key={`input-${question.field_name}-${step}`} type={question.field_name.toLowerCase().includes("email") ? "email" : "text"} placeholder={question.input_placeholder || `Digite ${question.question.toLowerCase()}`} className="h-12 text-base" autoFocus={isFirst} autoComplete="off" maxLength={question.max_length || undefined} value={form.watch(question.field_name) || ""} onChange={e => form.setValue(question.field_name, e.target.value, {
+        }} onKeyDown={handleKeyDown} />
+              {isValid && <div className="absolute right-3 top-1/2 -translate-y-1/2 bg-green-500 rounded-full p-1">
+                <Check className="h-4 w-4 text-white" />
+              </div>}
+            </div> : <div className="relative">
+              <Input key={`input-${question.field_name}-${step}`} type={question.field_name.toLowerCase().includes("email") ? "email" : "text"} placeholder={question.input_placeholder || `Digite ${question.question.toLowerCase()}`} className={`h-14 text-base rounded-xl border-2 pr-12 ${isValid ? 'border-green-500' : isInvalid ? 'border-destructive' : ''}`} autoFocus={isFirst} autoComplete="off" maxLength={question.max_length || undefined} value={form.watch(question.field_name) || ""} onChange={e => form.setValue(question.field_name, e.target.value, {
           shouldValidate: true
-        })} onKeyDown={handleKeyDown} />}
+        })} onKeyDown={handleKeyDown} />
+              {isValid && <div className="absolute right-3 top-1/2 -translate-y-1/2 bg-green-500 rounded-full p-1">
+                <Check className="h-4 w-4 text-white" />
+              </div>}
+            </div>}
 
-          {form.formState.errors[question.field_name] && <p className="text-destructive text-sm mt-1">
-              {form.formState.errors[question.field_name]?.message as string}
-            </p>}
+          {/* Validation feedback */}
+          {hasValue && isRequired && (
+            isValid ? (
+              <p className="text-green-600 text-sm flex items-center gap-1">
+                <Check className="h-4 w-4" />
+                {feedback.valid}
+              </p>
+            ) : isInvalid ? (
+              <p className="text-destructive text-sm flex items-center gap-1">
+                <X className="h-4 w-4" />
+                {form.formState.errors[question.field_name]?.message as string || feedback.invalid}
+              </p>
+            ) : null
+          )}
         </div>
       </div>;
   };
