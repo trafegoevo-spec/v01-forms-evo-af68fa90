@@ -620,12 +620,20 @@ export const MultiStepFormDynamic = () => {
         setTimeout(() => nextStep(), 300);
       }
     };
-    const inputClasses = "h-14 text-lg typeform-input border-2 rounded-xl focus:outline-none";
     const errorMessage = form.formState.errors[question.field_name]?.message as string;
     
+    // Underline-style input classes (like Typeform reference)
+    const inputClasses = "h-14 text-2xl md:text-3xl bg-transparent border-0 border-b-2 border-primary rounded-none px-0 focus:outline-none focus:ring-0 focus:border-primary placeholder:text-muted-foreground/40 transition-all duration-300";
+    
     return (
-      <div key={question.id} className="space-y-6 opacity-0 animate-slide-up">
-        {/* Question title with animation */}
+      <div key={question.id} className="space-y-8 opacity-0 animate-slide-up">
+        {/* Step number indicator */}
+        <div className="flex items-center gap-2 text-primary font-medium">
+          <span className="text-lg">{step}.</span>
+          <ArrowRight className="h-4 w-4" />
+        </div>
+
+        {/* Question title */}
         <div className="space-y-2">
           <h2 className="font-bold text-foreground text-2xl md:text-3xl lg:text-4xl text-left leading-tight">
             {question.question}
@@ -637,8 +645,8 @@ export const MultiStepFormDynamic = () => {
           )}
         </div>
 
-        {/* Input field with microcopy */}
-        <div className="space-y-3">
+        {/* Input field */}
+        <div className="space-y-4">
           {question.input_type === "buttons" && question.options.length > 0 ? (
             <div className="grid gap-3">
               {question.options.map((option, idx) => {
@@ -650,18 +658,18 @@ export const MultiStepFormDynamic = () => {
                     variant={isSelected ? "default" : "outline"}
                     className={`typeform-button h-auto min-h-[56px] text-base md:text-lg py-4 px-6 whitespace-normal text-left justify-start rounded-xl border-2 opacity-0 animate-slide-up ${
                       isSelected 
-                        ? "border-primary shadow-lg" 
-                        : "hover:border-primary/50 hover:bg-muted/50"
+                        ? "border-primary bg-primary shadow-lg" 
+                        : "bg-card hover:border-primary/50 hover:bg-muted/50"
                     }`}
                     style={{ animationDelay: `${idx * 0.1}s` }}
                     onClick={() => handleButtonClick(option)}
                   >
                     <span className="flex items-center gap-3">
                       <span className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${
-                        isSelected ? "bg-primary border-primary" : "border-muted-foreground/30"
+                        isSelected ? "bg-primary-foreground border-primary-foreground" : "border-muted-foreground/30"
                       }`}>
                         {isSelected && (
-                          <svg className="w-3 h-3 text-primary-foreground" fill="currentColor" viewBox="0 0 20 20">
+                          <svg className="w-3 h-3 text-primary" fill="currentColor" viewBox="0 0 20 20">
                             <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                           </svg>
                         )}
@@ -678,7 +686,7 @@ export const MultiStepFormDynamic = () => {
               value={form.watch(question.field_name)} 
               onValueChange={handleSelectChange}
             >
-              <SelectTrigger className={`${inputClasses} px-4`}>
+              <SelectTrigger className="h-14 text-lg border-2 rounded-xl px-4">
                 <SelectValue placeholder="Selecione uma opção" />
               </SelectTrigger>
               <SelectContent>
@@ -705,7 +713,7 @@ export const MultiStepFormDynamic = () => {
             <Input
               key={`input-${question.field_name}-${step}`}
               type="tel"
-              placeholder={question.input_placeholder || "55 (99) 99999-9999"}
+              placeholder={question.input_placeholder || "(00) 00000-0000"}
               className={inputClasses}
               autoFocus={isFirst}
               autoComplete="off"
@@ -780,6 +788,14 @@ export const MultiStepFormDynamic = () => {
             />
           )}
 
+          {/* Keyboard hint - below input */}
+          {question.input_type !== "buttons" && question.input_type !== "select" && (
+            <p className="hidden md:flex items-center gap-2 text-sm text-muted-foreground mt-4">
+              <span className="inline-flex items-center justify-center px-2 py-1 bg-muted/50 rounded text-xs font-mono border border-border/50">Enter ↵</span>
+              <span>Pressione para avançar</span>
+            </p>
+          )}
+
           {/* Friendly error message */}
           {errorMessage && (
             <div className="flex items-start gap-2 text-destructive animate-slide-down">
@@ -790,10 +806,13 @@ export const MultiStepFormDynamic = () => {
             </div>
           )}
           
-          {/* Microcopy hint - only for specific fields */}
-          {!errorMessage && question.field_name.toLowerCase().includes("email") && (
-            <p className="text-xs text-muted-foreground/70">
-              Seus dados estão seguros conosco
+          {/* Trust/security microcopy for sensitive fields */}
+          {!errorMessage && (question.field_name.toLowerCase().includes("email") || question.field_name.toLowerCase().includes("telefone") || question.field_name.toLowerCase().includes("whatsapp")) && (
+            <p className="flex items-center gap-2 text-sm text-green-600">
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+              </svg>
+              <span>Não enviamos spam. Apenas sua cotação personalizada.</span>
             </p>
           )}
         </div>
@@ -802,66 +821,80 @@ export const MultiStepFormDynamic = () => {
   };
   const renderStep = () => {
     if (step === totalSteps && isSuccess && submittedData) {
-      const nomeQuestion = questions.find(q => q.field_name === "nome");
-      const firstName = nomeQuestion ? submittedData[nomeQuestion.field_name]?.split(" ")[0] : "você";
-
       // Use active success page if set, otherwise default settings
       const successConfig = activeSuccessPage || settings;
       
       return (
-        <div className="space-y-8 text-center py-4">
-          {/* Celebration icon */}
-          <div className="animate-celebrate">
-            <div className="w-24 h-24 mx-auto bg-gradient-to-br from-primary/20 to-primary/5 rounded-full flex items-center justify-center">
-              <span className="text-5xl">🎉</span>
+        <div className="space-y-8 text-center py-4 max-w-md mx-auto">
+          {/* Success icon with WhatsApp badge */}
+          <div className="relative w-fit mx-auto opacity-0 animate-scale-in">
+            <div className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center">
+              <svg className="w-12 h-12 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            {/* WhatsApp badge */}
+            <div className="absolute -bottom-1 -right-1 w-10 h-10 bg-background rounded-full flex items-center justify-center shadow-lg border-2 border-background">
+              <img src={whatsappIcon} alt="" className="w-6 h-6" />
             </div>
           </div>
 
           {/* Success message */}
           <div className="space-y-3 opacity-0 animate-slide-up stagger-1">
-            <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-foreground">
-              {successConfig?.success_title || successConfig?.title || "Obrigado"}, {firstName}!
+            <h2 className="text-2xl md:text-3xl font-bold text-foreground">
+              {successConfig?.success_title || successConfig?.title || "Análise Concluída!"}
             </h2>
-            <p className="text-lg text-muted-foreground max-w-md mx-auto">
-              {successConfig?.success_description || successConfig?.description || "Recebemos suas informações com sucesso!"}
+            <p className="text-base md:text-lg text-muted-foreground">
+              {successConfig?.success_description || successConfig?.description || "Encontramos as melhores opções para o seu perfil. Vamos finalizar os detalhes no WhatsApp?"}
             </p>
           </div>
 
-          {/* Next step explanation */}
+          {/* Status card */}
           <div className="opacity-0 animate-slide-up stagger-2">
-            <div className="bg-gradient-to-br from-card to-muted/30 rounded-2xl p-8 border border-border/50 shadow-lg">
-              <img 
-                src={whatsappIcon} 
-                alt="WhatsApp" 
-                className="w-20 h-20 mx-auto mb-5 animate-float" 
-              />
-
-              <p className="text-base md:text-lg text-foreground leading-relaxed mb-6 font-medium">
-                {successConfig?.success_subtitle || successConfig?.subtitle || "Próximo passo: fale com nossa equipe"}
-              </p>
-
-              {successConfig?.whatsapp_enabled && (
-                <Button 
-                  type="button" 
-                  onClick={e => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    trackWhatsAppClick();
-                    const phoneNumber = rotatedWhatsApp?.number 
-                      ? rotatedWhatsApp.number.replace(/\D/g, "") 
-                      : (successConfig.whatsapp_number || "").replace(/\D/g, "");
-                    const message = encodeURIComponent(successConfig.whatsapp_message || "Olá! Preenchi o formulário.");
-                    window.open(`https://wa.me/${phoneNumber}?text=${message}`, "_blank");
-                  }} 
-                  className="whatsapp-button typeform-button w-full h-14 text-lg font-semibold bg-green-600 hover:bg-green-700 text-white rounded-xl shadow-xl"
-                >
-                  <img src={whatsappIcon} alt="" className="w-6 h-6 mr-3" />
-                  Falar agora no WhatsApp
-                  <span className="ml-2 text-sm opacity-80">• Resposta rápida</span>
-                </Button>
-              )}
+            <div className="bg-card rounded-2xl p-5 border border-border/50 shadow-sm">
+              <div className="flex justify-between items-center py-2 border-b border-border/30">
+                <span className="text-muted-foreground text-sm">Consultor</span>
+                <span className="font-semibold text-foreground">
+                  {rotatedWhatsApp?.name || "Equipe de Atendimento"}
+                </span>
+              </div>
+              <div className="flex justify-between items-center py-2">
+                <span className="text-muted-foreground text-sm">Status</span>
+                <span className="flex items-center gap-2 text-green-600 font-medium">
+                  <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                  Disponível Agora
+                </span>
+              </div>
             </div>
           </div>
+
+          {/* WhatsApp CTA button */}
+          {successConfig?.whatsapp_enabled && (
+            <div className="opacity-0 animate-slide-up stagger-3">
+              <Button 
+                type="button" 
+                onClick={e => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  trackWhatsAppClick();
+                  const phoneNumber = rotatedWhatsApp?.number 
+                    ? rotatedWhatsApp.number.replace(/\D/g, "") 
+                    : (successConfig.whatsapp_number || "").replace(/\D/g, "");
+                  const message = encodeURIComponent(successConfig.whatsapp_message || "Olá! Preenchi o formulário.");
+                  window.open(`https://wa.me/${phoneNumber}?text=${message}`, "_blank");
+                }} 
+                className="whatsapp-button w-full h-14 text-lg font-semibold bg-green-500 hover:bg-green-600 text-white rounded-2xl shadow-xl"
+              >
+                <img src={whatsappIcon} alt="" className="w-6 h-6 mr-3" />
+                Abrir WhatsApp Agora
+              </Button>
+            </div>
+          )}
+
+          {/* Response time hint */}
+          <p className="text-sm text-muted-foreground opacity-0 animate-fade-in stagger-4">
+            Tempo de resposta médio: 2 minutos.
+          </p>
         </div>
       );
     }
@@ -896,33 +929,23 @@ export const MultiStepFormDynamic = () => {
   
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      {/* Fixed progress bar at top - discreet */}
+      {/* Minimal progress bar at very top */}
       {step < totalSteps && (
-        <div className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-sm border-b border-border/50">
-          <div className="max-w-2xl mx-auto px-4 py-3">
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-xs font-medium text-muted-foreground">
-                Etapa {step} de {uniqueSteps.length}
-              </span>
-              <span className="text-xs font-bold text-primary">
-                {progressPercentage}%
-              </span>
-            </div>
-            <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-              <div 
-                className="h-full bg-primary rounded-full progress-animated"
-                style={{ width: `${progressPercentage}%` }}
-              />
-            </div>
+        <div className="fixed top-0 left-0 right-0 z-50">
+          <div className="h-1 bg-muted">
+            <div 
+              className="h-full bg-primary progress-animated"
+              style={{ width: `${progressPercentage}%` }}
+            />
           </div>
         </div>
       )}
 
       {/* Main form content - centered vertically */}
-      <div className="flex-1 flex items-center justify-center px-4 py-20">
+      <div className="flex-1 flex items-center justify-center px-6 py-12">
         <div className="w-full max-w-xl">
           <form onSubmit={(e) => e.preventDefault()}>
-            <div className="min-h-[280px] mb-8">
+            <div className="min-h-[320px] mb-10">
               {renderStep()}
             </div>
 
@@ -931,12 +954,12 @@ export const MultiStepFormDynamic = () => {
                 {step > 1 && (
                   <Button 
                     type="button" 
-                    variant="outline" 
+                    variant="ghost" 
                     onClick={prevStep} 
-                    className="typeform-button flex-none h-14 px-6 rounded-xl border-2 text-base"
+                    className="typeform-button flex-none h-12 px-4 text-muted-foreground hover:text-foreground"
                     disabled={isSubmitting}
                   >
-                    <ArrowLeft className="mr-2 h-5 w-5" />
+                    <ArrowLeft className="mr-2 h-4 w-4" />
                     Voltar
                   </Button>
                 )}
@@ -977,13 +1000,6 @@ export const MultiStepFormDynamic = () => {
               </div>
             )}
           </form>
-          
-          {/* Keyboard hint - desktop only */}
-          {step < totalSteps && step <= uniqueSteps.length && (
-            <p className="hidden md:block text-center text-xs text-muted-foreground/50 mt-6 opacity-0 animate-fade-in" style={{ animationDelay: '0.5s' }}>
-              Pressione <kbd className="px-1.5 py-0.5 bg-muted rounded text-[10px] font-mono">Enter ↵</kbd> para avançar
-            </p>
-          )}
         </div>
       </div>
     </div>
