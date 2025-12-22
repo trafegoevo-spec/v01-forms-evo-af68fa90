@@ -9,8 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, ArrowRight, ArrowLeft, Check, X } from "lucide-react";
-import whatsappIcon from "@/assets/whatsapp.png";
+import { Loader2, ArrowRight, ArrowLeft, Check, X, CheckCircle, MessageCircle } from "lucide-react";
+
 import { Progress } from "@/components/ui/progress";
 interface ConditionalRule {
   value: string;
@@ -744,6 +744,13 @@ export const MultiStepFormDynamic = () => {
       // Use active success page if set, otherwise default settings
       const successConfig = activeSuccessPage || settings;
       return <div className="space-y-6 text-center py-8">
+          {/* Check icon */}
+          <div className="flex justify-center">
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+              <CheckCircle className="w-10 h-10 text-green-600" />
+            </div>
+          </div>
+
           <div>
             <h2 className="text-3xl font-bold text-foreground mb-4">
               Obrigado, {firstName}
@@ -768,7 +775,7 @@ export const MultiStepFormDynamic = () => {
                 }} 
                 className="w-full h-14 bg-green-600 hover:bg-green-700 text-white text-base font-semibold rounded-2xl"
               >
-                <img src={whatsappIcon} alt="WhatsApp" className="w-6 h-6 mr-2" />
+                <MessageCircle className="w-6 h-6 mr-2 text-white" />
                 Continuar conversa no WhatsApp
               </Button>
               
