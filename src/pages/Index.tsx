@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Settings } from "lucide-react";
-
 interface CoverSettings {
   cover_enabled: boolean;
   cover_title: string;
@@ -40,7 +39,6 @@ const Index = () => {
           data,
           error
         } = await supabase.from("app_settings").select("cover_enabled, cover_title, cover_subtitle, cover_cta_text").eq("subdomain", formName).maybeSingle();
-
         if (error) {
           console.error("Error loading cover settings:", error);
           setCoverSettings({
@@ -95,12 +93,7 @@ const Index = () => {
             </Button>
           </div>}
         
-        <CoverPage 
-          title={coverSettings.cover_title} 
-          subtitle={coverSettings.cover_subtitle}
-          ctaText={coverSettings.cover_cta_text} 
-          onStart={handleStartForm}
-        />
+        <CoverPage title={coverSettings.cover_title} subtitle={coverSettings.cover_subtitle} ctaText={coverSettings.cover_cta_text} onStart={handleStartForm} />
       </div>;
   }
   return <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
@@ -117,7 +110,7 @@ const Index = () => {
 
       {/* Multi-Step Form */}
       <main className="container mx-auto pb-12 px-[5px]">
-        <MultiStepFormDynamic />
+        <MultiStepFormDynamic className="text-primary-foreground" />
       </main>
 
       {/* Footer */}
