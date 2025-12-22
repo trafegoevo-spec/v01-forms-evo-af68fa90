@@ -28,86 +28,83 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
 };
 
 export const CoverPage = ({ title, subtitle, topics, ctaText, onStart, imageUrl }: CoverPageProps) => {
-
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row relative overflow-hidden bg-background">
-      {/* Animated background layers */}
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/10 animate-[pulse_8s_ease-in-out_infinite]" />
+    <div className="min-h-screen flex flex-col relative overflow-hidden bg-background">
+      {/* Gradient background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/10" />
       
-      {/* Floating orbs */}
-      <div className="absolute top-0 left-0 w-72 h-72 bg-primary/10 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2 animate-[float_6s_ease-in-out_infinite]" />
-      <div className="absolute bottom-0 right-0 w-96 h-96 bg-primary/15 rounded-full blur-3xl translate-x-1/3 translate-y-1/3 animate-[float_8s_ease-in-out_infinite_reverse]" />
+      {/* Floating orbs - subtle */}
+      <div className="absolute top-20 left-10 w-32 h-32 bg-primary/10 rounded-full blur-3xl animate-float" />
+      <div className="absolute bottom-20 right-10 w-48 h-48 bg-primary/10 rounded-full blur-3xl animate-float" style={{ animationDelay: '1s' }} />
       
-      {/* Left Content Section */}
-      <div className="relative z-10 flex-1 flex flex-col justify-center px-6 py-12 lg:px-12 xl:px-20 lg:py-0">
-        <div className="max-w-xl mx-auto lg:mx-0">
-          {/* Title */}
+      {/* Main content - centered for mobile-first */}
+      <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 py-12 text-center">
+        <div className="max-w-lg mx-auto">
+          {/* Optional image */}
+          {imageUrl && (
+            <div className="mb-8 opacity-0 animate-slide-up">
+              <div className="w-32 h-32 mx-auto rounded-2xl overflow-hidden shadow-xl bg-muted">
+                <img 
+                  src={imageUrl} 
+                  alt="Hero" 
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            </div>
+          )}
+          
+          {/* Title - benefit-oriented */}
           <h1 
-            className="text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold text-foreground mb-4 leading-tight opacity-0 animate-[slideUp_0.8s_ease-out_0.2s_forwards]"
+            className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-4 leading-tight opacity-0 animate-slide-up stagger-1"
           >
             {title}
           </h1>
           
-          {/* Subtitle */}
-          <p className="text-lg md:text-xl text-muted-foreground mb-8 opacity-0 animate-[slideUp_0.8s_ease-out_0.3s_forwards]">
+          {/* Subtitle - what user gains */}
+          <p className="text-lg md:text-xl text-muted-foreground mb-6 opacity-0 animate-slide-up stagger-2">
             {subtitle}
           </p>
           
-          {/* Topics with Icons */}
+          {/* Time estimate badge */}
+          <div className="inline-flex items-center gap-2 bg-muted/50 rounded-full px-4 py-2 mb-8 opacity-0 animate-slide-up stagger-3">
+            <Clock className="h-4 w-4 text-primary" />
+            <span className="text-sm text-muted-foreground font-medium">Leva menos de 1 minuto</span>
+          </div>
+          
+          {/* Topics with Icons - horizontal on desktop, vertical on mobile */}
           {topics.length > 0 && (
-            <div className="flex flex-wrap items-center gap-4 mb-10 opacity-0 animate-[slideUp_0.8s_ease-out_0.4s_forwards]">
+            <div className="flex flex-col sm:flex-row flex-wrap items-center justify-center gap-3 mb-10 opacity-0 animate-slide-up stagger-4">
               {topics.map((topic, index) => {
                 const IconComponent = iconMap[topic.icon] || CheckCircle;
                 return (
-                  <div key={index} className="flex items-center gap-2">
-                    <IconComponent className="h-5 w-5 text-primary" />
-                    <span className="text-muted-foreground">{topic.text}</span>
-                    {index < topics.length - 1 && (
-                      <span className="text-muted-foreground/50 ml-2">|</span>
-                    )}
+                  <div 
+                    key={index} 
+                    className="flex items-center gap-2 bg-card/50 backdrop-blur-sm rounded-full px-4 py-2 border border-border/50"
+                  >
+                    <IconComponent className="h-4 w-4 text-primary flex-shrink-0" />
+                    <span className="text-sm text-foreground">{topic.text}</span>
                   </div>
                 );
               })}
             </div>
           )}
           
-          {/* CTA Button */}
-          <div className="opacity-0 animate-[slideUp_0.8s_ease-out_0.6s_forwards]">
+          {/* Single CTA Button */}
+          <div className="opacity-0 animate-slide-up stagger-5">
             <Button
               size="lg"
               onClick={onStart}
-              className="group text-lg px-8 py-6 h-auto rounded-full shadow-lg hover:shadow-2xl transition-all duration-500 hover:scale-105 hover:-translate-y-1 active:scale-95"
+              className="typeform-button group text-lg px-10 py-7 h-auto rounded-full shadow-xl hover:shadow-2xl font-semibold min-w-[200px]"
             >
               {ctaText}
-              <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-2 transition-transform duration-300" />
+              <ArrowRight className="ml-3 h-5 w-5 group-hover:translate-x-1 transition-transform duration-300" />
             </Button>
           </div>
         </div>
       </div>
       
-      {/* Right Image Section */}
-      <div className="relative z-10 flex-1 flex items-center justify-center p-6 lg:p-12 opacity-0 animate-[slideUp_0.8s_ease-out_0.3s_forwards]">
-        <div className="relative w-full max-w-md lg:max-w-lg xl:max-w-xl">
-          {/* Image container with aspect ratio */}
-          <div className="aspect-[4/5] rounded-2xl overflow-hidden shadow-2xl bg-muted">
-            {imageUrl ? (
-              <img 
-                src={imageUrl} 
-                alt="Landing page hero" 
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
-                <span className="text-muted-foreground/50 text-sm">Imagem</span>
-              </div>
-            )}
-          </div>
-          
-          {/* Decorative elements */}
-          <div className="absolute -top-4 -right-4 w-24 h-24 bg-primary/20 rounded-full blur-2xl" />
-          <div className="absolute -bottom-4 -left-4 w-32 h-32 bg-primary/15 rounded-full blur-2xl" />
-        </div>
-      </div>
+      {/* Bottom decorative line */}
+      <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
     </div>
   );
 };
