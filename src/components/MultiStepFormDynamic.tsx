@@ -620,292 +620,107 @@ export const MultiStepFormDynamic = () => {
         setTimeout(() => nextStep(), 300);
       }
     };
-    const errorMessage = form.formState.errors[question.field_name]?.message as string;
-    
-    // Underline-style input classes (like Typeform reference)
-    const inputClasses = "h-14 text-2xl md:text-3xl bg-transparent border-0 border-b-2 border-muted rounded-none px-0 focus:outline-none focus:ring-0 focus:border-primary placeholder:text-muted-foreground/40 transition-all duration-300";
-    
-    return (
-      <div key={question.id} className="space-y-4 opacity-0 animate-slide-up">
-        {/* Step number indicator */}
-        <div className="flex items-center gap-2 text-primary font-medium">
-          <span className="text-lg">{step}.</span>
-          <ArrowRight className="h-4 w-4" />
-        </div>
-
-        {/* Question title */}
-        <div className="space-y-2">
-          <h2 className="font-bold text-foreground text-2xl md:text-3xl lg:text-4xl text-left leading-tight">
-            {question.question}
-          </h2>
-          {question.subtitle && (
-            <p className="text-muted-foreground text-base md:text-lg">
+    return <div key={question.id} className="space-y-4">
+        <div>
+          <h2 className="font-bold text-foreground md:text-4xl text-3xl text-left">{question.question}</h2>
+          {question.subtitle && <label className="block font-medium text-muted-foreground mt-2 text-base">
               {question.subtitle}
-            </p>
-          )}
+            </label>}
         </div>
 
-        {/* Input field */}
-        <div className="space-y-3">
-          {question.input_type === "buttons" && question.options.length > 0 ? (
-            <div className="grid gap-3">
-              {question.options.map((option, idx) => {
-                const isSelected = form.watch(question.field_name) === option;
-                return (
-                  <Button
-                    key={option}
-                    type="button"
-                    variant={isSelected ? "default" : "outline"}
-                    className={`typeform-button h-auto min-h-[56px] text-base md:text-lg py-4 px-6 whitespace-normal text-left justify-start rounded-xl border-2 opacity-0 animate-slide-up ${
-                      isSelected 
-                        ? "border-primary bg-primary shadow-lg" 
-                        : "bg-card hover:border-primary/50 hover:bg-muted/50"
-                    }`}
-                    style={{ animationDelay: `${idx * 0.1}s` }}
-                    onClick={() => handleButtonClick(option)}
-                  >
-                    <span className="flex items-center gap-3">
-                      <span className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${
-                        isSelected ? "bg-primary-foreground border-primary-foreground" : "border-muted-foreground/30"
-                      }`}>
-                        {isSelected && (
-                          <svg className="w-3 h-3 text-primary" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                          </svg>
-                        )}
-                      </span>
-                      {option}
-                    </span>
-                  </Button>
-                );
-              })}
-            </div>
-          ) : question.input_type === "select" && question.options.length > 0 ? (
-            <Select 
-              key={`select-${question.field_name}-${step}`} 
-              value={form.watch(question.field_name)} 
-              onValueChange={handleSelectChange}
-            >
-              <SelectTrigger className="h-14 text-lg border-2 rounded-xl px-4">
+        <div className="space-y-2">
+          {question.input_type === "buttons" && question.options.length > 0 ? <div className="grid gap-2">
+              {question.options.map(option => {
+            const isSelected = form.watch(question.field_name) === option;
+            return <Button key={option} type="button" variant={isSelected ? "default" : "outline"} className={`h-auto min-h-[44px] text-base py-2 px-4 whitespace-normal text-left justify-start ${isSelected ? "" : "hover:bg-muted"}`} onClick={() => handleButtonClick(option)}>
+                    {option}
+                  </Button>;
+          })}
+            </div> : question.input_type === "select" && question.options.length > 0 ? <Select key={`select-${question.field_name}-${step}`} value={form.watch(question.field_name)} onValueChange={handleSelectChange}>
+              <SelectTrigger className="h-12 text-base">
                 <SelectValue placeholder="Selecione uma opção" />
               </SelectTrigger>
               <SelectContent>
-                {question.options.map(option => (
-                  <SelectItem key={option} value={option} className="py-3 text-base">
+                {question.options.map(option => <SelectItem key={option} value={option}>
                     {option}
-                  </SelectItem>
-                ))}
+                  </SelectItem>)}
               </SelectContent>
-            </Select>
-          ) : question.input_type === "password" ? (
-            <Input
-              key={`input-${question.field_name}-${step}`}
-              type="text"
-              placeholder={question.input_placeholder || `Digite ${question.question.toLowerCase()}`}
-              className={inputClasses}
-              autoFocus={isFirst}
-              autoComplete="off"
-              value={form.watch(question.field_name) || ""}
-              onChange={e => form.setValue(question.field_name, e.target.value, { shouldValidate: true })}
-              onKeyDown={handleKeyDown}
-            />
-          ) : question.field_name.toLowerCase().includes("whatsapp") || question.field_name.toLowerCase().includes("telefone") ? (
-            <Input
-              key={`input-${question.field_name}-${step}`}
-              type="tel"
-              placeholder={question.input_placeholder || "(00) 00000-0000"}
-              className={inputClasses}
-              autoFocus={isFirst}
-              autoComplete="off"
-              maxLength={question.max_length || 19}
-              value={form.watch(question.field_name) || "55 "}
-              onChange={e => {
-                const formatted = formatWhatsApp(e.target.value);
-                form.setValue(question.field_name, formatted, { shouldValidate: true });
-              }}
-              onKeyDown={handleKeyDown}
-            />
-          ) : question.field_name.toLowerCase().includes("placa") ? (
-            <Input
-              key={`input-${question.field_name}-${step}`}
-              type="text"
-              placeholder={question.input_placeholder || "ABC-1D23"}
-              className={`${inputClasses} uppercase`}
-              autoFocus={isFirst}
-              autoComplete="off"
-              maxLength={8}
-              value={form.watch(question.field_name) || ""}
-              onChange={e => {
-                const formatted = formatPlaca(e.target.value);
-                form.setValue(question.field_name, formatted, { shouldValidate: true });
-              }}
-              onKeyDown={handleKeyDown}
-            />
-          ) : question.field_name.toLowerCase().includes("cpf") ? (
-            <Input
-              key={`input-${question.field_name}-${step}`}
-              type="text"
-              placeholder={question.input_placeholder || "000.000.000-00"}
-              className={inputClasses}
-              autoFocus={isFirst}
-              autoComplete="off"
-              maxLength={14}
-              value={form.watch(question.field_name) || ""}
-              onChange={e => {
-                const formatted = formatCPF(e.target.value);
-                form.setValue(question.field_name, formatted, { shouldValidate: true });
-              }}
-              onKeyDown={handleKeyDown}
-            />
-          ) : question.field_name.toLowerCase().includes("cnpj") ? (
-            <Input
-              key={`input-${question.field_name}-${step}`}
-              type="text"
-              placeholder={question.input_placeholder || "00.000.000/0000-00"}
-              className={inputClasses}
-              autoFocus={isFirst}
-              autoComplete="off"
-              maxLength={18}
-              value={form.watch(question.field_name) || ""}
-              onChange={e => {
-                const formatted = formatCNPJ(e.target.value);
-                form.setValue(question.field_name, formatted, { shouldValidate: true });
-              }}
-              onKeyDown={handleKeyDown}
-            />
-          ) : (
-            <Input
-              key={`input-${question.field_name}-${step}`}
-              type={question.field_name.toLowerCase().includes("email") ? "email" : "text"}
-              placeholder={question.input_placeholder || `Digite ${question.question.toLowerCase()}`}
-              className={inputClasses}
-              autoFocus={isFirst}
-              autoComplete="off"
-              maxLength={question.max_length || undefined}
-              value={form.watch(question.field_name) || ""}
-              onChange={e => form.setValue(question.field_name, e.target.value, { shouldValidate: true })}
-              onKeyDown={handleKeyDown}
-            />
-          )}
+            </Select> : question.input_type === "password" ? <Input key={`input-${question.field_name}-${step}`} type="text" placeholder={question.input_placeholder || `Digite ${question.question.toLowerCase()}`} className="h-12 text-base" autoFocus={isFirst} autoComplete="off" value={form.watch(question.field_name) || ""} onChange={e => form.setValue(question.field_name, e.target.value, {
+          shouldValidate: true
+        })} onKeyDown={handleKeyDown} /> : question.field_name.toLowerCase().includes("whatsapp") || question.field_name.toLowerCase().includes("telefone") ? <Input key={`input-${question.field_name}-${step}`} type="tel" placeholder={question.input_placeholder || "55 (99) 99999-9999"} className="h-12 text-base" autoFocus={isFirst} autoComplete="off" maxLength={question.max_length || 19} value={form.watch(question.field_name) || "55 "} onChange={e => {
+          const formatted = formatWhatsApp(e.target.value);
+          form.setValue(question.field_name, formatted, {
+            shouldValidate: true
+          });
+        }} onKeyDown={handleKeyDown} /> : question.field_name.toLowerCase().includes("placa") ? <Input key={`input-${question.field_name}-${step}`} type="text" placeholder={question.input_placeholder || "ABC-1D23"} className="h-12 text-base uppercase" autoFocus={isFirst} autoComplete="off" maxLength={8} value={form.watch(question.field_name) || ""} onChange={e => {
+          const formatted = formatPlaca(e.target.value);
+          form.setValue(question.field_name, formatted, {
+            shouldValidate: true
+          });
+        }} onKeyDown={handleKeyDown} /> : question.field_name.toLowerCase().includes("cpf") ? <Input key={`input-${question.field_name}-${step}`} type="text" placeholder={question.input_placeholder || "000.000.000-00"} className="h-12 text-base" autoFocus={isFirst} autoComplete="off" maxLength={14} value={form.watch(question.field_name) || ""} onChange={e => {
+          const formatted = formatCPF(e.target.value);
+          form.setValue(question.field_name, formatted, {
+            shouldValidate: true
+          });
+        }} onKeyDown={handleKeyDown} /> : question.field_name.toLowerCase().includes("cnpj") ? <Input key={`input-${question.field_name}-${step}`} type="text" placeholder={question.input_placeholder || "00.000.000/0000-00"} className="h-12 text-base" autoFocus={isFirst} autoComplete="off" maxLength={18} value={form.watch(question.field_name) || ""} onChange={e => {
+          const formatted = formatCNPJ(e.target.value);
+          form.setValue(question.field_name, formatted, {
+            shouldValidate: true
+          });
+        }} onKeyDown={handleKeyDown} /> : <Input key={`input-${question.field_name}-${step}`} type={question.field_name.toLowerCase().includes("email") ? "email" : "text"} placeholder={question.input_placeholder || `Digite ${question.question.toLowerCase()}`} className="h-12 text-base" autoFocus={isFirst} autoComplete="off" maxLength={question.max_length || undefined} value={form.watch(question.field_name) || ""} onChange={e => form.setValue(question.field_name, e.target.value, {
+          shouldValidate: true
+        })} onKeyDown={handleKeyDown} />}
 
-          {/* Keyboard hint - below input */}
-          {question.input_type !== "buttons" && question.input_type !== "select" && (
-            <p className="hidden md:flex items-center gap-2 text-sm text-muted-foreground mt-4">
-              <span className="inline-flex items-center justify-center px-2 py-1 bg-muted/50 rounded text-xs font-mono border border-border/50">Enter ↵</span>
-              <span>Pressione para avançar</span>
-            </p>
-          )}
-
-          {/* Friendly error message */}
-          {errorMessage && (
-            <div className="flex items-start gap-2 text-destructive animate-slide-down">
-              <svg className="w-5 h-5 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-              </svg>
-              <p className="text-sm">{errorMessage}</p>
-            </div>
-          )}
-          
-          {/* Trust/security microcopy for sensitive fields */}
-          {!errorMessage && (question.field_name.toLowerCase().includes("email") || question.field_name.toLowerCase().includes("telefone") || question.field_name.toLowerCase().includes("whatsapp")) && (
-            <p className="flex items-center gap-2 text-sm text-green-600">
-              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
-              </svg>
-              <span>Não enviamos spam. Apenas sua cotação personalizada.</span>
-            </p>
-          )}
+          {form.formState.errors[question.field_name] && <p className="text-destructive text-sm mt-1">
+              {form.formState.errors[question.field_name]?.message as string}
+            </p>}
         </div>
-      </div>
-    );
+      </div>;
   };
   const renderStep = () => {
     if (step === totalSteps && isSuccess && submittedData) {
+      const nomeQuestion = questions.find(q => q.field_name === "nome");
+      const firstName = nomeQuestion ? submittedData[nomeQuestion.field_name]?.split(" ")[0] : "você";
+
       // Use active success page if set, otherwise default settings
       const successConfig = activeSuccessPage || settings;
-      
-      return (
-        <div className="space-y-8 text-center py-4 max-w-md mx-auto">
-          {/* Success icon with WhatsApp badge */}
-          <div className="relative w-fit mx-auto opacity-0 animate-scale-in">
-            <div className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center">
-              <svg className="w-12 h-12 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-              </svg>
-            </div>
-            {/* WhatsApp badge */}
-            <div className="absolute -bottom-1 -right-1 w-10 h-10 bg-background rounded-full flex items-center justify-center shadow-lg border-2 border-background">
-              <img src={whatsappIcon} alt="" className="w-6 h-6" />
-            </div>
-          </div>
+      return <div className="space-y-6 text-center">
+          <div className="text-6xl">🎉</div>
 
-          {/* Success message */}
-          <div className="space-y-3 opacity-0 animate-slide-up stagger-1">
-            <h2 className="text-2xl md:text-3xl font-bold text-foreground">
-              {successConfig?.success_title || successConfig?.title || "Análise Concluída!"}
+          <div>
+            <h2 className="text-3xl font-bold text-foreground mb-3">
+              {successConfig?.success_title || successConfig?.title || "Obrigado"}, {firstName}!
             </h2>
-            <p className="text-base md:text-lg text-muted-foreground">
-              {successConfig?.success_description || successConfig?.description || "Encontramos as melhores opções para o seu perfil. Vamos finalizar os detalhes no WhatsApp?"}
+
+            <p className="text-lg text-muted-foreground">
+              {successConfig?.success_description || successConfig?.description || "Recebemos suas informações com sucesso!"}
             </p>
           </div>
 
-          {/* Status card */}
-          <div className="opacity-0 animate-slide-up stagger-2">
-            <div className="bg-card rounded-2xl p-5 border border-border/50 shadow-sm">
-              <div className="flex justify-between items-center py-2 border-b border-border/30">
-                <span className="text-muted-foreground text-sm">Consultor</span>
-                <span className="font-semibold text-foreground">
-                  {rotatedWhatsApp?.name || "Equipe de Atendimento"}
-                </span>
-              </div>
-              <div className="flex justify-between items-center py-2">
-                <span className="text-muted-foreground text-sm">Status</span>
-                <span className="flex items-center gap-2 text-green-600 font-medium">
-                  <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                  Disponível Agora
-                </span>
-              </div>
-            </div>
+          <div className="bg-muted/30 rounded-lg p-8 mt-6">
+            <img src={whatsappIcon} alt="WhatsApp" className="w-16 h-16 mx-auto mb-4" />
+
+            <p className="text-base text-foreground leading-relaxed mb-4">
+              {successConfig?.success_subtitle || successConfig?.subtitle || "Em breve entraremos em contato."}
+            </p>
+
+            {successConfig?.whatsapp_enabled && <Button type="button" onClick={e => {
+            e.preventDefault();
+            e.stopPropagation();
+            trackWhatsAppClick();
+            const phoneNumber = rotatedWhatsApp?.number ? rotatedWhatsApp.number.replace(/\D/g, "") : (successConfig.whatsapp_number || "").replace(/\D/g, "");
+            const message = encodeURIComponent(successConfig.whatsapp_message || "Olá! Preenchi o formulário.");
+            window.open(`https://wa.me/${phoneNumber}?text=${message}`, "_blank");
+          }} className="w-full h-12 bg-green-600 hover:bg-green-700 text-white">
+                Conversar no WhatsApp
+              </Button>}
           </div>
-
-          {/* WhatsApp CTA button */}
-          {successConfig?.whatsapp_enabled && (
-            <div className="opacity-0 animate-slide-up stagger-3">
-              <Button 
-                type="button" 
-                onClick={e => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  trackWhatsAppClick();
-                  const phoneNumber = rotatedWhatsApp?.number 
-                    ? rotatedWhatsApp.number.replace(/\D/g, "") 
-                    : (successConfig.whatsapp_number || "").replace(/\D/g, "");
-                  const message = encodeURIComponent(successConfig.whatsapp_message || "Olá! Preenchi o formulário.");
-                  window.open(`https://wa.me/${phoneNumber}?text=${message}`, "_blank");
-                }} 
-                className="whatsapp-button w-full h-14 text-lg font-semibold bg-green-500 hover:bg-green-600 text-white rounded-2xl shadow-xl"
-              >
-                <img src={whatsappIcon} alt="" className="w-6 h-6 mr-3" />
-                Abrir WhatsApp Agora
-              </Button>
-            </div>
-          )}
-
-          {/* Response time hint */}
-          <p className="text-sm text-muted-foreground opacity-0 animate-fade-in stagger-4">
-            Tempo de resposta médio: 2 minutos.
-          </p>
-        </div>
-      );
+        </div>;
     }
-    
     if (!currentQuestions || currentQuestions.length === 0) return null;
-    
-    return (
-      <div className="space-y-6" key={`step-${step}`}>
+    return <div className="space-y-8">
         {currentQuestions.map((question, index) => renderQuestionInput(question, index === 0))}
-      </div>
-    );
+      </div>;
   };
   if (loading) {
     return <div className="w-full max-w-2xl mx-auto px-4 py-6">
@@ -925,83 +740,43 @@ export const MultiStepFormDynamic = () => {
         </div>
       </div>;
   }
-  const progressPercentage = Math.round((step / uniqueSteps.length) * 100);
-  
-  return (
-    <div className="min-h-screen flex flex-col bg-background">
-      {/* Minimal progress bar at very top */}
-      {step < totalSteps && (
-        <div className="fixed top-0 left-0 right-0 z-50">
-          <div className="h-1 bg-muted">
-            <div 
-              className="h-full bg-primary progress-animated"
-              style={{ width: `${progressPercentage}%` }}
-            />
+  return <div className="w-full max-w-2xl mx-auto px-[5px] py-[20px]">
+      {step < totalSteps && <div className="mb-8">
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-sm font-medium text-muted-foreground">
+              Etapa {step} de {uniqueSteps.length}
+            </span>
+
+            <span className="text-sm font-bold text-primary">
+              {Math.round(step / uniqueSteps.length * 100)}%
+            </span>
           </div>
-        </div>
-      )}
 
-      {/* Main form content - centered vertically */}
-      <div className="flex-1 flex items-center justify-center px-6 py-6 md:py-10">
-        <div className="w-full max-w-xl">
-          <form onSubmit={(e) => e.preventDefault()}>
-            <div className="mb-6">
-              {renderStep()}
-            </div>
+          <Progress value={step / uniqueSteps.length * 100} className="h-2" />
+        </div>}
 
-            {step < totalSteps && (
-              <div className="flex gap-3 opacity-0 animate-fade-in" style={{ animationDelay: '0.3s' }}>
-                {step > 1 && (
-                  <Button 
-                    type="button" 
-                    variant="ghost" 
-                    onClick={prevStep} 
-                    className="typeform-button flex-none h-12 px-4 text-muted-foreground hover:text-foreground"
-                    disabled={isSubmitting}
-                  >
-                    <ArrowLeft className="mr-2 h-4 w-4" />
-                    Voltar
-                  </Button>
-                )}
+      <form onSubmit={(e) => e.preventDefault()}>
+        <div className="min-h-[200px] mb-4">{renderStep()}</div>
 
-                {step < uniqueSteps.length ? (
-                  <Button 
-                    type="button" 
-                    onClick={nextStep} 
-                    disabled={isSubmitting} 
-                    className="typeform-button flex-1 h-14 text-base md:text-lg font-semibold rounded-xl shadow-lg"
-                  >
-                    Próximo
-                    <ArrowRight className="ml-2 h-5 w-5" />
-                  </Button>
-                ) : (
-                  <Button 
-                    type="button" 
-                    onClick={() => {
-                      shouldFireGtmRef.current = true;
-                      form.handleSubmit(onSubmit)();
-                    }} 
-                    className="typeform-button flex-1 h-14 text-base md:text-lg font-semibold rounded-xl shadow-lg"
-                    disabled={isSubmitting}
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                        Enviando...
-                      </>
-                    ) : (
-                      <>
-                        Finalizar
-                        <ArrowRight className="ml-2 h-5 w-5" />
-                      </>
-                    )}
-                  </Button>
-                )}
-              </div>
-            )}
-          </form>
-        </div>
-      </div>
-    </div>
-  );
+        {step < totalSteps && <div className="flex gap-3">
+            {step > 1 && <Button type="button" variant="outline" onClick={prevStep} className="flex-1 h-12" disabled={isSubmitting}>
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Voltar
+              </Button>}
+
+            {step < uniqueSteps.length ? <Button type="button" onClick={nextStep} disabled={isSubmitting} className="flex-1 h-12 text-base font-sans">
+                Próximo
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button> : <Button type="button" onClick={() => {
+                shouldFireGtmRef.current = true; // Finalizar button = final submit
+                form.handleSubmit(onSubmit)();
+              }} className="flex-1 h-12" disabled={isSubmitting}>
+                {isSubmitting ? <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Enviando...
+                  </> : "Finalizar"}
+              </Button>}
+          </div>}
+      </form>
+    </div>;
 };
