@@ -491,9 +491,34 @@ export const MultiStepFormDynamic = () => {
   };
   const onSubmit = async (data: any) => {
     setIsSubmitting(true);
-    try {
-      const utmParams = getUtmParams();
+    const utmParams = getUtmParams();
+    
+    // GTM event PRIMEIRO - antes de qualquer chamada assíncrona
+    // Isso garante que o evento seja disparado mesmo se a API falhar
+    if (shouldFireGtmRef.current && typeof window !== "undefined") {
+      const win = window as any;
+      if (!win.dataLayer) {
+        win.dataLayer = [];
+      }
+      
+      const gtmEvent = {
+        event: "gtm.formSubmit",
+        form_nome: formName,
+        ...utmParams,
+        timestamp: new Date().toISOString()
+      };
+      
+      console.log("[GTM] Disparando evento:", gtmEvent);
+      win.dataLayer.push(gtmEvent);
+      
+      // Fallback: dispara evento customizado para garantir captura
+      window.dispatchEvent(new CustomEvent('formSubmitComplete', { detail: gtmEvent }));
+    }
+    
+    // Reset ref imediatamente após disparar
+    shouldFireGtmRef.current = false;
 
+    try {
       // Seleciona edge function baseado no form_name
       const edgeFunctionName = formName === "autoprotecta" ? "enviar-conversao-autoprotecta" : formName === "educa" ? "enviar-conversao-educa" : "enviar-conversao";
 
@@ -518,30 +543,6 @@ export const MultiStepFormDynamic = () => {
           name: responseData.vendedor_nome || ""
         });
       }
-
-      // GTM event APENAS quando shouldFireGtmRef=true (botão Finalizar clicado)
-      if (shouldFireGtmRef.current && typeof window !== "undefined") {
-        // Garante que dataLayer existe antes de usar
-        const win = window as any;
-        if (!win.dataLayer) {
-          win.dataLayer = [];
-        }
-        
-        const gtmEvent = {
-          event: "gtm.formSubmit",
-          form_nome: formName,
-          ...utmParams,
-          timestamp: new Date().toISOString()
-        };
-        
-        win.dataLayer.push(gtmEvent);
-        
-        // Fallback: dispara evento customizado para garantir captura
-        window.dispatchEvent(new CustomEvent('formSubmitComplete', { detail: gtmEvent }));
-      }
-
-      // Reset ref after use
-      shouldFireGtmRef.current = false;
 
       // Track form_completed event
       supabase.from("form_analytics").insert({
