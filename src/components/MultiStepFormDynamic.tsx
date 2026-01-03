@@ -508,7 +508,6 @@ export const MultiStepFormDynamic = () => {
         timestamp: new Date().toISOString()
       };
       
-      console.log("[GTM] Disparando evento:", gtmEvent);
       win.dataLayer.push(gtmEvent);
       
       // Fallback: dispara evento customizado para garantir captura
