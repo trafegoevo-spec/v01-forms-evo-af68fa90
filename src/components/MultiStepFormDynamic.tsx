@@ -521,6 +521,7 @@ export const MultiStepFormDynamic = () => {
 
       // GTM event APENAS quando shouldFireGtmRef=true (botão Finalizar clicado)
       if (shouldFireGtmRef.current && typeof window !== "undefined") {
+        console.log("🚀 Disparando evento GTM gtm.formSubmit");
         (window as any).dataLayer = (window as any).dataLayer || [];
         (window as any).dataLayer.push({
           event: "gtm.formSubmit",
@@ -528,6 +529,9 @@ export const MultiStepFormDynamic = () => {
           ...utmParams,
           timestamp: new Date().toISOString()
         });
+        console.log("✅ Evento GTM disparado:", (window as any).dataLayer);
+      } else {
+        console.log("⚠️ GTM não disparado - shouldFireGtmRef:", shouldFireGtmRef.current);
       }
 
       // Reset ref after use
