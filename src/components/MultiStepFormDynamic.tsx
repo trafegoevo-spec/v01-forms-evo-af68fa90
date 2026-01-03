@@ -521,17 +521,23 @@ export const MultiStepFormDynamic = () => {
 
       // GTM event APENAS quando shouldFireGtmRef=true (botão Finalizar clicado)
       if (shouldFireGtmRef.current && typeof window !== "undefined") {
-        console.log("🚀 Disparando evento GTM gtm.formSubmit");
-        (window as any).dataLayer = (window as any).dataLayer || [];
-        (window as any).dataLayer.push({
+        // Garante que dataLayer existe antes de usar
+        const win = window as any;
+        if (!win.dataLayer) {
+          win.dataLayer = [];
+        }
+        
+        const gtmEvent = {
           event: "gtm.formSubmit",
           form_nome: formName,
           ...utmParams,
           timestamp: new Date().toISOString()
-        });
-        console.log("✅ Evento GTM disparado:", (window as any).dataLayer);
-      } else {
-        console.log("⚠️ GTM não disparado - shouldFireGtmRef:", shouldFireGtmRef.current);
+        };
+        
+        win.dataLayer.push(gtmEvent);
+        
+        // Fallback: dispara evento customizado para garantir captura
+        window.dispatchEvent(new CustomEvent('formSubmitComplete', { detail: gtmEvent }));
       }
 
       // Reset ref after use
