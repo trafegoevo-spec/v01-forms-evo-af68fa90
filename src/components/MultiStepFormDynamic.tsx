@@ -525,6 +525,9 @@ export const MultiStepFormDynamic = () => {
         (window as any).dataLayer.push({
           event: "form_submit_success",
           form_name: formName,
+          lead_nome: data.nome || data.name || "",
+          lead_email: data.email || "",
+          lead_telefone: data.telefone || data.phone || "",
           ...utmParams,
           timestamp: new Date().toISOString()
         });
