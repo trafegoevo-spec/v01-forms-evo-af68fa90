@@ -523,8 +523,8 @@ export const MultiStepFormDynamic = () => {
       if (shouldFireGtmRef.current && typeof window !== "undefined") {
         (window as any).dataLayer = (window as any).dataLayer || [];
         (window as any).dataLayer.push({
-          event: "form_submit_success",
-          form_name: formName,
+          event: "gtm.formSubmit",
+          form_nome: formName,
           lead_nome: data.nome || data.name || "",
           lead_email: data.email || "",
           lead_telefone: data.telefone || data.phone || "",
