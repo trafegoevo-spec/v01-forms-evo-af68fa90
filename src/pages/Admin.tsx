@@ -1106,16 +1106,78 @@ VITE_GTM_ID=GTM-XXXXXXX`}
         </div>
 
         {/* Configurações Gerais */}
-        {settings && <div className="mt-8">
-            <h2 className="text-2xl font-bold mb-4">Configurações Gerais</h2>
+        {settings && <div className="mt-8 space-y-6">
+            <h2 className="text-2xl font-bold">Configurações Gerais</h2>
+            
+            {/* Página de Obrigado */}
             <Card>
               <CardHeader>
-                <CardTitle>Botão WhatsApp e Página de Sucesso</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <CheckCircle className="h-5 w-5 text-green-500" />
+                  Página de Obrigado
+                </CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Personalize os textos exibidos após o envio do formulário
+                </p>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label>Título Principal</Label>
+                  <Input 
+                    value={settings.success_title} 
+                    onChange={e => updateSettings({ success_title: e.target.value })} 
+                    placeholder="Obrigado!" 
+                    className="text-lg"
+                  />
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Texto grande exibido no topo (ex: "Obrigado!", "Parabéns!")
+                  </p>
+                </div>
+
+                <div>
+                  <Label>Subtítulo</Label>
+                  <Input 
+                    value={settings.success_subtitle} 
+                    onChange={e => updateSettings({ success_subtitle: e.target.value })} 
+                    placeholder="Recebemos suas informações com sucesso!" 
+                  />
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Texto secundário logo abaixo do título
+                  </p>
+                </div>
+
+                <div>
+                  <Label>Descrição / Instruções</Label>
+                  <textarea
+                    value={settings.success_description}
+                    onChange={e => updateSettings({ success_description: e.target.value })}
+                    placeholder="Em breve entraremos em contato para dar continuidade ao seu atendimento."
+                    className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    rows={3}
+                  />
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Texto explicativo ou próximos passos para o usuário
+                  </p>
+                </div>
+
+                <Button onClick={saveSettings} disabled={!settingsChanged} className="w-full">
+                  {settingsChanged ? "Salvar Configurações da Página" : "Configurações Salvas"}
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* WhatsApp */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Botão WhatsApp</CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Configure a integração com WhatsApp na página de obrigado
+                </p>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
-                    <Label htmlFor="whatsapp-enabled">Exibir opção WhatsApp na página de obrigado</Label>
+                    <Label htmlFor="whatsapp-enabled">Exibir opção WhatsApp</Label>
                     <p className="text-sm text-muted-foreground">
                       Ative para mostrar a seção do WhatsApp após o envio do formulário
                     </p>
@@ -1137,36 +1199,18 @@ VITE_GTM_ID=GTM-XXXXXXX`}
 
                 <div>
                   <Label>Mensagem do WhatsApp</Label>
-                  <Input value={settings.whatsapp_message} onChange={e => updateSettings({
-                whatsapp_message: e.target.value
-              })} placeholder="Olá! Acabei de enviar meus dados no formulário." disabled={!settings.whatsapp_enabled} />
+                  <textarea
+                    value={settings.whatsapp_message}
+                    onChange={e => updateSettings({ whatsapp_message: e.target.value })}
+                    placeholder="Olá! Acabei de enviar meus dados no formulário."
+                    disabled={!settings.whatsapp_enabled}
+                    className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    rows={2}
+                  />
                   <p className="text-sm text-muted-foreground mt-1">
                     Mensagem que será enviada automaticamente ao abrir o WhatsApp
                   </p>
                 </div>
-
-                <div>
-                  <Label>Título da Página de Sucesso</Label>
-                  <Input value={settings.success_title} onChange={e => updateSettings({
-                success_title: e.target.value
-              })} placeholder="Obrigado" />
-                </div>
-
-                <div>
-                  <Label>Descrição da Página de Sucesso</Label>
-                  <Input value={settings.success_description} onChange={e => updateSettings({
-                success_description: e.target.value
-              })} placeholder="Recebemos suas informações com sucesso!" />
-                </div>
-
-                <div>
-                  <Label>Subtítulo da Página de Sucesso</Label>
-                  <Input value={settings.success_subtitle} onChange={e => updateSettings({
-                success_subtitle: e.target.value
-              })} placeholder="Em breve entraremos em contato." />
-                </div>
-
-                
 
                 <Button onClick={saveSettings} disabled={!settingsChanged} className="w-full">
                   {settingsChanged ? "Salvar Configurações" : "Configurações Salvas"}
