@@ -79,6 +79,10 @@ interface AppSettings {
   cover_cta_text: string;
   cover_image_url: string | null;
   cover_topics: CoverTopic[];
+  bg_gradient_from: string;
+  bg_gradient_via: string;
+  bg_gradient_to: string;
+  bg_gradient_direction: string;
 }
 
 const AVAILABLE_ICONS = [
@@ -312,7 +316,11 @@ const Admin = () => {
           cover_subtitle: 'Preencha o formulário e entre em contato conosco',
           cover_cta_text: 'Começar',
           cover_image_url: null,
-          cover_topics: JSON.parse(JSON.stringify(defaultTopics))
+          cover_topics: JSON.parse(JSON.stringify(defaultTopics)),
+          bg_gradient_from: '#f0f9ff',
+          bg_gradient_via: '#ffffff',
+          bg_gradient_to: '#faf5ff',
+          bg_gradient_direction: 'to-br'
         };
         const {
           data: newData,
@@ -322,7 +330,14 @@ const Admin = () => {
         const parsedTopics = Array.isArray(newData.cover_topics) 
           ? (newData.cover_topics as unknown as CoverTopic[])
           : defaultTopics;
-        setSettings({ ...newData, cover_topics: parsedTopics } as AppSettings);
+        setSettings({ 
+          ...newData, 
+          cover_topics: parsedTopics,
+          bg_gradient_from: newData.bg_gradient_from || '#f0f9ff',
+          bg_gradient_via: newData.bg_gradient_via || '#ffffff',
+          bg_gradient_to: newData.bg_gradient_to || '#faf5ff',
+          bg_gradient_direction: newData.bg_gradient_direction || 'to-br'
+        } as AppSettings);
         toast({
           title: "Configurações criadas",
           description: "Configurações padrão foram criadas automaticamente."
@@ -337,7 +352,14 @@ const Admin = () => {
       const parsedTopics = Array.isArray(data.cover_topics) 
         ? (data.cover_topics as unknown as CoverTopic[])
         : defaultTopics;
-      setSettings({ ...data, cover_topics: parsedTopics } as AppSettings);
+      setSettings({ 
+        ...data, 
+        cover_topics: parsedTopics,
+        bg_gradient_from: data.bg_gradient_from || '#f0f9ff',
+        bg_gradient_via: data.bg_gradient_via || '#ffffff',
+        bg_gradient_to: data.bg_gradient_to || '#faf5ff',
+        bg_gradient_direction: data.bg_gradient_direction || 'to-br'
+      } as AppSettings);
     } catch (error: any) {
       console.error("Erro ao carregar configurações:", error);
       toast({
@@ -365,7 +387,11 @@ const Admin = () => {
         cover_subtitle: settings.cover_subtitle,
         cover_cta_text: settings.cover_cta_text,
         cover_image_url: settings.cover_image_url,
-        cover_topics: JSON.parse(JSON.stringify(settings.cover_topics))
+        cover_topics: JSON.parse(JSON.stringify(settings.cover_topics)),
+        bg_gradient_from: settings.bg_gradient_from,
+        bg_gradient_via: settings.bg_gradient_via,
+        bg_gradient_to: settings.bg_gradient_to,
+        bg_gradient_direction: settings.bg_gradient_direction
       }).eq("id", settings.id);
       if (error) throw error;
       toast({
@@ -873,6 +899,118 @@ VITE_GTM_ID=GTM-XXXXXXX`}
                     disabled={!settings.cover_enabled}
                   />
                 </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Background Gradient Settings */}
+        {settings && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle>Background Gradiente</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Personalize o gradiente de fundo das páginas. O gradiente vai da cor inicial, passa pela cor intermediária, até a cor final.
+              </p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <Label>Cor Inicial (De)</Label>
+                  <div className="flex items-center gap-2 mt-1">
+                    <input 
+                      type="color" 
+                      value={settings.bg_gradient_from}
+                      onChange={(e) => updateSettings({ bg_gradient_from: e.target.value })}
+                      className="w-10 h-10 rounded border cursor-pointer"
+                    />
+                    <Input 
+                      value={settings.bg_gradient_from} 
+                      onChange={(e) => updateSettings({ bg_gradient_from: e.target.value })} 
+                      placeholder="#f0f9ff"
+                      className="flex-1"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Label>Cor Intermediária (Via)</Label>
+                  <div className="flex items-center gap-2 mt-1">
+                    <input 
+                      type="color" 
+                      value={settings.bg_gradient_via}
+                      onChange={(e) => updateSettings({ bg_gradient_via: e.target.value })}
+                      className="w-10 h-10 rounded border cursor-pointer"
+                    />
+                    <Input 
+                      value={settings.bg_gradient_via} 
+                      onChange={(e) => updateSettings({ bg_gradient_via: e.target.value })} 
+                      placeholder="#ffffff"
+                      className="flex-1"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Label>Cor Final (Para)</Label>
+                  <div className="flex items-center gap-2 mt-1">
+                    <input 
+                      type="color" 
+                      value={settings.bg_gradient_to}
+                      onChange={(e) => updateSettings({ bg_gradient_to: e.target.value })}
+                      className="w-10 h-10 rounded border cursor-pointer"
+                    />
+                    <Input 
+                      value={settings.bg_gradient_to} 
+                      onChange={(e) => updateSettings({ bg_gradient_to: e.target.value })} 
+                      placeholder="#faf5ff"
+                      className="flex-1"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <Label>Direção do Gradiente</Label>
+                <Select
+                  value={settings.bg_gradient_direction}
+                  onValueChange={(value) => updateSettings({ bg_gradient_direction: value })}
+                >
+                  <SelectTrigger className="w-full md:w-64">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="to-t">Para Cima ↑</SelectItem>
+                    <SelectItem value="to-b">Para Baixo ↓</SelectItem>
+                    <SelectItem value="to-l">Para Esquerda ←</SelectItem>
+                    <SelectItem value="to-r">Para Direita →</SelectItem>
+                    <SelectItem value="to-tl">Diagonal Superior Esquerda ↖</SelectItem>
+                    <SelectItem value="to-tr">Diagonal Superior Direita ↗</SelectItem>
+                    <SelectItem value="to-bl">Diagonal Inferior Esquerda ↙</SelectItem>
+                    <SelectItem value="to-br">Diagonal Inferior Direita ↘</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Preview */}
+              <div>
+                <Label>Pré-visualização</Label>
+                <div 
+                  className="h-24 rounded-lg border mt-2"
+                  style={{
+                    background: `linear-gradient(${
+                      settings.bg_gradient_direction === 'to-t' ? '0deg' :
+                      settings.bg_gradient_direction === 'to-b' ? '180deg' :
+                      settings.bg_gradient_direction === 'to-l' ? '270deg' :
+                      settings.bg_gradient_direction === 'to-r' ? '90deg' :
+                      settings.bg_gradient_direction === 'to-tl' ? '315deg' :
+                      settings.bg_gradient_direction === 'to-tr' ? '45deg' :
+                      settings.bg_gradient_direction === 'to-bl' ? '225deg' :
+                      '135deg'
+                    }, ${settings.bg_gradient_from}, ${settings.bg_gradient_via}, ${settings.bg_gradient_to})`
+                  }}
+                />
               </div>
             </CardContent>
           </Card>

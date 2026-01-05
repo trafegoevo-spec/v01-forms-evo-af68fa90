@@ -12,6 +12,7 @@ interface CoverPageProps {
   topics: CoverTopic[];
   ctaText: string;
   onStart: () => void;
+  gradientStyle?: React.CSSProperties;
 }
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -26,10 +27,10 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   Target,
 };
 
-export const CoverPage = ({ title, subtitle, topics, ctaText, onStart }: CoverPageProps) => {
+export const CoverPage = ({ title, subtitle, topics, ctaText, onStart, gradientStyle }: CoverPageProps) => {
 
   return (
-    <div className="min-h-screen flex flex-col relative overflow-hidden bg-background">
+    <div className="min-h-screen flex flex-col relative overflow-hidden" style={gradientStyle}>
       {/* Animated background layers */}
       <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/10 animate-[pulse_8s_ease-in-out_infinite]" />
       

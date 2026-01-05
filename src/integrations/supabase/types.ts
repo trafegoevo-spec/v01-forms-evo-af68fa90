@@ -16,6 +16,10 @@ export type Database = {
     Tables: {
       app_settings: {
         Row: {
+          bg_gradient_direction: string | null
+          bg_gradient_from: string | null
+          bg_gradient_to: string | null
+          bg_gradient_via: string | null
           cover_cta_text: string
           cover_enabled: boolean
           cover_image_url: string | null
@@ -37,6 +41,10 @@ export type Database = {
           whatsapp_number: string
         }
         Insert: {
+          bg_gradient_direction?: string | null
+          bg_gradient_from?: string | null
+          bg_gradient_to?: string | null
+          bg_gradient_via?: string | null
           cover_cta_text?: string
           cover_enabled?: boolean
           cover_image_url?: string | null
@@ -58,6 +66,10 @@ export type Database = {
           whatsapp_number?: string
         }
         Update: {
+          bg_gradient_direction?: string | null
+          bg_gradient_from?: string | null
+          bg_gradient_to?: string | null
+          bg_gradient_via?: string | null
           cover_cta_text?: string
           cover_enabled?: boolean
           cover_image_url?: string | null
