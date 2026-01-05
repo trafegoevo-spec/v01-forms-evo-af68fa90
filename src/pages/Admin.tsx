@@ -912,27 +912,32 @@ VITE_GTM_ID=GTM-XXXXXXX`}
             </CardHeader>
             <CardContent className="space-y-4">
               <p className="text-sm text-muted-foreground">
-                Personalize o gradiente de fundo das páginas. Escolha um preset ou personalize as cores manualmente.
+                Escolha um dos gradientes disponíveis para o fundo das páginas.
               </p>
 
               {/* Gradient Presets */}
-              <div>
-                <Label className="mb-2 block">Presets Rápidos</Label>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
-                  {[
-                    { name: "Padrão", from: "#f0f9ff", via: "#ffffff", to: "#faf5ff", direction: "to-br" },
-                    { name: "Sunset", from: "#fef3c7", via: "#fde68a", to: "#fca5a5", direction: "to-br" },
-                    { name: "Ocean", from: "#e0f2fe", via: "#bae6fd", to: "#7dd3fc", direction: "to-br" },
-                    { name: "Forest", from: "#dcfce7", via: "#bbf7d0", to: "#86efac", direction: "to-br" },
-                    { name: "Lavender", from: "#f3e8ff", via: "#e9d5ff", to: "#d8b4fe", direction: "to-br" },
-                    { name: "Rose", from: "#ffe4e6", via: "#fecdd3", to: "#fda4af", direction: "to-br" },
-                    { name: "Sky", from: "#f0f9ff", via: "#e0f2fe", to: "#bae6fd", direction: "to-b" },
-                    { name: "Mint", from: "#ecfdf5", via: "#d1fae5", to: "#a7f3d0", direction: "to-br" },
-                    { name: "Peach", from: "#fff7ed", via: "#ffedd5", to: "#fed7aa", direction: "to-br" },
-                    { name: "Aurora", from: "#fdf4ff", via: "#e0f2fe", to: "#dcfce7", direction: "to-r" },
-                    { name: "Coral", from: "#fff1f2", via: "#ffe4e6", to: "#fecaca", direction: "to-br" },
-                    { name: "Clean", from: "#fafafa", via: "#f5f5f5", to: "#e5e5e5", direction: "to-b" },
-                  ].map((preset) => (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                {[
+                  { name: "Padrão", from: "#f0f9ff", via: "#ffffff", to: "#faf5ff", direction: "to-br" },
+                  { name: "Sunset", from: "#fef3c7", via: "#fde68a", to: "#fca5a5", direction: "to-br" },
+                  { name: "Ocean", from: "#e0f2fe", via: "#bae6fd", to: "#7dd3fc", direction: "to-br" },
+                  { name: "Forest", from: "#dcfce7", via: "#bbf7d0", to: "#86efac", direction: "to-br" },
+                  { name: "Lavender", from: "#f3e8ff", via: "#e9d5ff", to: "#d8b4fe", direction: "to-br" },
+                  { name: "Rose", from: "#ffe4e6", via: "#fecdd3", to: "#fda4af", direction: "to-br" },
+                  { name: "Sky", from: "#f0f9ff", via: "#e0f2fe", to: "#bae6fd", direction: "to-b" },
+                  { name: "Mint", from: "#ecfdf5", via: "#d1fae5", to: "#a7f3d0", direction: "to-br" },
+                  { name: "Peach", from: "#fff7ed", via: "#ffedd5", to: "#fed7aa", direction: "to-br" },
+                  { name: "Aurora", from: "#fdf4ff", via: "#e0f2fe", to: "#dcfce7", direction: "to-r" },
+                  { name: "Coral", from: "#fff1f2", via: "#ffe4e6", to: "#fecaca", direction: "to-br" },
+                  { name: "Clean", from: "#fafafa", via: "#f5f5f5", to: "#e5e5e5", direction: "to-b" },
+                ].map((preset) => {
+                  const isActive = 
+                    settings.bg_gradient_from === preset.from &&
+                    settings.bg_gradient_via === preset.via &&
+                    settings.bg_gradient_to === preset.to &&
+                    settings.bg_gradient_direction === preset.direction;
+                  
+                  return (
                     <button
                       key={preset.name}
                       onClick={() => updateSettings({
@@ -941,7 +946,9 @@ VITE_GTM_ID=GTM-XXXXXXX`}
                         bg_gradient_to: preset.to,
                         bg_gradient_direction: preset.direction
                       })}
-                      className="group relative h-16 rounded-lg border overflow-hidden transition-all hover:scale-105 hover:shadow-md"
+                      className={`group relative h-20 rounded-lg border-2 overflow-hidden transition-all hover:scale-105 hover:shadow-md ${
+                        isActive ? 'border-primary ring-2 ring-primary/30' : 'border-transparent'
+                      }`}
                       style={{
                         background: `linear-gradient(${
                           preset.direction === 'to-t' ? '0deg' :
@@ -952,94 +959,14 @@ VITE_GTM_ID=GTM-XXXXXXX`}
                         }, ${preset.from}, ${preset.via}, ${preset.to})`
                       }}
                     >
-                      <span className="absolute bottom-1 left-1/2 -translate-x-1/2 text-xs font-medium bg-background/80 px-2 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity">
+                      <span className={`absolute bottom-1 left-1/2 -translate-x-1/2 text-xs font-medium px-2 py-0.5 rounded transition-opacity ${
+                        isActive ? 'bg-primary text-primary-foreground opacity-100' : 'bg-background/80 opacity-0 group-hover:opacity-100'
+                      }`}>
                         {preset.name}
                       </span>
                     </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="border-t pt-4">
-                <Label className="mb-2 block text-sm text-muted-foreground">Personalização Manual</Label>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <Label>Cor Inicial (De)</Label>
-                  <div className="flex items-center gap-2 mt-1">
-                    <input 
-                      type="color" 
-                      value={settings.bg_gradient_from}
-                      onChange={(e) => updateSettings({ bg_gradient_from: e.target.value })}
-                      className="w-10 h-10 rounded border cursor-pointer"
-                    />
-                    <Input 
-                      value={settings.bg_gradient_from} 
-                      onChange={(e) => updateSettings({ bg_gradient_from: e.target.value })} 
-                      placeholder="#f0f9ff"
-                      className="flex-1"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <Label>Cor Intermediária (Via)</Label>
-                  <div className="flex items-center gap-2 mt-1">
-                    <input 
-                      type="color" 
-                      value={settings.bg_gradient_via}
-                      onChange={(e) => updateSettings({ bg_gradient_via: e.target.value })}
-                      className="w-10 h-10 rounded border cursor-pointer"
-                    />
-                    <Input 
-                      value={settings.bg_gradient_via} 
-                      onChange={(e) => updateSettings({ bg_gradient_via: e.target.value })} 
-                      placeholder="#ffffff"
-                      className="flex-1"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <Label>Cor Final (Para)</Label>
-                  <div className="flex items-center gap-2 mt-1">
-                    <input 
-                      type="color" 
-                      value={settings.bg_gradient_to}
-                      onChange={(e) => updateSettings({ bg_gradient_to: e.target.value })}
-                      className="w-10 h-10 rounded border cursor-pointer"
-                    />
-                    <Input 
-                      value={settings.bg_gradient_to} 
-                      onChange={(e) => updateSettings({ bg_gradient_to: e.target.value })} 
-                      placeholder="#faf5ff"
-                      className="flex-1"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <Label>Direção do Gradiente</Label>
-                <Select
-                  value={settings.bg_gradient_direction}
-                  onValueChange={(value) => updateSettings({ bg_gradient_direction: value })}
-                >
-                  <SelectTrigger className="w-full md:w-64">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="to-t">Para Cima ↑</SelectItem>
-                    <SelectItem value="to-b">Para Baixo ↓</SelectItem>
-                    <SelectItem value="to-l">Para Esquerda ←</SelectItem>
-                    <SelectItem value="to-r">Para Direita →</SelectItem>
-                    <SelectItem value="to-tl">Diagonal Superior Esquerda ↖</SelectItem>
-                    <SelectItem value="to-tr">Diagonal Superior Direita ↗</SelectItem>
-                    <SelectItem value="to-bl">Diagonal Inferior Esquerda ↙</SelectItem>
-                    <SelectItem value="to-br">Diagonal Inferior Direita ↘</SelectItem>
-                  </SelectContent>
-                </Select>
+                  );
+                })}
               </div>
 
               {/* Preview */}
