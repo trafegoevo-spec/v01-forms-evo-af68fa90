@@ -912,8 +912,57 @@ VITE_GTM_ID=GTM-XXXXXXX`}
             </CardHeader>
             <CardContent className="space-y-4">
               <p className="text-sm text-muted-foreground">
-                Personalize o gradiente de fundo das páginas. O gradiente vai da cor inicial, passa pela cor intermediária, até a cor final.
+                Personalize o gradiente de fundo das páginas. Escolha um preset ou personalize as cores manualmente.
               </p>
+
+              {/* Gradient Presets */}
+              <div>
+                <Label className="mb-2 block">Presets Rápidos</Label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
+                  {[
+                    { name: "Padrão", from: "#f0f9ff", via: "#ffffff", to: "#faf5ff", direction: "to-br" },
+                    { name: "Sunset", from: "#fef3c7", via: "#fde68a", to: "#fca5a5", direction: "to-br" },
+                    { name: "Ocean", from: "#e0f2fe", via: "#bae6fd", to: "#7dd3fc", direction: "to-br" },
+                    { name: "Forest", from: "#dcfce7", via: "#bbf7d0", to: "#86efac", direction: "to-br" },
+                    { name: "Lavender", from: "#f3e8ff", via: "#e9d5ff", to: "#d8b4fe", direction: "to-br" },
+                    { name: "Rose", from: "#ffe4e6", via: "#fecdd3", to: "#fda4af", direction: "to-br" },
+                    { name: "Sky", from: "#f0f9ff", via: "#e0f2fe", to: "#bae6fd", direction: "to-b" },
+                    { name: "Mint", from: "#ecfdf5", via: "#d1fae5", to: "#a7f3d0", direction: "to-br" },
+                    { name: "Peach", from: "#fff7ed", via: "#ffedd5", to: "#fed7aa", direction: "to-br" },
+                    { name: "Aurora", from: "#fdf4ff", via: "#e0f2fe", to: "#dcfce7", direction: "to-r" },
+                    { name: "Coral", from: "#fff1f2", via: "#ffe4e6", to: "#fecaca", direction: "to-br" },
+                    { name: "Clean", from: "#fafafa", via: "#f5f5f5", to: "#e5e5e5", direction: "to-b" },
+                  ].map((preset) => (
+                    <button
+                      key={preset.name}
+                      onClick={() => updateSettings({
+                        bg_gradient_from: preset.from,
+                        bg_gradient_via: preset.via,
+                        bg_gradient_to: preset.to,
+                        bg_gradient_direction: preset.direction
+                      })}
+                      className="group relative h-16 rounded-lg border overflow-hidden transition-all hover:scale-105 hover:shadow-md"
+                      style={{
+                        background: `linear-gradient(${
+                          preset.direction === 'to-t' ? '0deg' :
+                          preset.direction === 'to-b' ? '180deg' :
+                          preset.direction === 'to-l' ? '270deg' :
+                          preset.direction === 'to-r' ? '90deg' :
+                          '135deg'
+                        }, ${preset.from}, ${preset.via}, ${preset.to})`
+                      }}
+                    >
+                      <span className="absolute bottom-1 left-1/2 -translate-x-1/2 text-xs font-medium bg-background/80 px-2 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity">
+                        {preset.name}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="border-t pt-4">
+                <Label className="mb-2 block text-sm text-muted-foreground">Personalização Manual</Label>
+              </div>
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
