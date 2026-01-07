@@ -918,18 +918,18 @@ VITE_GTM_ID=GTM-XXXXXXX`}
               {/* Gradient Presets */}
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
                 {[
-                  { name: "Padrão", from: "#f0f9ff", via: "#ffffff", to: "#faf5ff", direction: "to-br" },
-                  { name: "Sunset", from: "#fef3c7", via: "#fde68a", to: "#fca5a5", direction: "to-br" },
-                  { name: "Ocean", from: "#e0f2fe", via: "#bae6fd", to: "#7dd3fc", direction: "to-br" },
-                  { name: "Forest", from: "#dcfce7", via: "#bbf7d0", to: "#86efac", direction: "to-br" },
-                  { name: "Lavender", from: "#f3e8ff", via: "#e9d5ff", to: "#d8b4fe", direction: "to-br" },
-                  { name: "Rose", from: "#ffe4e6", via: "#fecdd3", to: "#fda4af", direction: "to-br" },
-                  { name: "Sky", from: "#f0f9ff", via: "#e0f2fe", to: "#bae6fd", direction: "to-b" },
-                  { name: "Mint", from: "#ecfdf5", via: "#d1fae5", to: "#a7f3d0", direction: "to-br" },
-                  { name: "Peach", from: "#fff7ed", via: "#ffedd5", to: "#fed7aa", direction: "to-br" },
-                  { name: "Aurora", from: "#fdf4ff", via: "#e0f2fe", to: "#dcfce7", direction: "to-r" },
-                  { name: "Coral", from: "#fff1f2", via: "#ffe4e6", to: "#fecaca", direction: "to-br" },
-                  { name: "Clean", from: "#fafafa", via: "#f5f5f5", to: "#e5e5e5", direction: "to-b" },
+                  { name: "Mist", from: "#f8fafc", via: "#f1f5f9", to: "#e2e8f0", direction: "to-b" },
+                  { name: "Cloud", from: "#ffffff", via: "#f8fafc", to: "#f1f5f9", direction: "to-br" },
+                  { name: "Pearl", from: "#fafafa", via: "#f5f5f5", to: "#ebebeb", direction: "to-b" },
+                  { name: "Frost", from: "#f0f9ff", via: "#e8f4fc", to: "#dbeafe", direction: "to-br" },
+                  { name: "Silk", from: "#fdf4ff", via: "#f5f3ff", to: "#ede9fe", direction: "to-br" },
+                  { name: "Blush", from: "#fff5f7", via: "#fef2f4", to: "#fce7ea", direction: "to-br" },
+                  { name: "Dawn", from: "#fffbeb", via: "#fef3c7", to: "#fde68a", direction: "to-b" },
+                  { name: "Sage", from: "#f0fdf4", via: "#ecfdf5", to: "#dcfce7", direction: "to-br" },
+                  { name: "Slate", from: "#f8fafc", via: "#e2e8f0", to: "#cbd5e1", direction: "to-b" },
+                  { name: "Azure", from: "#f0f9ff", via: "#dbeafe", to: "#bfdbfe", direction: "to-br" },
+                  { name: "Ivory", from: "#fffbf5", via: "#faf7f2", to: "#f5f0e8", direction: "to-b" },
+                  { name: "Snow", from: "#ffffff", via: "#fafafa", to: "#f4f4f5", direction: "to-b" },
                 ].map((preset) => {
                   const isActive = 
                     settings.bg_gradient_from === preset.from &&
