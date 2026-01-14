@@ -92,6 +92,48 @@ export type Database = {
         }
         Relationships: []
       }
+      crm_integrations: {
+        Row: {
+          bearer_token: string | null
+          created_at: string | null
+          crm_name: string | null
+          id: string
+          include_dynamic_fields: boolean | null
+          is_active: boolean | null
+          manager_id: string | null
+          slug: string | null
+          subdomain: string
+          updated_at: string | null
+          webhook_url: string
+        }
+        Insert: {
+          bearer_token?: string | null
+          created_at?: string | null
+          crm_name?: string | null
+          id?: string
+          include_dynamic_fields?: boolean | null
+          is_active?: boolean | null
+          manager_id?: string | null
+          slug?: string | null
+          subdomain: string
+          updated_at?: string | null
+          webhook_url: string
+        }
+        Update: {
+          bearer_token?: string | null
+          created_at?: string | null
+          crm_name?: string | null
+          id?: string
+          include_dynamic_fields?: boolean | null
+          is_active?: boolean | null
+          manager_id?: string | null
+          slug?: string | null
+          subdomain?: string
+          updated_at?: string | null
+          webhook_url?: string
+        }
+        Relationships: []
+      }
       entidades: {
         Row: {
           cpf: string | null

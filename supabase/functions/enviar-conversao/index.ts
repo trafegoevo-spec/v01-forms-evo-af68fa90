@@ -166,12 +166,69 @@ serve(async (req) => {
 
     console.log("✅ Webhook enviado com sucesso");
 
+    // === INTEGRAÇÃO CRM (em paralelo) ===
+    let crmStatus = "not_configured";
+    try {
+      const { data: crmConfig } = await supabase
+        .from("crm_integrations")
+        .select("*")
+        .eq("subdomain", subdomain)
+        .eq("is_active", true)
+        .single();
+
+      if (crmConfig?.webhook_url) {
+        console.log("📤 Enviando para CRM:", crmConfig.crm_name);
+
+        const crmPayload: Record<string, any> = {
+          nome: nome || "",
+          telefone: telefoneRaw?.toString().replace(/\D/g, "") || "",
+          email: email || "",
+          manager_id: crmConfig.manager_id || "",
+          slug: crmConfig.slug || "",
+          data_cadastro: new Date().toISOString(),
+          whatsapp_redirecionado: whatsappRedirecionado,
+          vendedor_nome: vendedorNome,
+        };
+
+        if (crmConfig.include_dynamic_fields) {
+          Object.assign(crmPayload, flattened);
+        }
+
+        const crmHeaders: Record<string, string> = {
+          "Content-Type": "application/json"
+        };
+
+        if (crmConfig.bearer_token) {
+          crmHeaders["Authorization"] = `Bearer ${crmConfig.bearer_token}`;
+        }
+
+        const crmResp = await fetch(crmConfig.webhook_url, {
+          method: "POST",
+          headers: crmHeaders,
+          body: JSON.stringify(crmPayload),
+          signal: AbortSignal.timeout(10000),
+        });
+
+        if (crmResp.ok) {
+          console.log("✅ CRM webhook enviado com sucesso");
+          crmStatus = "sent";
+        } else {
+          console.error("❌ Erro CRM webhook:", await crmResp.text());
+          crmStatus = "error";
+        }
+      }
+    } catch (crmErr) {
+      console.error("❌ Erro ao enviar para CRM:", crmErr);
+      crmStatus = "error";
+    }
+
     return jsonResponse({
       success: true,
       message: "Dados salvos e enviados",
       database_id: insertedData?.id,
       whatsapp_redirecionado: whatsappRedirecionado,
       vendedor_nome: vendedorNome,
+      crm_status: crmStatus,
     });
 
   } catch (err) {
