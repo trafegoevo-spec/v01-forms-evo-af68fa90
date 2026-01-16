@@ -60,6 +60,7 @@ export const MultiStepFormDynamic = () => {
     number: string;
     name: string;
   } | null>(null);
+  const [isSkippedSubmit, setIsSkippedSubmit] = useState(false);
   const {
     toast
   } = useToast();
@@ -447,6 +448,7 @@ export const MultiStepFormDynamic = () => {
           
           // Se skip_submit=true, apenas mostra a página sem enviar dados
           if (condition.skip_submit) {
+            setIsSkippedSubmit(true);
             setIsSuccess(true);
             setStep(totalSteps);
             return;
@@ -774,54 +776,91 @@ export const MultiStepFormDynamic = () => {
       </div>;
   };
   const renderStep = () => {
-    if (step === totalSteps && isSuccess && submittedData) {
-      const nomeQuestion = questions.find(q => q.field_name === "nome");
-      const firstName = nomeQuestion ? submittedData[nomeQuestion.field_name]?.split(" ")[0] : "você";
-
-      // Use active success page if set, otherwise default settings
-      const successConfig = activeSuccessPage || settings;
-      return <div className="space-y-6 text-center py-8">
-          {/* Check icon */}
-          <div className="flex justify-center">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
-              <CheckCircle className="w-10 h-10 text-green-600" />
+    if (step === totalSteps && isSuccess) {
+      // Página para leads não qualificados (skip_submit = true)
+      if (isSkippedSubmit) {
+        return (
+          <div className="space-y-6 text-center py-8">
+            {/* Icon */}
+            <div className="flex justify-center">
+              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
+                <CheckCircle className="w-10 h-10 text-blue-600" />
+              </div>
             </div>
-          </div>
 
-          <div>
-            <h2 className="text-3xl font-bold text-foreground mb-4">
-              Obrigado, {firstName}
-            </h2>
+            <div className="space-y-4">
+              <h2 className="text-3xl font-bold text-foreground">
+                Obrigado por nos considerar!
+              </h2>
 
-            <p className="text-lg text-muted-foreground leading-relaxed">
-              Recebemos suas informações com sucesso. Agora vamos continuar a conversa no WhatsApp para te ajudar ainda melhor.
-            </p>
-          </div>
+              <p className="text-lg text-muted-foreground leading-relaxed">
+                Analisamos seu perfil e, por ora, nossa solução pode não atender exatamente o que você precisa. Acreditamos em ser transparentes: queremos garantir que você encontre a opção ideal para suas necessidades.
+              </p>
 
-          {successConfig?.whatsapp_enabled && (
-            <div className="mt-8">
-              <Button 
-                type="button" 
-                onClick={e => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  trackWhatsAppClick();
-                  const phoneNumber = rotatedWhatsApp?.number ? rotatedWhatsApp.number.replace(/\D/g, "") : (successConfig.whatsapp_number || "").replace(/\D/g, "");
-                  const message = encodeURIComponent(successConfig.whatsapp_message || "Olá! Preenchi o formulário.");
-                  window.open(`https://wa.me/${phoneNumber}?text=${message}`, "_blank");
-                }} 
-                className="w-full h-14 bg-green-600 hover:bg-green-700 text-white text-base font-semibold rounded-2xl"
-              >
-                <MessageCircle className="w-6 h-6 mr-2 text-white" />
-                Continuar conversa no WhatsApp
-              </Button>
-              
-              <p className="text-sm text-muted-foreground mt-3">
-                Você será redirecionado para o WhatsApp.
+              <p className="text-lg text-muted-foreground leading-relaxed">
+                Se algo mudar ou quiser explorar outras possibilidades, fique à vontade para entrar em contato novamente.
+              </p>
+
+              <p className="text-xl font-semibold text-foreground mt-6">
+                Sucesso!
               </p>
             </div>
-          )}
-        </div>;
+          </div>
+        );
+      }
+
+      // Página padrão para leads qualificados
+      if (submittedData) {
+        const nomeQuestion = questions.find(q => q.field_name === "nome");
+        const firstName = nomeQuestion ? submittedData[nomeQuestion.field_name]?.split(" ")[0] : "você";
+
+        // Use active success page if set, otherwise default settings
+        const successConfig = activeSuccessPage || settings;
+        return (
+          <div className="space-y-6 text-center py-8">
+            {/* Check icon */}
+            <div className="flex justify-center">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+                <CheckCircle className="w-10 h-10 text-green-600" />
+              </div>
+            </div>
+
+            <div>
+              <h2 className="text-3xl font-bold text-foreground mb-4">
+                Obrigado, {firstName}
+              </h2>
+
+              <p className="text-lg text-muted-foreground leading-relaxed">
+                Recebemos suas informações com sucesso. Agora vamos continuar a conversa no WhatsApp para te ajudar ainda melhor.
+              </p>
+            </div>
+
+            {successConfig?.whatsapp_enabled && (
+              <div className="mt-8">
+                <Button 
+                  type="button" 
+                  onClick={e => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    trackWhatsAppClick();
+                    const phoneNumber = rotatedWhatsApp?.number ? rotatedWhatsApp.number.replace(/\D/g, "") : (successConfig.whatsapp_number || "").replace(/\D/g, "");
+                    const message = encodeURIComponent(successConfig.whatsapp_message || "Olá! Preenchi o formulário.");
+                    window.open(`https://wa.me/${phoneNumber}?text=${message}`, "_blank");
+                  }} 
+                  className="w-full h-14 bg-green-600 hover:bg-green-700 text-white text-base font-semibold rounded-2xl"
+                >
+                  <MessageCircle className="w-6 h-6 mr-2 text-white" />
+                  Continuar conversa no WhatsApp
+                </Button>
+                
+                <p className="text-sm text-muted-foreground mt-3">
+                  Você será redirecionado para o WhatsApp.
+                </p>
+              </div>
+            )}
+          </div>
+        );
+      }
     }
     if (!currentQuestions || currentQuestions.length === 0) return null;
     return <div className="space-y-8">
