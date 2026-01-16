@@ -24,7 +24,7 @@ interface WhatsAppQueueItem {
 }
 interface ConditionalRule {
   value: string;
-  action: "skip_to_step" | "success_page" | "disqualify_page";
+  action: "skip_to_step" | "success_page";
   target_step?: number;
   target_page?: string;
 }
@@ -1153,17 +1153,16 @@ VITE_GTM_ID=GTM-XXXXXXX`}
                           <span className="text-sm font-medium">então</span>
                           <Select
                             value={condition.action}
-                            onValueChange={(value: "skip_to_step" | "success_page" | "disqualify_page") => 
+                            onValueChange={(value: "skip_to_step" | "success_page") => 
                               updateConditionalRule(question.id, condIndex, { action: value })
                             }
                           >
-                            <SelectTrigger className="w-52">
+                            <SelectTrigger className="w-44">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="skip_to_step">Pular para passo</SelectItem>
                               <SelectItem value="success_page">Ir para página de sucesso</SelectItem>
-                              <SelectItem value="disqualify_page">Desqualificar (sem enviar)</SelectItem>
                             </SelectContent>
                           </Select>
                           
@@ -1181,7 +1180,7 @@ VITE_GTM_ID=GTM-XXXXXXX`}
                             />
                           )}
                           
-                          {(condition.action === "success_page" || condition.action === "disqualify_page") && (
+                          {condition.action === "success_page" && (
                             <Select
                               value={condition.target_page || "default"}
                               onValueChange={(value) => updateConditionalRule(question.id, condIndex, { target_page: value })}
@@ -1198,12 +1197,6 @@ VITE_GTM_ID=GTM-XXXXXXX`}
                                 ))}
                               </SelectContent>
                             </Select>
-                          )}
-                          
-                          {condition.action === "disqualify_page" && (
-                            <span className="text-xs text-orange-600 bg-orange-50 px-2 py-1 rounded">
-                              ⚠️ Não dispara envio
-                            </span>
                           )}
                           
                           <Button 
