@@ -17,6 +17,7 @@ interface ConditionalRule {
   action: "skip_to_step" | "success_page";
   target_step?: number;
   target_page?: string;
+  skip_submit?: boolean;
 }
 interface ConditionalLogic {
   conditions: ConditionalRule[];
@@ -434,12 +435,23 @@ export const MultiStepFormDynamic = () => {
       const value = form.watch(question.field_name);
       const condition = handleConditionalLogic(question, value);
       if (condition) {
-        if (condition.action === "success_page" && condition.target_page) {
-          const successPage = successPages.find(p => p.page_key === condition.target_page);
-          if (successPage) {
-            setActiveSuccessPage(successPage);
+        if (condition.action === "success_page") {
+          const targetPage = condition.target_page;
+          if (targetPage && targetPage !== "default") {
+            const successPage = successPages.find(p => p.page_key === targetPage);
+            if (successPage) {
+              setActiveSuccessPage(successPage);
+            }
           }
           shouldFireGtmRef.current = false; // Conditional logic, NOT final submit
+          
+          // Se skip_submit=true, apenas mostra a página sem enviar dados
+          if (condition.skip_submit) {
+            setIsSuccess(true);
+            setStep(totalSteps);
+            return;
+          }
+          
           form.handleSubmit(onSubmit)();
           return;
         } else if (condition.action === "skip_to_step" && condition.target_step) {
@@ -571,12 +583,23 @@ export const MultiStepFormDynamic = () => {
       // Check for conditional logic
       const condition = question.conditional_logic?.conditions?.find(c => c.value === option);
       if (condition) {
-        if (condition.action === "success_page" && condition.target_page) {
-          const successPage = successPages.find(p => p.page_key === condition.target_page);
-          if (successPage) {
-            setActiveSuccessPage(successPage);
+        if (condition.action === "success_page") {
+          const targetPage = condition.target_page;
+          if (targetPage && targetPage !== "default") {
+            const successPage = successPages.find(p => p.page_key === targetPage);
+            if (successPage) {
+              setActiveSuccessPage(successPage);
+            }
           }
           shouldFireGtmRef.current = false; // Conditional logic, NOT final submit
+          
+          // Se skip_submit=true, apenas mostra a página sem enviar dados
+          if (condition.skip_submit) {
+            setIsSuccess(true);
+            setStep(totalSteps);
+            return;
+          }
+          
           setTimeout(() => form.handleSubmit(onSubmit)(), 300);
           return;
         } else if (condition.action === "skip_to_step" && condition.target_step) {
@@ -599,12 +622,23 @@ export const MultiStepFormDynamic = () => {
       // Check for conditional logic
       const condition = question.conditional_logic?.conditions?.find(c => c.value === value);
       if (condition) {
-        if (condition.action === "success_page" && condition.target_page) {
-          const successPage = successPages.find(p => p.page_key === condition.target_page);
-          if (successPage) {
-            setActiveSuccessPage(successPage);
+        if (condition.action === "success_page") {
+          const targetPage = condition.target_page;
+          if (targetPage && targetPage !== "default") {
+            const successPage = successPages.find(p => p.page_key === targetPage);
+            if (successPage) {
+              setActiveSuccessPage(successPage);
+            }
           }
           shouldFireGtmRef.current = false; // Conditional logic, NOT final submit
+          
+          // Se skip_submit=true, apenas mostra a página sem enviar dados
+          if (condition.skip_submit) {
+            setIsSuccess(true);
+            setStep(totalSteps);
+            return;
+          }
+          
           setTimeout(() => form.handleSubmit(onSubmit)(), 300);
           return;
         } else if (condition.action === "skip_to_step" && condition.target_step) {
