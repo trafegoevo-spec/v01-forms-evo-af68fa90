@@ -1,4 +1,3 @@
-// Arquivo corrigido: MultiStepFormDynamic.tsx - Redesign Typeform Style
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -9,7 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, ArrowRight, ArrowLeft, Check, X, CheckCircle, MessageCircle, ChevronUp, ChevronDown } from "lucide-react";
+import { Loader2, ArrowRight, ArrowLeft, MessageCircle } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 
 interface ConditionalRule {
   value: string;
@@ -60,7 +60,6 @@ export const MultiStepFormDynamic = () => {
     name: string;
   } | null>(null);
   const [isDisqualified, setIsDisqualified] = useState(false);
-  const [animationKey, setAnimationKey] = useState(0);
   const { toast } = useToast();
   const formName = import.meta.env.VITE_FORM_NAME || "default";
 
@@ -357,7 +356,7 @@ export const MultiStepFormDynamic = () => {
   const totalSteps = uniqueSteps.length + 1;
   const currentStepNumber = uniqueSteps[step - 1];
   const currentQuestions = questions.filter(q => q.step === currentStepNumber);
-  const progressPercentage = (step / uniqueSteps.length) * 100;
+  const progress = (step / uniqueSteps.length) * 100;
 
   const formatWhatsApp = (value: string) => {
     let cleaned = value.replace(/\D/g, "");
@@ -462,7 +461,6 @@ export const MultiStepFormDynamic = () => {
         } else if (condition.action === "skip_to_step" && condition.target_step) {
           const targetIndex = uniqueSteps.findIndex(s => s === condition.target_step);
           if (targetIndex !== -1) {
-            setAnimationKey(prev => prev + 1);
             setStep(targetIndex + 1);
             return;
           }
@@ -470,28 +468,14 @@ export const MultiStepFormDynamic = () => {
       }
     }
 
-    // Default: go to next step with animation
+    // Default: go to next step
     if (step < totalSteps) {
-      setAnimationKey(prev => prev + 1);
       setStep(step + 1);
-    }
-  };
-
-  const handleKeyDown = async (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      if (step < uniqueSteps.length) {
-        await nextStep();
-      } else {
-        shouldFireGtmRef.current = true;
-        form.handleSubmit(onSubmit)();
-      }
     }
   };
 
   const prevStep = () => {
     if (step > 1) {
-      setAnimationKey(prev => prev + 1);
       setStep(step - 1);
     }
   };
@@ -576,11 +560,8 @@ export const MultiStepFormDynamic = () => {
     }
   };
 
-  // Option letter generator (A, B, C, D...)
-  const getOptionLetter = (index: number) => String.fromCharCode(65 + index);
-
-  const renderQuestionInput = (question: Question, isFirst: boolean) => {
-    const handleButtonClick = async (option: string) => {
+  const renderQuestionInput = (question: Question) => {
+    const handleButtonClick = (option: string) => {
       form.setValue(question.field_name, option);
 
       const condition = question.conditional_logic?.conditions?.find(c => c.value === option);
@@ -599,10 +580,7 @@ export const MultiStepFormDynamic = () => {
         } else if (condition.action === "skip_to_step" && condition.target_step) {
           const targetIndex = uniqueSteps.findIndex(s => s === condition.target_step);
           if (targetIndex !== -1) {
-            setTimeout(() => {
-              setAnimationKey(prev => prev + 1);
-              setStep(targetIndex + 1);
-            }, 300);
+            setTimeout(() => setStep(targetIndex + 1), 300);
             return;
           }
         }
@@ -613,7 +591,7 @@ export const MultiStepFormDynamic = () => {
       }
     };
 
-    const handleSelectChange = async (value: string) => {
+    const handleSelectChange = (value: string) => {
       form.setValue(question.field_name, value);
 
       const condition = question.conditional_logic?.conditions?.find(c => c.value === value);
@@ -632,10 +610,7 @@ export const MultiStepFormDynamic = () => {
         } else if (condition.action === "skip_to_step" && condition.target_step) {
           const targetIndex = uniqueSteps.findIndex(s => s === condition.target_step);
           if (targetIndex !== -1) {
-            setTimeout(() => {
-              setAnimationKey(prev => prev + 1);
-              setStep(targetIndex + 1);
-            }, 300);
+            setTimeout(() => setStep(targetIndex + 1), 300);
             return;
           }
         }
@@ -646,54 +621,33 @@ export const MultiStepFormDynamic = () => {
       }
     };
 
-    const fieldValue = form.watch(question.field_name);
-    const fieldState = form.getFieldState(question.field_name, form.formState);
-    const isRequired = question.required !== false;
-    const hasValue = fieldValue && fieldValue.trim() !== '' && fieldValue !== '55 ';
-    const isValid = hasValue && !fieldState.invalid;
-    const isInvalid = hasValue && fieldState.invalid;
-
-    const getValidationFeedback = () => {
-      const fieldName = question.field_name.toLowerCase();
-      if (fieldName.includes("cpf")) return { valid: "CPF válido!", invalid: "CPF inválido" };
-      if (fieldName.includes("cnpj")) return { valid: "CNPJ válido!", invalid: "CNPJ inválido" };
-      if (fieldName.includes("email")) return { valid: "Email válido!", invalid: "Email inválido" };
-      if (fieldName.includes("whatsapp") || fieldName.includes("telefone")) return { valid: "Telefone válido!", invalid: "Telefone inválido" };
-      if (fieldName.includes("placa")) return { valid: "Placa válida!", invalid: "Placa inválida" };
-      return { valid: "Campo válido!", invalid: "Campo inválido" };
-    };
-
-    const feedback = getValidationFeedback();
-
     return (
-      <div key={question.id} className="space-y-6">
-        {/* Question Header - Typeform style */}
-        <div className="space-y-2">
-          <h2 className="typeform-question">{question.question}</h2>
+      <div key={question.id} className="space-y-4">
+        <div>
+          <h2 className="text-2xl font-bold text-foreground mb-2">
+            {question.question}
+          </h2>
           {question.subtitle && (
-            <p className="typeform-subtitle">{question.subtitle}</p>
+            <p className="text-muted-foreground">{question.subtitle}</p>
           )}
         </div>
-
-        {/* Input Area */}
-        <div className="space-y-3">
+        <div>
+          <label className="block text-sm font-medium mb-2">{question.question}</label>
+          
           {question.input_type === "buttons" && question.options.length > 0 ? (
-            <div className="grid gap-3">
-              {question.options.map((option, idx) => {
+            <div className="grid gap-2">
+              {question.options.map((option) => {
                 const isSelected = form.watch(question.field_name) === option;
                 return (
-                  <button
+                  <Button
                     key={option}
                     type="button"
-                    className={`typeform-option-card ${isSelected ? 'selected' : ''}`}
+                    variant={isSelected ? "default" : "outline"}
+                    className="h-12 text-base justify-start"
                     onClick={() => handleButtonClick(option)}
                   >
-                    <span className="option-letter">{getOptionLetter(idx)}</span>
-                    <span className="text-base md:text-lg font-medium">{option}</span>
-                    {isSelected && (
-                      <Check className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-primary" />
-                    )}
-                  </button>
+                    {option}
+                  </Button>
                 );
               })}
             </div>
@@ -703,96 +657,71 @@ export const MultiStepFormDynamic = () => {
               value={form.watch(question.field_name)}
               onValueChange={handleSelectChange}
             >
-              <SelectTrigger className="typeform-input">
+              <SelectTrigger className="h-12 text-base">
                 <SelectValue placeholder="Selecione uma opção" />
               </SelectTrigger>
               <SelectContent>
                 {question.options.map(option => (
-                  <SelectItem key={option} value={option} className="text-base py-3">
+                  <SelectItem key={option} value={option}>
                     {option}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           ) : (
-            <div className="relative">
-              <Input
-                key={`input-${question.field_name}-${step}`}
-                type={
-                  question.input_type === "password" ? "text" :
-                  question.field_name.toLowerCase().includes("email") ? "email" :
-                  question.field_name.toLowerCase().includes("whatsapp") || question.field_name.toLowerCase().includes("telefone") ? "tel" :
-                  "text"
-                }
-                placeholder={
-                  question.input_placeholder ||
-                  (question.field_name.toLowerCase().includes("whatsapp") || question.field_name.toLowerCase().includes("telefone") ? "55 (99) 99999-9999" :
-                  question.field_name.toLowerCase().includes("placa") ? "ABC-1D23" :
-                  question.field_name.toLowerCase().includes("cpf") ? "000.000.000-00" :
-                  question.field_name.toLowerCase().includes("cnpj") ? "00.000.000/0000-00" :
-                  `Digite sua resposta aqui...`)
-                }
-                className={`typeform-input ${isValid ? 'valid' : isInvalid ? 'invalid' : ''} ${
-                  question.field_name.toLowerCase().includes("placa") ? 'uppercase' : ''
-                }`}
-                autoFocus={isFirst}
-                autoComplete="off"
-                maxLength={
-                  question.max_length ||
-                  (question.field_name.toLowerCase().includes("whatsapp") || question.field_name.toLowerCase().includes("telefone") ? 19 :
-                  question.field_name.toLowerCase().includes("placa") ? 8 :
-                  question.field_name.toLowerCase().includes("cpf") ? 14 :
-                  question.field_name.toLowerCase().includes("cnpj") ? 18 : undefined)
-                }
-                value={form.watch(question.field_name) || (
-                  question.field_name.toLowerCase().includes("whatsapp") || question.field_name.toLowerCase().includes("telefone") ? "55 " : ""
-                )}
-                onChange={e => {
-                  let formatted = e.target.value;
-                  const fieldName = question.field_name.toLowerCase();
-                  
-                  if (fieldName.includes("whatsapp") || fieldName.includes("telefone")) {
-                    formatted = formatWhatsApp(e.target.value);
-                  } else if (fieldName.includes("placa")) {
-                    formatted = formatPlaca(e.target.value);
-                  } else if (fieldName.includes("cpf")) {
-                    formatted = formatCPF(e.target.value);
-                  } else if (fieldName.includes("cnpj")) {
-                    formatted = formatCNPJ(e.target.value);
-                  }
-                  
-                  form.setValue(question.field_name, formatted, { shouldValidate: true });
-                }}
-                onKeyDown={handleKeyDown}
-              />
-              {isValid && (
-                <div className="absolute right-4 top-1/2 -translate-y-1/2 bg-green-500 rounded-full p-1.5">
-                  <Check className="h-4 w-4 text-white" />
-                </div>
+            <Input
+              key={`input-${question.field_name}-${step}`}
+              type={
+                question.input_type === "password" ? "text" :
+                question.field_name.toLowerCase().includes("email") ? "email" :
+                question.field_name.toLowerCase().includes("whatsapp") || question.field_name.toLowerCase().includes("telefone") ? "tel" :
+                "text"
+              }
+              placeholder={
+                question.input_placeholder ||
+                (question.field_name.toLowerCase().includes("whatsapp") || question.field_name.toLowerCase().includes("telefone") ? "55 (99) 99999-9999" :
+                question.field_name.toLowerCase().includes("placa") ? "ABC-1D23" :
+                question.field_name.toLowerCase().includes("cpf") ? "000.000.000-00" :
+                question.field_name.toLowerCase().includes("cnpj") ? "00.000.000/0000-00" :
+                `Digite aqui...`)
+              }
+              className={`h-12 text-base ${
+                question.field_name.toLowerCase().includes("placa") ? 'uppercase' : ''
+              }`}
+              autoComplete="off"
+              maxLength={
+                question.max_length ||
+                (question.field_name.toLowerCase().includes("whatsapp") || question.field_name.toLowerCase().includes("telefone") ? 19 :
+                question.field_name.toLowerCase().includes("placa") ? 8 :
+                question.field_name.toLowerCase().includes("cpf") ? 14 :
+                question.field_name.toLowerCase().includes("cnpj") ? 18 : undefined)
+              }
+              value={form.watch(question.field_name) || (
+                question.field_name.toLowerCase().includes("whatsapp") || question.field_name.toLowerCase().includes("telefone") ? "55 " : ""
               )}
-            </div>
+              onChange={e => {
+                let formatted = e.target.value;
+                const fieldName = question.field_name.toLowerCase();
+                
+                if (fieldName.includes("whatsapp") || fieldName.includes("telefone")) {
+                  formatted = formatWhatsApp(e.target.value);
+                } else if (fieldName.includes("placa")) {
+                  formatted = formatPlaca(e.target.value);
+                } else if (fieldName.includes("cpf")) {
+                  formatted = formatCPF(e.target.value);
+                } else if (fieldName.includes("cnpj")) {
+                  formatted = formatCNPJ(e.target.value);
+                }
+                
+                form.setValue(question.field_name, formatted, { shouldValidate: true });
+              }}
+            />
           )}
 
-          {/* Validation feedback */}
-          {hasValue && isRequired && (
-            isValid ? (
-              <p className="text-green-600 text-sm flex items-center gap-1.5 animate-fade-in-up">
-                <Check className="h-4 w-4" />
-                {feedback.valid}
-              </p>
-            ) : isInvalid ? (
-              <p className="text-destructive text-sm flex items-center gap-1.5 animate-fade-in-up">
-                <X className="h-4 w-4" />
-                {form.formState.errors[question.field_name]?.message as string || feedback.invalid}
-              </p>
-            ) : null
-          )}
-
-          {/* Keyboard hint for text inputs */}
-          {question.input_type !== "buttons" && question.input_type !== "select" && (
-            <div className="keyboard-hint mt-4">
-              Pressione <kbd>Enter ↵</kbd> para continuar
-            </div>
+          {form.formState.errors[question.field_name] && (
+            <p className="text-destructive text-sm mt-1">
+              {form.formState.errors[question.field_name]?.message as string}
+            </p>
           )}
         </div>
       </div>
@@ -805,27 +734,24 @@ export const MultiStepFormDynamic = () => {
     const successConfig = activeSuccessPage || settings;
 
     return (
-      <div className="space-y-8 text-center max-w-lg mx-auto">
-        {/* Success Icon */}
-        <div className="flex justify-center">
-          <div className="typeform-success-icon">
-            <CheckCircle />
-          </div>
-        </div>
-
-        {/* Success Message */}
-        <div className="space-y-4 animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
-          <h2 className="text-3xl md:text-4xl font-bold text-foreground">
+      <div className="space-y-6 text-center">
+        <div className="text-6xl">🎉</div>
+        <div>
+          <h2 className="text-3xl font-bold text-foreground mb-3">
             {isDisqualified ? (successConfig?.title || "Obrigado pela participação") : `Obrigado, ${firstName}!`}
           </h2>
-          <p className="text-lg md:text-xl text-muted-foreground leading-relaxed">
-            {successConfig?.description || "Recebemos suas informações com sucesso. Em breve entraremos em contato."}
+          <p className="text-lg text-muted-foreground">
+            {successConfig?.description || "Recebemos suas informações com sucesso!"}
           </p>
+          {successConfig?.subtitle && (
+            <p className="text-lg text-muted-foreground mt-2">
+              {successConfig.subtitle}
+            </p>
+          )}
         </div>
-
-        {/* WhatsApp Button */}
+        
         {successConfig?.whatsapp_enabled && !isDisqualified && (
-          <div className="animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
+          <div className="pt-4">
             <Button
               type="button"
               onClick={e => {
@@ -838,14 +764,12 @@ export const MultiStepFormDynamic = () => {
                 const message = encodeURIComponent(successConfig.whatsapp_message || "Olá! Preenchi o formulário.");
                 window.open(`https://wa.me/${phoneNumber}?text=${message}`, "_blank");
               }}
-              className="w-full h-16 bg-green-600 hover:bg-green-700 text-white text-lg font-semibold rounded-2xl transition-all duration-200 hover:scale-[1.02]"
+              className="h-14 px-8 text-lg bg-green-600 hover:bg-green-700 text-white"
+              size="lg"
             >
-              <MessageCircle className="w-6 h-6 mr-3" />
-              Continuar no WhatsApp
+              <MessageCircle className="mr-2 h-5 w-5" />
+              Falar no WhatsApp Agora
             </Button>
-            <p className="text-sm text-muted-foreground mt-3">
-              Você será redirecionado para o WhatsApp.
-            </p>
           </div>
         )}
       </div>
@@ -859,18 +783,18 @@ export const MultiStepFormDynamic = () => {
     if (!currentQuestions || currentQuestions.length === 0) return null;
     
     return (
-      <div key={animationKey} className="space-y-8 step-transition-enter">
-        {currentQuestions.map((question, index) => renderQuestionInput(question, index === 0))}
+      <div className="space-y-6">
+        {currentQuestions.map((question) => renderQuestionInput(question))}
       </div>
     );
   };
 
   if (loading) {
     return (
-      <div className="typeform-container">
-        <div className="text-center">
-          <Loader2 className="h-10 w-10 animate-spin mx-auto text-primary" />
-          <p className="mt-4 text-lg text-muted-foreground">Carregando formulário...</p>
+      <div className="w-full max-w-2xl mx-auto p-6">
+        <div className="bg-white rounded-2xl shadow-xl p-8 text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
+          <p className="mt-4 text-muted-foreground">Carregando formulário...</p>
         </div>
       </div>
     );
@@ -878,10 +802,10 @@ export const MultiStepFormDynamic = () => {
 
   if (questions.length === 0) {
     return (
-      <div className="typeform-container">
-        <div className="text-center max-w-md">
-          <p className="text-xl text-muted-foreground">Nenhuma pergunta configurada ainda.</p>
-          <p className="text-base text-muted-foreground mt-2">
+      <div className="w-full max-w-2xl mx-auto p-6">
+        <div className="bg-white rounded-2xl shadow-xl p-8 text-center">
+          <p className="text-muted-foreground">Nenhuma pergunta configurada ainda.</p>
+          <p className="text-sm text-muted-foreground mt-2">
             Entre em contato conosco para mais informações.
           </p>
         </div>
@@ -890,133 +814,75 @@ export const MultiStepFormDynamic = () => {
   }
 
   return (
-    <div className="typeform-container">
-      {/* Progress Bar - Fixed at top */}
-      {step < totalSteps && (
-        <div className="typeform-progress">
-          <div 
-            className="typeform-progress-bar" 
-            style={{ width: `${progressPercentage}%` }}
-          />
-        </div>
-      )}
-
-      {/* Main Content Area */}
-      <div className="w-full max-w-2xl mx-auto px-4">
-        {/* Step Counter */}
+    <div className="w-full max-w-2xl mx-auto p-6">
+      <div className="bg-white rounded-2xl shadow-xl p-8">
+        {/* Progress */}
         {step < totalSteps && (
-          <div className="mb-8 flex items-center justify-between">
-            <span className="text-sm font-semibold text-primary">
-              Pergunta {step} de {uniqueSteps.length}
-            </span>
-            <span className="text-sm font-medium text-muted-foreground">
-              {Math.round(progressPercentage)}% completo
-            </span>
+          <div className="mb-8">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-sm font-medium text-muted-foreground">
+                Etapa {step} de {uniqueSteps.length}
+              </span>
+              <span className="text-sm font-bold text-primary">{Math.round(progress)}%</span>
+            </div>
+            <Progress value={progress} className="h-2" />
           </div>
         )}
 
-        {/* Form Content */}
         <form onSubmit={e => e.preventDefault()}>
-          <div className="min-h-[300px] flex flex-col justify-center">
-            {renderStep()}
-          </div>
+          {/* Step Content */}
+          <div className="min-h-[200px] mb-4">{renderStep()}</div>
 
-          {/* Navigation */}
+          {/* Navigation Buttons */}
           {step < totalSteps && (
-            <div className="mt-12 flex items-center justify-between gap-4">
-              {/* Back Button */}
-              <div className="w-24">
-                {step > 1 && (
-                  <button
-                    type="button"
-                    onClick={prevStep}
-                    disabled={isSubmitting}
-                    className="typeform-nav-arrow"
-                    aria-label="Voltar"
-                  >
-                    <ChevronUp className="h-6 w-6 rotate-[-90deg]" />
-                  </button>
-                )}
-              </div>
+            <div className="flex gap-3">
+              {step > 1 && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={prevStep}
+                  className="flex-1 h-12"
+                  disabled={isSubmitting}
+                >
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  Voltar
+                </Button>
+              )}
 
-              {/* Continue / Submit Button */}
-              <div className="flex-1 max-w-sm">
-                {step < uniqueSteps.length ? (
-                  <Button
-                    type="button"
-                    onClick={nextStep}
-                    disabled={isSubmitting || !currentQuestions.every(q => {
-                      const value = form.watch(q.field_name);
-                      const isRequired = q.required !== false;
-                      if (!isRequired) return true;
-                      if (!value || value.trim() === '' || value === '55 ') return false;
-                      const fieldState = form.getFieldState(q.field_name);
-                      return !fieldState.invalid;
-                    })}
-                    className="typeform-button-primary w-full"
-                  >
-                    Continuar
-                    <ArrowRight className="ml-2 h-5 w-5" />
-                  </Button>
-                ) : (
-                  <Button
-                    type="button"
-                    onClick={() => {
-                      shouldFireGtmRef.current = true;
-                      form.handleSubmit(onSubmit)();
-                    }}
-                    className="typeform-button-primary w-full"
-                    disabled={isSubmitting || !currentQuestions.every(q => {
-                      const value = form.watch(q.field_name);
-                      const isRequired = q.required !== false;
-                      if (!isRequired) return true;
-                      if (!value || value.trim() === '' || value === '55 ') return false;
-                      const fieldState = form.getFieldState(q.field_name);
-                      return !fieldState.invalid;
-                    })}
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                        Enviando...
-                      </>
-                    ) : (
-                      <>
-                        Finalizar
-                        <Check className="ml-2 h-5 w-5" />
-                      </>
-                    )}
-                  </Button>
-                )}
-              </div>
-
-              {/* Spacer for alignment */}
-              <div className="w-24" />
+              {step < uniqueSteps.length ? (
+                <Button
+                  type="button"
+                  onClick={nextStep}
+                  className="flex-1 h-12"
+                  disabled={isSubmitting}
+                >
+                  Próximo
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  onClick={() => {
+                    shouldFireGtmRef.current = true;
+                    form.handleSubmit(onSubmit)();
+                  }}
+                  className="flex-1 h-12"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Enviando...
+                    </>
+                  ) : (
+                    "Finalizar"
+                  )}
+                </Button>
+              )}
             </div>
           )}
         </form>
       </div>
-
-      {/* Keyboard Navigation Hint */}
-      {step < totalSteps && (
-        <div className="fixed bottom-6 right-6 hidden md:flex items-center gap-2">
-          <button
-            onClick={prevStep}
-            disabled={step === 1}
-            className="typeform-nav-arrow disabled:opacity-30"
-            aria-label="Pergunta anterior"
-          >
-            <ChevronUp className="h-5 w-5" />
-          </button>
-          <button
-            onClick={nextStep}
-            className="typeform-nav-arrow"
-            aria-label="Próxima pergunta"
-          >
-            <ChevronDown className="h-5 w-5" />
-          </button>
-        </div>
-      )}
     </div>
   );
 };
