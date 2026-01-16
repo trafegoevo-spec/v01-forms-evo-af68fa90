@@ -165,43 +165,44 @@ export const MultiStepFormDynamic = () => {
       if (error) console.error("Error tracking WhatsApp click:", error);
     });
   }, [sessionId, formName]);
-  useEffect(() => {
-    loadQuestions();
-    loadSettings();
-    loadSuccessPages();
-  }, []);
-  const loadSuccessPages = async () => {
+
+  // Load all public data via Edge Function (secure - no sensitive data exposed)
+  const loadPublicData = async () => {
     try {
-      const {
-        data,
-        error
-      } = await supabase.from("success_pages").select("*").eq("subdomain", formName);
-      if (error) throw error;
-      setSuccessPages(data || []);
-    } catch (error: any) {
-      console.error("Erro ao carregar páginas de sucesso:", error);
-    }
-  };
-  const loadQuestions = async () => {
-    try {
-      const {
-        data,
-        error
-      } = await supabase.from("form_questions").select("*").eq("subdomain", formName).order("step", {
-        ascending: true
-      });
-      if (error) throw error;
-      const transformedData = (data || []).map(item => ({
+      setLoading(true);
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const response = await fetch(
+        `${supabaseUrl}/functions/v1/get-public-settings?subdomain=${encodeURIComponent(formName)}`,
+        {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+
+      // Transform questions
+      const transformedQuestions = (result.questions || []).map((item: any) => ({
         ...item,
         options: Array.isArray(item.options) ? item.options as string[] : [],
-        input_type: (["select", "text", "password", "buttons"].includes(item.input_type) ? item.input_type : "text") as "text" | "select" | "password" | "buttons",
+        input_type: (["select", "text", "password", "buttons"].includes(item.input_type) 
+          ? item.input_type 
+          : "text") as "text" | "select" | "password" | "buttons",
         required: item.required !== undefined ? item.required : true,
         conditional_logic: item.conditional_logic as unknown as ConditionalLogic | null
       }));
-      setQuestions(transformedData);
+
+      setQuestions(transformedQuestions);
+      setSettings(result.settings);
+      setSuccessPages(result.successPages || []);
     } catch (error: any) {
+      console.error("Erro ao carregar dados públicos:", error);
       toast({
-        title: "Erro ao carregar perguntas",
+        title: "Erro ao carregar formulário",
         description: error.message,
         variant: "destructive"
       });
@@ -209,40 +210,37 @@ export const MultiStepFormDynamic = () => {
       setLoading(false);
     }
   };
-  const loadSettings = async () => {
+
+  useEffect(() => {
+    loadPublicData();
+  }, []);
+  // Helper to get WhatsApp link securely via Edge Function
+  const getWhatsAppLink = async (data: any, successPageKey?: string): Promise<string | null> => {
     try {
-      const {
-        data,
-        error
-      } = await supabase.from("app_settings").select("*").eq("subdomain", formName).single();
-      if (error) {
-        if (error.code === 'PGRST116') {
-          const defaultSettings = {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const response = await fetch(
+        `${supabaseUrl}/functions/v1/get-whatsapp-link`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
             subdomain: formName,
-            form_name: formName,
-            whatsapp_enabled: true,
-            whatsapp_number: '5531989236061',
-            whatsapp_message: 'Olá! Acabei de enviar meus dados no formulário.',
-            success_title: 'Obrigado',
-            success_description: 'Recebemos suas informações com sucesso!',
-            success_subtitle: 'Em breve entraremos em contato.'
-          };
-          const {
-            data: newData,
-            error: insertError
-          } = await supabase.from("app_settings").insert([defaultSettings]).select().single();
-          if (insertError) {
-            console.error("Erro ao criar configurações:", insertError);
-            return;
-          }
-          setSettings(newData);
-          return;
+            formData: data,
+            successPageKey: successPageKey || "default"
+          })
         }
-        throw error;
+      );
+
+      if (!response.ok) return null;
+      
+      const result = await response.json();
+      if (result.enabled && result.url) {
+        return result.url;
       }
-      setSettings(data);
-    } catch (error: any) {
-      console.error("Erro ao carregar configurações:", error);
+      return null;
+    } catch (error) {
+      console.error("Erro ao obter link do WhatsApp:", error);
+      return null;
     }
   };
   const buildSchema = () => {
@@ -581,13 +579,20 @@ export const MultiStepFormDynamic = () => {
       setIsSuccess(true);
       setStep(totalSteps);
       
-      // Se whatsapp_on_submit está habilitado, abrir WhatsApp automaticamente
+      // Se whatsapp_on_submit está habilitado, abrir WhatsApp automaticamente via Edge Function
       if (settings?.whatsapp_on_submit && settings?.whatsapp_enabled) {
-        const phoneNumber = responseData?.whatsapp_redirecionado 
-          ? responseData.whatsapp_redirecionado.replace(/\D/g, "") 
-          : (settings.whatsapp_number || "").replace(/\D/g, "");
-        const interpolatedMessage = interpolateText(settings.whatsapp_message || "Olá! Preenchi o formulário.", data);
-        window.open(`https://wa.me/${phoneNumber}?text=${encodeURIComponent(interpolatedMessage)}`, "_blank");
+        // Se tem número rotacionado da resposta, usa ele diretamente
+        if (responseData?.whatsapp_redirecionado) {
+          const phoneNumber = responseData.whatsapp_redirecionado.replace(/\D/g, "");
+          const interpolatedMessage = interpolateText("Olá! Preenchi o formulário.", data);
+          window.open(`https://wa.me/${phoneNumber}?text=${encodeURIComponent(interpolatedMessage)}`, "_blank");
+        } else {
+          // Usa Edge Function para obter link seguro
+          const whatsappUrl = await getWhatsAppLink(data);
+          if (whatsappUrl) {
+            window.open(whatsappUrl, "_blank");
+          }
+        }
       }
     } catch (error) {
       console.error("Erro ao enviar", error);
@@ -864,15 +869,26 @@ export const MultiStepFormDynamic = () => {
               <div className="mt-8">
                 <Button 
                   type="button" 
-                  onClick={e => {
+                  onClick={async (e) => {
                     e.preventDefault();
                     e.stopPropagation();
                     trackWhatsAppClick();
-                    const phoneNumber = rotatedWhatsApp?.number ? rotatedWhatsApp.number.replace(/\D/g, "") : (successConfig.whatsapp_number || "").replace(/\D/g, "");
-                    // Interpolar a mensagem com os dados do formulário
-                    const interpolatedMessage = interpolateText(successConfig.whatsapp_message || "Olá! Preenchi o formulário.", submittedData);
-                    const message = encodeURIComponent(interpolatedMessage);
-                    window.open(`https://wa.me/${phoneNumber}?text=${message}`, "_blank");
+                    
+                    // Se tem número rotacionado, usa direto (já veio da Edge Function de envio)
+                    if (rotatedWhatsApp?.number) {
+                      const phoneNumber = rotatedWhatsApp.number.replace(/\D/g, "");
+                      const message = encodeURIComponent("Olá! Preenchi o formulário.");
+                      window.open(`https://wa.me/${phoneNumber}?text=${message}`, "_blank");
+                    } else {
+                      // Usa Edge Function para obter link seguro
+                      const whatsappUrl = await getWhatsAppLink(
+                        submittedData, 
+                        activeSuccessPage?.page_key
+                      );
+                      if (whatsappUrl) {
+                        window.open(whatsappUrl, "_blank");
+                      }
+                    }
                   }} 
                   className="w-full h-14 bg-green-600 hover:bg-green-700 text-white text-base font-semibold rounded-2xl"
                 >

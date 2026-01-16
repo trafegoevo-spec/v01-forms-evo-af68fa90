@@ -5,7 +5,6 @@ import { LogoDisplay } from "@/components/LogoDisplay";
 import { CoverPage, CoverTopic } from "@/components/CoverPage";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
 import { Settings } from "lucide-react";
 
 interface CoverSettings {
@@ -20,6 +19,7 @@ interface CoverSettings {
   bg_gradient_to: string;
   bg_gradient_direction: string;
 }
+
 const Index = () => {
   const {
     user,
@@ -33,19 +33,26 @@ const Index = () => {
   const [showCover, setShowCover] = useState(true);
   const [coverSettings, setCoverSettings] = useState<CoverSettings | null>(null);
   const [loadingCover, setLoadingCover] = useState(true);
+
   useEffect(() => {
     // Redirect admin users to /admin after login, unless they're previewing
     if (!loading && user && isAdmin && preview !== "true") {
       navigate("/admin");
     }
   }, [user, isAdmin, loading, navigate, preview]);
+
   useEffect(() => {
     const loadCoverSettings = async () => {
       try {
-        const {
-          data,
-          error
-        } = await supabase.from("app_settings").select("cover_enabled, cover_title, cover_subtitle, cover_cta_text, cover_image_url, cover_topics, bg_gradient_from, bg_gradient_via, bg_gradient_to, bg_gradient_direction").eq("subdomain", formName).maybeSingle();
+        // Use Edge Function to get public settings securely
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+        const response = await fetch(
+          `${supabaseUrl}/functions/v1/get-public-settings?subdomain=${encodeURIComponent(formName)}`,
+          {
+            method: "GET",
+            headers: { "Content-Type": "application/json" },
+          }
+        );
         
         const defaultTopics: CoverTopic[] = [
           { icon: "CheckCircle", text: "Tópico 1" },
@@ -53,8 +60,8 @@ const Index = () => {
           { icon: "CheckCircle", text: "Tópico 3" }
         ];
 
-        if (error) {
-          console.error("Error loading cover settings:", error);
+        if (!response.ok) {
+          console.error("Error loading cover settings:", response.statusText);
           setCoverSettings({
             cover_enabled: false,
             cover_title: "Bem-vindo",
@@ -68,7 +75,13 @@ const Index = () => {
             bg_gradient_direction: 'to-br'
           });
           setShowCover(false);
-        } else if (!data) {
+          return;
+        }
+
+        const result = await response.json();
+        const data = result.settings;
+
+        if (!data) {
           setCoverSettings({
             cover_enabled: false,
             cover_title: "Bem-vindo",

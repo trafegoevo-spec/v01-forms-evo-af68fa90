@@ -11,3 +11,9 @@ verify_jwt = false
 
 [functions.salvar-parcial]
 verify_jwt = false
+
+[functions.get-public-settings]
+verify_jwt = false
+
+[functions.get-whatsapp-link]
+verify_jwt = false
