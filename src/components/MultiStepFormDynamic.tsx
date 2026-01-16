@@ -624,6 +624,7 @@ export const MultiStepFormDynamic = () => {
           
           // Se skip_submit=true, apenas mostra a página sem enviar dados
           if (condition.skip_submit) {
+            setIsSkippedSubmit(true);
             setIsSuccess(true);
             setStep(totalSteps);
             return;
@@ -663,6 +664,7 @@ export const MultiStepFormDynamic = () => {
           
           // Se skip_submit=true, apenas mostra a página sem enviar dados
           if (condition.skip_submit) {
+            setIsSkippedSubmit(true);
             setIsSuccess(true);
             setStep(totalSteps);
             return;
