@@ -12,6 +12,19 @@ import { supabase } from "@/integrations/supabase/client";
 import { Loader2, ArrowRight, ArrowLeft, Check, X, CheckCircle, MessageCircle } from "lucide-react";
 
 import { Progress } from "@/components/ui/progress";
+
+// Função para substituir placeholders {campo} pelos valores do formulário
+const interpolateText = (text: string, formData: Record<string, any>): string => {
+  if (!text) return text;
+  return text.replace(/\{(\w+)\}/g, (match, fieldName) => {
+    const value = formData[fieldName];
+    if (value !== undefined && value !== null && value !== '') {
+      return String(value);
+    }
+    return match; // Mantém o placeholder se não tiver valor
+  });
+};
+
 interface ConditionalRule {
   value: string;
   action: "skip_to_step" | "success_page";
@@ -567,6 +580,15 @@ export const MultiStepFormDynamic = () => {
       setSubmittedData(data);
       setIsSuccess(true);
       setStep(totalSteps);
+      
+      // Se whatsapp_on_submit está habilitado, abrir WhatsApp automaticamente
+      if (settings?.whatsapp_on_submit && settings?.whatsapp_enabled) {
+        const phoneNumber = responseData?.whatsapp_redirecionado 
+          ? responseData.whatsapp_redirecionado.replace(/\D/g, "") 
+          : (settings.whatsapp_number || "").replace(/\D/g, "");
+        const interpolatedMessage = interpolateText(settings.whatsapp_message || "Olá! Preenchi o formulário.", data);
+        window.open(`https://wa.me/${phoneNumber}?text=${encodeURIComponent(interpolatedMessage)}`, "_blank");
+      }
     } catch (error) {
       console.error("Erro ao enviar", error);
       toast({
@@ -679,9 +701,11 @@ export const MultiStepFormDynamic = () => {
 
     return <div key={question.id} className="space-y-2">
         <div>
-          <h2 className="font-bold text-foreground md:text-4xl text-3xl text-left">{question.question}</h2>
+          <h2 className="font-bold text-foreground md:text-4xl text-3xl text-left">
+            {interpolateText(question.question, form.getValues())}
+          </h2>
           {question.subtitle && <label className="block font-medium text-muted-foreground mt-1 text-base">
-              {question.subtitle}
+              {interpolateText(question.subtitle, form.getValues())}
             </label>}
         </div>
 
@@ -835,7 +859,8 @@ export const MultiStepFormDynamic = () => {
               </p>
             </div>
 
-            {successConfig?.whatsapp_enabled && (
+            {/* Só mostra botão de WhatsApp se não foi aberto automaticamente */}
+            {successConfig?.whatsapp_enabled && !settings?.whatsapp_on_submit && (
               <div className="mt-8">
                 <Button 
                   type="button" 
@@ -844,7 +869,9 @@ export const MultiStepFormDynamic = () => {
                     e.stopPropagation();
                     trackWhatsAppClick();
                     const phoneNumber = rotatedWhatsApp?.number ? rotatedWhatsApp.number.replace(/\D/g, "") : (successConfig.whatsapp_number || "").replace(/\D/g, "");
-                    const message = encodeURIComponent(successConfig.whatsapp_message || "Olá! Preenchi o formulário.");
+                    // Interpolar a mensagem com os dados do formulário
+                    const interpolatedMessage = interpolateText(successConfig.whatsapp_message || "Olá! Preenchi o formulário.", submittedData);
+                    const message = encodeURIComponent(interpolatedMessage);
                     window.open(`https://wa.me/${phoneNumber}?text=${message}`, "_blank");
                   }} 
                   className="w-full h-14 bg-green-600 hover:bg-green-700 text-white text-base font-semibold rounded-2xl"
@@ -855,6 +882,15 @@ export const MultiStepFormDynamic = () => {
                 
                 <p className="text-sm text-muted-foreground mt-3">
                   Você será redirecionado para o WhatsApp.
+                </p>
+              </div>
+            )}
+            
+            {/* Mensagem quando WhatsApp já foi aberto automaticamente */}
+            {settings?.whatsapp_on_submit && settings?.whatsapp_enabled && (
+              <div className="mt-8 p-4 bg-green-50 rounded-lg border border-green-200">
+                <p className="text-sm text-green-700 text-center">
+                  ✅ O WhatsApp foi aberto automaticamente. Verifique sua aba ou pop-up.
                 </p>
               </div>
             )}

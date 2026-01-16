@@ -39,6 +39,7 @@ export type Database = {
           whatsapp_enabled: boolean
           whatsapp_message: string
           whatsapp_number: string
+          whatsapp_on_submit: boolean | null
         }
         Insert: {
           bg_gradient_direction?: string | null
@@ -64,6 +65,7 @@ export type Database = {
           whatsapp_enabled?: boolean
           whatsapp_message?: string
           whatsapp_number?: string
+          whatsapp_on_submit?: boolean | null
         }
         Update: {
           bg_gradient_direction?: string | null
@@ -89,6 +91,7 @@ export type Database = {
           whatsapp_enabled?: boolean
           whatsapp_message?: string
           whatsapp_number?: string
+          whatsapp_on_submit?: boolean | null
         }
         Relationships: []
       }
