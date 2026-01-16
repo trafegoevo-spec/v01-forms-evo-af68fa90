@@ -73,6 +73,7 @@ interface AppSettings {
   success_subtitle: string;
   form_name: string;
   whatsapp_enabled: boolean;
+  whatsapp_on_submit: boolean;
   subdomain: string;
   cover_enabled: boolean;
   cover_title: string;
@@ -309,6 +310,7 @@ const Admin = () => {
           subdomain: formName,
           form_name: formName,
           whatsapp_enabled: true,
+          whatsapp_on_submit: false,
           whatsapp_number: '5531989236061',
           whatsapp_message: 'Olá! Acabei de enviar meus dados no formulário.',
           success_title: 'Obrigado',
@@ -361,7 +363,8 @@ const Admin = () => {
         bg_gradient_from: data.bg_gradient_from || '#f0f9ff',
         bg_gradient_via: data.bg_gradient_via || '#ffffff',
         bg_gradient_to: data.bg_gradient_to || '#faf5ff',
-        bg_gradient_direction: data.bg_gradient_direction || 'to-br'
+        bg_gradient_direction: data.bg_gradient_direction || 'to-br',
+        whatsapp_on_submit: data.whatsapp_on_submit || false
       } as AppSettings);
     } catch (error: any) {
       console.error("Erro ao carregar configurações:", error);
@@ -385,6 +388,7 @@ const Admin = () => {
         success_subtitle: settings.success_subtitle,
         form_name: settings.form_name,
         whatsapp_enabled: settings.whatsapp_enabled,
+        whatsapp_on_submit: settings.whatsapp_on_submit,
         cover_enabled: settings.cover_enabled,
         cover_title: settings.cover_title,
         cover_subtitle: settings.cover_subtitle,
@@ -1036,6 +1040,9 @@ VITE_GTM_ID=GTM-XXXXXXX`}
                   <Input value={question.question} onChange={e => updateQuestionLocal(question.id, {
                 question: e.target.value
               })} />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    💡 Use {"{campo}"} para incluir dados anteriores. Ex: "Olá {"{nome}"}, qual é seu WhatsApp?"
+                  </p>
                 </div>
 
                 <div>
@@ -1343,14 +1350,29 @@ VITE_GTM_ID=GTM-XXXXXXX`}
                   <textarea
                     value={settings.whatsapp_message}
                     onChange={e => updateSettings({ whatsapp_message: e.target.value })}
-                    placeholder="Olá! Acabei de enviar meus dados no formulário."
+                    placeholder="Olá! Sou {nome}, meu telefone é {telefone}. Tenho interesse em {curso}."
                     disabled={!settings.whatsapp_enabled}
                     className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                     rows={2}
                   />
                   <p className="text-sm text-muted-foreground mt-1">
-                    Mensagem que será enviada automaticamente ao abrir o WhatsApp
+                    💡 Use {"{campo}"} para incluir dados do formulário. Ex: "Sou {"{nome}"}, meu WhatsApp é {"{telefone}"}"
                   </p>
+                </div>
+
+                <div className="flex items-center justify-between border-t pt-4">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="whatsapp-on-submit">Abrir WhatsApp automaticamente ao finalizar</Label>
+                    <p className="text-sm text-muted-foreground">
+                      O WhatsApp será aberto assim que o usuário clicar em "Finalizar"
+                    </p>
+                  </div>
+                  <Switch 
+                    id="whatsapp-on-submit"
+                    checked={settings.whatsapp_on_submit || false} 
+                    onCheckedChange={checked => updateSettings({ whatsapp_on_submit: checked })}
+                    disabled={!settings.whatsapp_enabled}
+                  />
                 </div>
 
                 <Button onClick={saveSettings} disabled={!settingsChanged} className="w-full">
