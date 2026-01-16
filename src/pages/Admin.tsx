@@ -976,25 +976,6 @@ VITE_GTM_ID=GTM-XXXXXXX`}
                 })}
               </div>
 
-              {/* Preview */}
-              <div>
-                <Label>Pré-visualização</Label>
-                <div 
-                  className="h-24 rounded-lg border mt-2"
-                  style={{
-                    background: `linear-gradient(${
-                      settings.bg_gradient_direction === 'to-t' ? '0deg' :
-                      settings.bg_gradient_direction === 'to-b' ? '180deg' :
-                      settings.bg_gradient_direction === 'to-l' ? '270deg' :
-                      settings.bg_gradient_direction === 'to-r' ? '90deg' :
-                      settings.bg_gradient_direction === 'to-tl' ? '315deg' :
-                      settings.bg_gradient_direction === 'to-tr' ? '45deg' :
-                      settings.bg_gradient_direction === 'to-bl' ? '225deg' :
-                      '135deg'
-                    }, ${settings.bg_gradient_from}, ${settings.bg_gradient_via}, ${settings.bg_gradient_to})`
-                  }}
-                />
-              </div>
             </CardContent>
           </Card>
         )}
@@ -1198,6 +1179,7 @@ VITE_GTM_ID=GTM-XXXXXXX`}
                               </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="default">Página Padrão</SelectItem>
+                                <SelectItem value="disqualified">Página de Desqualificado</SelectItem>
                                 {successPages.map((page) => (
                                   <SelectItem key={page.id} value={page.page_key}>
                                     {page.title}
@@ -1404,10 +1386,6 @@ VITE_GTM_ID=GTM-XXXXXXX`}
             <Card>
               <CardContent className="py-8 text-center text-muted-foreground">
                 <p>Nenhum número na fila. Será usado o número configurado em "Configurações Gerais".</p>
-                <Button onClick={addWhatsappQueueItem} className="mt-4">
-                  <Plus className="mr-2 h-4 w-4" />
-                  Adicionar Primeiro Número
-                </Button>
               </CardContent>
             </Card>
           ) : (
