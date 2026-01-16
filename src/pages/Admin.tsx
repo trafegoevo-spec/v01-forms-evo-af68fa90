@@ -27,6 +27,7 @@ interface ConditionalRule {
   action: "skip_to_step" | "success_page";
   target_step?: number;
   target_page?: string;
+  skip_submit?: boolean;
 }
 
 interface ConditionalLogic {
@@ -1207,6 +1208,30 @@ VITE_GTM_ID=GTM-XXXXXXX`}
                             <X className="h-4 w-4" />
                           </Button>
                         </div>
+                        
+                        {/* Toggle para não enviar dados */}
+                        {condition.action === "success_page" && (
+                          <div className="flex items-center gap-2 pt-2 border-t mt-2">
+                            <Switch
+                              id={`skip-submit-${question.id}-${condIndex}`}
+                              checked={condition.skip_submit || false}
+                              onCheckedChange={(checked) => 
+                                updateConditionalRule(question.id, condIndex, { skip_submit: checked })
+                              }
+                            />
+                            <Label 
+                              htmlFor={`skip-submit-${question.id}-${condIndex}`}
+                              className="text-sm cursor-pointer"
+                            >
+                              Não enviar dados do lead
+                            </Label>
+                            {condition.skip_submit && (
+                              <span className="text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded">
+                                ⚠️ Dados não serão salvos
+                              </span>
+                            )}
+                          </div>
+                        )}
                       </div>
                     ))}
                     
