@@ -976,7 +976,11 @@ export const MultiStepFormDynamic = () => {
                   shouldFireGtmRef.current = true;
                   form.handleSubmit(onSubmit)();
                 }} 
-                className="flex-1 h-14 text-base font-semibold rounded-2xl" 
+                className={`flex-1 h-14 text-base font-semibold rounded-2xl ${
+                  settings?.whatsapp_on_submit && settings?.whatsapp_enabled 
+                    ? 'bg-green-600 hover:bg-green-700' 
+                    : ''
+                }`}
                 disabled={isSubmitting || !currentQuestions.every(q => {
                   const value = form.watch(q.field_name);
                   const isRequired = q.required !== false;
@@ -990,6 +994,11 @@ export const MultiStepFormDynamic = () => {
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Enviando...
+                  </>
+                ) : settings?.whatsapp_on_submit && settings?.whatsapp_enabled ? (
+                  <>
+                    <MessageCircle className="mr-2 h-5 w-5" />
+                    Continuar no WhatsApp
                   </>
                 ) : (
                   <>
