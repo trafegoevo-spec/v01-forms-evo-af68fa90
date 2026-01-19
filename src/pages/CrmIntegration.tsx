@@ -25,6 +25,7 @@ interface CrmIntegration {
   origem: string | null;
   campanha: string | null;
   include_utm_params: boolean;
+  produto: string | null;
 }
 
 const CrmIntegrationPage = () => {
@@ -77,7 +78,8 @@ const CrmIntegrationPage = () => {
           exclusive_mode: true,
           origem: "formulario-lovable",
           campanha: null,
-          include_utm_params: true
+          include_utm_params: true,
+          produto: null
         });
       }
     } catch (error: any) {
@@ -116,7 +118,8 @@ const CrmIntegrationPage = () => {
             exclusive_mode: crmIntegration.exclusive_mode,
             origem: crmIntegration.origem,
             campanha: crmIntegration.campanha,
-            include_utm_params: crmIntegration.include_utm_params
+            include_utm_params: crmIntegration.include_utm_params,
+            produto: crmIntegration.produto
           })
           .eq("id", crmIntegration.id);
         
@@ -136,7 +139,8 @@ const CrmIntegrationPage = () => {
             exclusive_mode: crmIntegration.exclusive_mode,
             origem: crmIntegration.origem,
             campanha: crmIntegration.campanha,
-            include_utm_params: crmIntegration.include_utm_params
+            include_utm_params: crmIntegration.include_utm_params,
+            produto: crmIntegration.produto
           })
           .select()
           .single();
@@ -174,7 +178,7 @@ const CrmIntegrationPage = () => {
         telefone: "31999887766",
         email: "maria@empresa.com",
         origem: crmIntegration.origem || "formulario-lovable",
-        produto: (crmIntegration as any).produto || "",
+        produto: crmIntegration.produto || "",
         _teste: true,
         timestamp: new Date().toISOString()
       };
@@ -349,8 +353,8 @@ const CrmIntegrationPage = () => {
                 <div>
                   <Label>Produto</Label>
                   <Input
-                    value={(crmIntegration as any).produto ?? ""}
-                    onChange={(e) => updateCrmIntegration({ produto: e.target.value } as any)}
+                    value={crmIntegration.produto ?? ""}
+                    onChange={(e) => updateCrmIntegration({ produto: e.target.value })}
                     placeholder="Plano Enterprise"
                   />
                   <p className="text-sm text-muted-foreground mt-1">
@@ -421,7 +425,7 @@ const CrmIntegrationPage = () => {
   
   // Origem e Produto
   "origem": "${crmIntegration.origem || "formulario-lovable"}",
-  "produto": "${(crmIntegration as any).produto || ""}"${crmIntegration.include_dynamic_fields ? `,
+  "produto": "${crmIntegration.produto || ""}"${crmIntegration.include_dynamic_fields ? `,
   
   // Campos Dinâmicos (opcionais)
   "mensagem": "Gostaria de saber mais...",
