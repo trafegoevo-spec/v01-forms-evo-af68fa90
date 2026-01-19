@@ -174,7 +174,6 @@ const CrmIntegrationPage = () => {
         telefone: "31999887766",
         email: "maria@empresa.com",
         origem: crmIntegration.origem || "formulario-lovable",
-        campanha: crmIntegration.campanha || "",
         _teste: true,
         timestamp: new Date().toISOString()
       };
@@ -305,8 +304,8 @@ const CrmIntegrationPage = () => {
               <div>
                 <Label>Bearer Token (Autenticação)</Label>
                 <Input
-                  value={crmIntegration.bearer_token || ""}
-                  onChange={(e) => updateCrmIntegration({ bearer_token: e.target.value || null })}
+                  value={crmIntegration.bearer_token ?? ""}
+                  onChange={(e) => updateCrmIntegration({ bearer_token: e.target.value })}
                   placeholder="seu_token_secreto"
                   type="password"
                 />
@@ -319,38 +318,31 @@ const CrmIntegrationPage = () => {
                 <div>
                   <Label>Manager ID</Label>
                   <Input
-                    value={crmIntegration.manager_id || ""}
-                    onChange={(e) => updateCrmIntegration({ manager_id: e.target.value || null })}
+                    value={crmIntegration.manager_id ?? ""}
+                    onChange={(e) => updateCrmIntegration({ manager_id: e.target.value })}
                     placeholder="ID do gerente no CRM"
                   />
                 </div>
                 <div>
-                  <Label>Slug (Campanha)</Label>
+                  <Label>Slug (Time/Campanha)</Label>
                   <Input
-                    value={crmIntegration.slug || ""}
-                    onChange={(e) => updateCrmIntegration({ slug: e.target.value || null })}
+                    value={crmIntegration.slug ?? ""}
+                    onChange={(e) => updateCrmIntegration({ slug: e.target.value })}
                     placeholder="identificador-campanha"
                   />
                 </div>
               </div>
               
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>Origem</Label>
-                  <Input
-                    value={crmIntegration.origem || ""}
-                    onChange={(e) => updateCrmIntegration({ origem: e.target.value || null })}
-                    placeholder="LP Black Friday"
-                  />
-                </div>
-                <div>
-                  <Label>Campanha</Label>
-                  <Input
-                    value={crmIntegration.campanha || ""}
-                    onChange={(e) => updateCrmIntegration({ campanha: e.target.value || null })}
-                    placeholder="black_friday_2025"
-                  />
-                </div>
+              <div>
+                <Label>Origem</Label>
+                <Input
+                  value={crmIntegration.origem ?? ""}
+                  onChange={(e) => updateCrmIntegration({ origem: e.target.value })}
+                  placeholder="LP Black Friday"
+                />
+                <p className="text-sm text-muted-foreground mt-1">
+                  Identificador de origem do lead (o utm_campaign será enviado automaticamente)
+                </p>
               </div>
               
               <div className="border-t pt-4 space-y-4">
@@ -413,9 +405,8 @@ const CrmIntegrationPage = () => {
   "telefone": "31999887766",
   "email": "maria@empresa.com",
   
-  // Origem e Campanha
-  "origem": "${crmIntegration.origem || "formulario-lovable"}",
-  "campanha": "${crmIntegration.campanha || ""}"${crmIntegration.include_dynamic_fields ? `,
+  // Origem
+  "origem": "${crmIntegration.origem || "formulario-lovable"}"${crmIntegration.include_dynamic_fields ? `,
   
   // Campos Dinâmicos (opcionais)
   "mensagem": "Gostaria de saber mais...",
@@ -425,7 +416,7 @@ const CrmIntegrationPage = () => {
   "tag_2": "prioridade_alta",
   "tag_3": "regiao_sudeste"` : ""}${crmIntegration.include_utm_params ? `,
   
-  // UTMs (opcionais)
+  // UTMs (via URL)
   "utm_source": "google",
   "utm_medium": "cpc",
   "utm_campaign": "black_friday_2025",
