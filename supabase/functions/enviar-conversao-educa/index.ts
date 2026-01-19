@@ -61,7 +61,7 @@ serve(async (req) => {
         nome: nome || "",
         telefone: String(telefoneRaw).replace(/\D/g, "") || "",
         email: email || "",
-        origem: crmConfig.origem || flattened.origem || "formulario-lovable",
+        origem: flattened.utm_source || crmConfig.origem || "formulario-lovable",
         produto: crmConfig.produto || "",
       };
 
@@ -283,8 +283,8 @@ serve(async (req) => {
           nome: nome || "",
           telefone: String(telefoneRaw).replace(/\D/g, "") || "",
           email: email || "",
-          origem: crmConfig.origem || flattened.origem || "formulario-lovable",
-          campanha: crmConfig.campanha || "",
+          origem: flattened.utm_source || crmConfig.origem || "formulario-lovable",
+          produto: crmConfig.produto || "",
           data_cadastro: new Date().toISOString(),
           whatsapp_redirecionado: whatsappRedirecionado,
           vendedor_nome: vendedorNome,
