@@ -108,6 +108,7 @@ export type Database = {
           is_active: boolean | null
           manager_id: string | null
           origem: string | null
+          produto: string | null
           slug: string | null
           subdomain: string
           updated_at: string | null
@@ -125,6 +126,7 @@ export type Database = {
           is_active?: boolean | null
           manager_id?: string | null
           origem?: string | null
+          produto?: string | null
           slug?: string | null
           subdomain: string
           updated_at?: string | null
@@ -142,6 +144,7 @@ export type Database = {
           is_active?: boolean | null
           manager_id?: string | null
           origem?: string | null
+          produto?: string | null
           slug?: string | null
           subdomain?: string
           updated_at?: string | null
