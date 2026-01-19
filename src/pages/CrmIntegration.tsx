@@ -21,6 +21,10 @@ interface CrmIntegration {
   slug: string | null;
   is_active: boolean;
   include_dynamic_fields: boolean;
+  exclusive_mode: boolean;
+  origem: string | null;
+  campanha: string | null;
+  include_utm_params: boolean;
 }
 
 const CrmIntegrationPage = () => {
@@ -69,7 +73,11 @@ const CrmIntegrationPage = () => {
           manager_id: null,
           slug: null,
           is_active: false,
-          include_dynamic_fields: true
+          include_dynamic_fields: true,
+          exclusive_mode: true,
+          origem: "formulario-lovable",
+          campanha: null,
+          include_utm_params: true
         });
       }
     } catch (error: any) {
@@ -104,7 +112,11 @@ const CrmIntegrationPage = () => {
             manager_id: crmIntegration.manager_id,
             slug: crmIntegration.slug,
             is_active: crmIntegration.is_active,
-            include_dynamic_fields: crmIntegration.include_dynamic_fields
+            include_dynamic_fields: crmIntegration.include_dynamic_fields,
+            exclusive_mode: crmIntegration.exclusive_mode,
+            origem: crmIntegration.origem,
+            campanha: crmIntegration.campanha,
+            include_utm_params: crmIntegration.include_utm_params
           })
           .eq("id", crmIntegration.id);
         
@@ -120,7 +132,11 @@ const CrmIntegrationPage = () => {
             manager_id: crmIntegration.manager_id,
             slug: crmIntegration.slug,
             is_active: crmIntegration.is_active,
-            include_dynamic_fields: crmIntegration.include_dynamic_fields
+            include_dynamic_fields: crmIntegration.include_dynamic_fields,
+            exclusive_mode: crmIntegration.exclusive_mode,
+            origem: crmIntegration.origem,
+            campanha: crmIntegration.campanha,
+            include_utm_params: crmIntegration.include_utm_params
           })
           .select()
           .single();
@@ -151,15 +167,33 @@ const CrmIntegrationPage = () => {
 
     setTestingCrm(true);
     try {
-      const testPayload = {
-        nome: "Lead de Teste",
-        telefone: "31999999999",
-        email: "teste@exemplo.com",
+      const testPayload: Record<string, any> = {
         manager_id: crmIntegration.manager_id || "",
         slug: crmIntegration.slug || "",
+        nome: "Maria Santos",
+        telefone: "31999887766",
+        email: "maria@empresa.com",
+        origem: crmIntegration.origem || "formulario-lovable",
+        campanha: crmIntegration.campanha || "",
         _teste: true,
         timestamp: new Date().toISOString()
       };
+      
+      if (crmIntegration.include_dynamic_fields) {
+        testPayload.mensagem = "Gostaria de saber mais sobre o plano empresarial";
+        testPayload.produto = "Plano Enterprise";
+        testPayload.valor_estimado = 15000;
+        testPayload.tag_1 = "empresa_grande";
+        testPayload.tag_2 = "prioridade_alta";
+        testPayload.tag_3 = "regiao_sudeste";
+      }
+      
+      if (crmIntegration.include_utm_params) {
+        testPayload.utm_source = "google";
+        testPayload.utm_medium = "cpc";
+        testPayload.utm_campaign = "black_friday_2025";
+        testPayload.gclid = "EAIaIQobChMI...";
+      }
 
       const headers: Record<string, string> = {
         "Content-Type": "application/json"
@@ -231,7 +265,7 @@ const CrmIntegrationPage = () => {
                 Webhook Externo (CRM)
               </CardTitle>
               <p className="text-sm text-muted-foreground">
-                Envie os leads para um CRM externo via webhook. Funciona em paralelo com o webhook do Google Sheets.
+                Envie os leads para um CRM externo via webhook. O CRM pode gerenciar o redirecionamento para WhatsApp.
               </p>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -299,31 +333,103 @@ const CrmIntegrationPage = () => {
                   />
                 </div>
               </div>
-
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Incluir campos dinâmicos</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Enviar todos os campos preenchidos no formulário
-                  </p>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Origem</Label>
+                  <Input
+                    value={crmIntegration.origem || ""}
+                    onChange={(e) => updateCrmIntegration({ origem: e.target.value || null })}
+                    placeholder="LP Black Friday"
+                  />
                 </div>
-                <Switch
-                  checked={crmIntegration.include_dynamic_fields}
-                  onCheckedChange={(checked) => updateCrmIntegration({ include_dynamic_fields: checked })}
-                />
+                <div>
+                  <Label>Campanha</Label>
+                  <Input
+                    value={crmIntegration.campanha || ""}
+                    onChange={(e) => updateCrmIntegration({ campanha: e.target.value || null })}
+                    placeholder="black_friday_2025"
+                  />
+                </div>
+              </div>
+              
+              <div className="border-t pt-4 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label className="text-base font-medium">Modo Exclusivo</Label>
+                    <p className="text-sm text-muted-foreground">
+                      O CRM cuida de tudo: salvar lead, rotacionar vendedor e retornar link WhatsApp. Não salva dados localmente.
+                    </p>
+                  </div>
+                  <Switch
+                    checked={crmIntegration.exclusive_mode}
+                    onCheckedChange={(checked) => updateCrmIntegration({ exclusive_mode: checked })}
+                  />
+                </div>
+                
+                {!crmIntegration.exclusive_mode && (
+                  <div className="bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                    <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                      ⚠️ Modo paralelo: Os dados serão salvos localmente E enviados para o CRM. O redirecionamento WhatsApp será gerenciado localmente.
+                    </p>
+                  </div>
+                )}
+
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Incluir campos dinâmicos</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Enviar todos os campos preenchidos no formulário (mensagem, produto, tags, etc)
+                    </p>
+                  </div>
+                  <Switch
+                    checked={crmIntegration.include_dynamic_fields}
+                    onCheckedChange={(checked) => updateCrmIntegration({ include_dynamic_fields: checked })}
+                  />
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Incluir parâmetros UTM</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Enviar utm_source, utm_medium, utm_campaign, gclid
+                    </p>
+                  </div>
+                  <Switch
+                    checked={crmIntegration.include_utm_params}
+                    onCheckedChange={(checked) => updateCrmIntegration({ include_utm_params: checked })}
+                  />
+                </div>
               </div>
 
               <div className="bg-muted p-3 rounded-lg">
                 <p className="text-xs font-medium mb-2">Payload de exemplo:</p>
-                <pre className="text-xs overflow-x-auto">
+                <pre className="text-xs overflow-x-auto whitespace-pre-wrap">
 {`{
-  "nome": "João Silva",
-  "telefone": "31999999999",
-  "email": "joao@email.com",
-  "manager_id": "${crmIntegration.manager_id || ""}",
-  "slug": "${crmIntegration.slug || ""}",
-  ${crmIntegration.include_dynamic_fields ? '"curso": "Graduação",\n  "utm_source": "google",' : ''}
-  "data_cadastro": "2026-01-14T12:00:00.000Z"
+  // Campos Obrigatórios
+  "manager_id": "${crmIntegration.manager_id || "c17bb632-627a-..."}",
+  "slug": "${crmIntegration.slug || "slug-do-time"}",
+  "nome": "Maria Santos",
+  "telefone": "31999887766",
+  "email": "maria@empresa.com",
+  
+  // Origem e Campanha
+  "origem": "${crmIntegration.origem || "formulario-lovable"}",
+  "campanha": "${crmIntegration.campanha || ""}"${crmIntegration.include_dynamic_fields ? `,
+  
+  // Campos Dinâmicos (opcionais)
+  "mensagem": "Gostaria de saber mais...",
+  "produto": "Plano Enterprise",
+  "valor_estimado": 15000,
+  "tag_1": "empresa_grande",
+  "tag_2": "prioridade_alta",
+  "tag_3": "regiao_sudeste"` : ""}${crmIntegration.include_utm_params ? `,
+  
+  // UTMs (opcionais)
+  "utm_source": "google",
+  "utm_medium": "cpc",
+  "utm_campaign": "black_friday_2025",
+  "gclid": "EAIaIQobChMI..."` : ""}
 }`}
                 </pre>
               </div>

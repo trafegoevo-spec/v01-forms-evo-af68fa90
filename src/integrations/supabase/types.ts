@@ -98,12 +98,16 @@ export type Database = {
       crm_integrations: {
         Row: {
           bearer_token: string | null
+          campanha: string | null
           created_at: string | null
           crm_name: string | null
+          exclusive_mode: boolean | null
           id: string
           include_dynamic_fields: boolean | null
+          include_utm_params: boolean | null
           is_active: boolean | null
           manager_id: string | null
+          origem: string | null
           slug: string | null
           subdomain: string
           updated_at: string | null
@@ -111,12 +115,16 @@ export type Database = {
         }
         Insert: {
           bearer_token?: string | null
+          campanha?: string | null
           created_at?: string | null
           crm_name?: string | null
+          exclusive_mode?: boolean | null
           id?: string
           include_dynamic_fields?: boolean | null
+          include_utm_params?: boolean | null
           is_active?: boolean | null
           manager_id?: string | null
+          origem?: string | null
           slug?: string | null
           subdomain: string
           updated_at?: string | null
@@ -124,12 +132,16 @@ export type Database = {
         }
         Update: {
           bearer_token?: string | null
+          campanha?: string | null
           created_at?: string | null
           crm_name?: string | null
+          exclusive_mode?: boolean | null
           id?: string
           include_dynamic_fields?: boolean | null
+          include_utm_params?: boolean | null
           is_active?: boolean | null
           manager_id?: string | null
+          origem?: string | null
           slug?: string | null
           subdomain?: string
           updated_at?: string | null

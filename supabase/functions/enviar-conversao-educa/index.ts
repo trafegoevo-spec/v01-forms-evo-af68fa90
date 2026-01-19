@@ -41,6 +41,111 @@ serve(async (req) => {
     const email = flattened.email || null;
     const temEmail = email && String(email).trim() !== "";
 
+    // === VERIFICA INTEGRAÇÃO CRM ===
+    const { data: crmConfig } = await supabase
+      .from("crm_integrations")
+      .select("*")
+      .eq("subdomain", subdomain)
+      .eq("is_active", true)
+      .single();
+
+    // === MODO EXCLUSIVO CRM ===
+    if (crmConfig?.webhook_url && crmConfig?.exclusive_mode === true) {
+      console.log("🚀 Modo exclusivo CRM ativado - enviando apenas para CRM:", crmConfig.crm_name);
+
+      // Monta payload para o CRM
+      const crmPayload: Record<string, any> = {
+        // Campos obrigatórios
+        manager_id: crmConfig.manager_id || "",
+        slug: crmConfig.slug || "",
+        nome: nome || "",
+        telefone: String(telefoneRaw).replace(/\D/g, "") || "",
+        email: email || "",
+        origem: crmConfig.origem || flattened.origem || "formulario-lovable",
+        campanha: crmConfig.campanha || "",
+      };
+
+      // Campos dinâmicos (todos os dados do formulário)
+      if (crmConfig.include_dynamic_fields) {
+        const excludeKeys = ["form_name", "timestamp", "nome", "name", "telefone", "phone", "whatsapp", "email"];
+        for (const [key, value] of Object.entries(flattened)) {
+          if (!excludeKeys.includes(key) && !key.startsWith("utm_") && key !== "gclid" && key !== "page_url" && key !== "page_referrer") {
+            crmPayload[key] = value;
+          }
+        }
+      }
+
+      // UTMs
+      if (crmConfig.include_utm_params !== false) {
+        const utmKeys = ["utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content", "gclid"];
+        for (const key of utmKeys) {
+          if (flattened[key]) {
+            crmPayload[key] = flattened[key];
+          }
+        }
+      }
+
+      console.log("📤 Payload CRM exclusivo:", JSON.stringify(crmPayload, null, 2));
+
+      const crmHeaders: Record<string, string> = {
+        "Content-Type": "application/json"
+      };
+
+      if (crmConfig.bearer_token) {
+        crmHeaders["Authorization"] = `Bearer ${crmConfig.bearer_token}`;
+      }
+
+      try {
+        const crmResp = await fetch(crmConfig.webhook_url, {
+          method: "POST",
+          headers: crmHeaders,
+          body: JSON.stringify(crmPayload),
+          signal: AbortSignal.timeout(15000),
+        });
+
+        const crmResponseText = await crmResp.text();
+        console.log("📥 Resposta CRM:", crmResponseText);
+
+        let crmResponseData: any = {};
+        try {
+          crmResponseData = JSON.parse(crmResponseText);
+        } catch {
+          crmResponseData = { raw: crmResponseText };
+        }
+
+        if (crmResp.ok) {
+          console.log("✅ CRM exclusivo - enviado com sucesso");
+          
+          return jsonResponse({
+            success: true,
+            ok: crmResponseData.ok ?? true,
+            message: "Dados enviados para CRM (modo exclusivo)",
+            whatsapp_link: crmResponseData.whatsapp_link || null,
+            crm_status: "sent",
+            crm_response: crmResponseData,
+          });
+        } else {
+          console.error("❌ Erro CRM exclusivo:", crmResponseText);
+          return jsonResponse({
+            success: false,
+            error: "Erro ao enviar para CRM",
+            crm_status: "error",
+            crm_response: crmResponseData,
+          }, 500);
+        }
+      } catch (crmErr) {
+        console.error("❌ Erro de conexão com CRM:", crmErr);
+        return jsonResponse({
+          success: false,
+          error: "Erro de conexão com CRM",
+          crm_status: "connection_error",
+        }, 500);
+      }
+    }
+
+    // === FLUXO NORMAL (modo não exclusivo ou sem CRM) ===
+    console.log("📌 Fluxo normal - salvando localmente e enviando para webhooks");
+
     // === LÓGICA DE ROTAÇÃO DE WHATSAPP ===
     let whatsappRedirecionado: string | null = null;
     let vendedorNome: string | null = null;
@@ -166,25 +271,20 @@ serve(async (req) => {
 
     console.log("✅ Webhook enviado com sucesso");
 
-    // === INTEGRAÇÃO CRM (em paralelo) ===
+    // === INTEGRAÇÃO CRM (modo paralelo - quando exclusive_mode = false) ===
     let crmStatus = "not_configured";
-    try {
-      const { data: crmConfig } = await supabase
-        .from("crm_integrations")
-        .select("*")
-        .eq("subdomain", subdomain)
-        .eq("is_active", true)
-        .single();
-
-      if (crmConfig?.webhook_url) {
-        console.log("📤 Enviando para CRM:", crmConfig.crm_name);
+    if (crmConfig?.webhook_url && crmConfig?.exclusive_mode !== true) {
+      try {
+        console.log("📤 Enviando para CRM (modo paralelo):", crmConfig.crm_name);
 
         const crmPayload: Record<string, any> = {
-          nome: nome || "",
-          telefone: telefoneRaw?.toString().replace(/\D/g, "") || "",
-          email: email || "",
           manager_id: crmConfig.manager_id || "",
           slug: crmConfig.slug || "",
+          nome: nome || "",
+          telefone: String(telefoneRaw).replace(/\D/g, "") || "",
+          email: email || "",
+          origem: crmConfig.origem || flattened.origem || "formulario-lovable",
+          campanha: crmConfig.campanha || "",
           data_cadastro: new Date().toISOString(),
           whatsapp_redirecionado: whatsappRedirecionado,
           vendedor_nome: vendedorNome,
@@ -192,6 +292,15 @@ serve(async (req) => {
 
         if (crmConfig.include_dynamic_fields) {
           Object.assign(crmPayload, flattened);
+        }
+
+        if (crmConfig.include_utm_params !== false) {
+          const utmKeys = ["utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content", "gclid"];
+          for (const key of utmKeys) {
+            if (flattened[key]) {
+              crmPayload[key] = flattened[key];
+            }
+          }
         }
 
         const crmHeaders: Record<string, string> = {
@@ -216,10 +325,10 @@ serve(async (req) => {
           console.error("❌ Erro CRM webhook:", await crmResp.text());
           crmStatus = "error";
         }
+      } catch (crmErr) {
+        console.error("❌ Erro ao enviar para CRM:", crmErr);
+        crmStatus = "error";
       }
-    } catch (crmErr) {
-      console.error("❌ Erro ao enviar para CRM:", crmErr);
-      crmStatus = "error";
     }
 
     return jsonResponse({
