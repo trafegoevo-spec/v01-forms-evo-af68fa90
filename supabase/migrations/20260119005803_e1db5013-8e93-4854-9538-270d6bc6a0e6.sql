@@ -1,0 +1,1 @@
+ALTER TABLE crm_integrations ADD COLUMN IF NOT EXISTS produto text;

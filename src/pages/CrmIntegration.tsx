@@ -174,6 +174,7 @@ const CrmIntegrationPage = () => {
         telefone: "31999887766",
         email: "maria@empresa.com",
         origem: crmIntegration.origem || "formulario-lovable",
+        produto: (crmIntegration as any).produto || "",
         _teste: true,
         timestamp: new Date().toISOString()
       };
@@ -333,16 +334,29 @@ const CrmIntegrationPage = () => {
                 </div>
               </div>
               
-              <div>
-                <Label>Origem</Label>
-                <Input
-                  value={crmIntegration.origem ?? ""}
-                  onChange={(e) => updateCrmIntegration({ origem: e.target.value })}
-                  placeholder="LP Black Friday"
-                />
-                <p className="text-sm text-muted-foreground mt-1">
-                  Identificador de origem do lead (o utm_campaign será enviado automaticamente)
-                </p>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Origem</Label>
+                  <Input
+                    value={crmIntegration.origem ?? ""}
+                    onChange={(e) => updateCrmIntegration({ origem: e.target.value })}
+                    placeholder="LP Black Friday"
+                  />
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Identificador de origem do lead
+                  </p>
+                </div>
+                <div>
+                  <Label>Produto</Label>
+                  <Input
+                    value={(crmIntegration as any).produto ?? ""}
+                    onChange={(e) => updateCrmIntegration({ produto: e.target.value } as any)}
+                    placeholder="Plano Enterprise"
+                  />
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Produto/serviço padrão do lead
+                  </p>
+                </div>
               </div>
               
               <div className="border-t pt-4 space-y-4">
@@ -405,8 +419,9 @@ const CrmIntegrationPage = () => {
   "telefone": "31999887766",
   "email": "maria@empresa.com",
   
-  // Origem
-  "origem": "${crmIntegration.origem || "formulario-lovable"}"${crmIntegration.include_dynamic_fields ? `,
+  // Origem e Produto
+  "origem": "${crmIntegration.origem || "formulario-lovable"}",
+  "produto": "${(crmIntegration as any).produto || ""}"${crmIntegration.include_dynamic_fields ? `,
   
   // Campos Dinâmicos (opcionais)
   "mensagem": "Gostaria de saber mais...",

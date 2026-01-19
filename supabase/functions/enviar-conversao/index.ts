@@ -62,7 +62,7 @@ serve(async (req) => {
         telefone: String(telefoneRaw).replace(/\D/g, "") || "",
         email: email || "",
         origem: crmConfig.origem || flattened.origem || "formulario-lovable",
-        campanha: crmConfig.campanha || "",
+        produto: crmConfig.produto || "",
       };
 
       // Campos dinâmicos (todos os dados do formulário)
