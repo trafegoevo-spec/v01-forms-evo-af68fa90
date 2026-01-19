@@ -579,6 +579,13 @@ export const MultiStepFormDynamic = () => {
       setIsSuccess(true);
       setStep(totalSteps);
       
+      // === MODO EXCLUSIVO CRM: Se CRM retornou whatsapp_link, usar diretamente ===
+      if (responseData?.ok && responseData?.whatsapp_link) {
+        console.log("🔗 Abrindo WhatsApp do CRM:", responseData.whatsapp_link);
+        window.open(responseData.whatsapp_link, "_blank");
+        return; // Não faz mais nada, CRM gerenciou tudo
+      }
+      
       // Se whatsapp_on_submit está habilitado, abrir WhatsApp automaticamente via Edge Function
       if (settings?.whatsapp_on_submit && settings?.whatsapp_enabled) {
         // Se tem número rotacionado da resposta, usa ele diretamente
