@@ -586,12 +586,14 @@ export const MultiStepFormDynamic = () => {
         return; // Não faz mais nada, CRM gerenciou tudo
       }
       
-      // Se whatsapp_on_submit está habilitado, abrir WhatsApp automaticamente via Edge Function
+        // Se whatsapp_on_submit está habilitado, abrir WhatsApp automaticamente via Edge Function
       if (settings?.whatsapp_on_submit && settings?.whatsapp_enabled) {
         // Se tem número rotacionado da resposta, usa ele diretamente
         if (responseData?.whatsapp_redirecionado) {
           const phoneNumber = responseData.whatsapp_redirecionado.replace(/\D/g, "");
-          const interpolatedMessage = interpolateText("Olá! Preenchi o formulário.", data);
+          // Usa a mensagem configurada em settings ao invés de texto fixo
+          const configuredMessage = settings?.whatsapp_message || "Olá! Preenchi o formulário.";
+          const interpolatedMessage = interpolateText(configuredMessage, data);
           window.open(`https://wa.me/${phoneNumber}?text=${encodeURIComponent(interpolatedMessage)}`, "_blank");
         } else {
           // Usa Edge Function para obter link seguro
@@ -886,8 +888,10 @@ export const MultiStepFormDynamic = () => {
                     // Se tem número rotacionado, usa direto (já veio da Edge Function de envio)
                     if (rotatedWhatsApp?.number) {
                       const phoneNumber = rotatedWhatsApp.number.replace(/\D/g, "");
-                      const message = encodeURIComponent("Olá! Preenchi o formulário.");
-                      window.open(`https://wa.me/${phoneNumber}?text=${message}`, "_blank");
+                      // Usa a mensagem configurada (da página de sucesso ativa ou settings geral)
+                      const configuredMessage = successConfig?.whatsapp_message || settings?.whatsapp_message || "Olá! Preenchi o formulário.";
+                      const interpolatedMessage = interpolateText(configuredMessage, submittedData);
+                      window.open(`https://wa.me/${phoneNumber}?text=${encodeURIComponent(interpolatedMessage)}`, "_blank");
                     } else {
                       // Usa Edge Function para obter link seguro
                       const whatsappUrl = await getWhatsAppLink(
