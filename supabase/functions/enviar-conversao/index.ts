@@ -116,6 +116,7 @@ serve(async (req) => {
 
         if (crmResp.ok) {
           console.log("✅ CRM exclusivo - enviado com sucesso");
+          console.log("🔗 WhatsApp link do CRM:", crmResponseData.whatsapp_link || "não retornado");
           
           // Retorna resposta do CRM incluindo whatsapp_link se existir
           return jsonResponse({
