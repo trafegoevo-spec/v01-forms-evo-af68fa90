@@ -1,89 +1,91 @@
 
-# Plano: Reorganizacao do Admin, Correcao do WhatsApp e Remocao de Paginas Condicionais
 
-## Resumo dos Problemas Identificados
+# Plano: Corrigir Redirecionamento WhatsApp com Integracao CRM
 
-### 1. Organizacao da Pagina Admin
-A pagina Admin atual tem mais de 1600 linhas com todas as secoes em um unico arquivo, dificultando a manutencao e navegacao.
+## Problema Identificado
 
-### 2. Mensagem do WhatsApp na Rotacao
-**Problema Encontrado**: Quando o sistema usa a fila de WhatsApp (rotacao), a mensagem personalizada configurada em "Botao WhatsApp" nao e utilizada. 
+Quando a integracao CRM (modo exclusivo) esta ativa, o redirecionamento automatico para WhatsApp nao funciona, mesmo que o CRM externo retorne um `whatsapp_link` na resposta.
 
-**Causa**: No arquivo `MultiStepFormDynamic.tsx`, nas linhas 594 e 889, a mensagem esta fixa:
-```javascript
-// Linha 594 - abertura automatica
-const interpolatedMessage = interpolateText("Ola! Preenchi o formulario.", data);
+### Causa Raiz
 
-// Linha 889 - botao manual
-const message = encodeURIComponent("Ola! Preenchi o formulario.");
+O frontend verifica a condicao `responseData?.ok && responseData?.whatsapp_link`, mas:
+
+1. O edge function retorna `ok: crmResponseData.ok ?? true`, dependendo da resposta do CRM externo
+2. Se o CRM retornar apenas `whatsapp_link` sem um campo `ok`, a condicao `responseData?.ok` pode ser `undefined`
+3. Alem disso, a verificacao deveria usar `success` (que sempre e retornado) ao inves de `ok`
+
+### Fluxo Atual (com problema)
+
+```text
+Frontend -> Edge Function -> CRM Externo
+                               |
+                               v
+                    { ok: true, whatsapp_link: "..." }
+                               |
+                               v
+Edge Function retorna: { success: true, ok: true, whatsapp_link: "..." }
+                               |
+                               v
+Frontend verifica: responseData?.ok && responseData?.whatsapp_link
+                               |
+                               v
+        Se CRM nao retornar "ok", condicao falha!
 ```
-
-A mensagem configurada em `settings.whatsapp_message` nao esta sendo passada para estes casos.
-
-### 3. Paginas de Sucesso Condicionais
-Funcionalidade desnecessaria pois ja existe:
-- Pagina de "desqualificado" para leads nao qualificados
-- Fluxo padrao para pagina "obrigado" convencional
 
 ---
 
 ## Solucao Proposta
 
-### Parte 1: Reorganizacao do Admin
+### Parte 1: Corrigir Condicao no Frontend
 
-Criar uma estrutura com abas (Tabs) para organizar as secoes da pagina Admin:
+Modificar `src/components/MultiStepFormDynamic.tsx` (linhas 582-587) para usar uma condicao mais robusta:
 
-| Aba | Conteudo |
-|-----|----------|
-| **Formulario** | Configuracao do formulario, editor de perguntas, logica condicional |
-| **Aparencia** | Logo, imagem de capa, pagina de capa, gradiente de fundo |
-| **Pos-Conversao** | Pagina de Obrigado, configuracoes de WhatsApp |
-| **WhatsApp Rotacao** | Fila de WhatsApp com ate 5 numeros |
-| **Integracoes** | Link para pagina de CRM |
-
-**Beneficios**:
-- Interface mais limpa e intuitiva
-- Facil navegacao entre secoes
-- Sem alterar funcionalidades existentes
-
-### Parte 2: Correcao da Mensagem do WhatsApp na Rotacao
-
-Modificar `MultiStepFormDynamic.tsx` para usar a mensagem configurada:
-
-1. **Na abertura automatica (linha 594)**:
-   - Usar `settings.whatsapp_message` ao inves de texto fixo
-   - Aplicar interpolacao com dados do formulario
-
-2. **No botao manual (linha 889)**:
-   - Usar `settings.whatsapp_message` ao inves de texto fixo
-   - Aplicar interpolacao com dados do formulario
-
-**Codigo corrigido**:
+**De:**
 ```javascript
-// Abertura automatica
-const interpolatedMessage = interpolateText(
-  settings?.whatsapp_message || "Ola! Preenchi o formulario.", 
-  data
-);
-
-// Botao manual
-const message = interpolateText(
-  successConfig?.whatsapp_message || settings?.whatsapp_message || "Ola! Preenchi o formulario.",
-  submittedData
-);
+if (responseData?.ok && responseData?.whatsapp_link) {
+  console.log("🔗 Abrindo WhatsApp do CRM:", responseData.whatsapp_link);
+  window.open(responseData.whatsapp_link, "_blank");
+  return;
+}
 ```
 
-### Parte 3: Remocao de Paginas de Sucesso Condicionais
+**Para:**
+```javascript
+// Verifica se CRM retornou whatsapp_link (independente de ok/success)
+if (responseData?.whatsapp_link) {
+  console.log("🔗 Abrindo WhatsApp do CRM:", responseData.whatsapp_link);
+  window.open(responseData.whatsapp_link, "_blank");
+  return;
+}
+```
 
-1. **Remover secao do Admin**: 
-   - Excluir todo o bloco "Paginas de Sucesso Condicionais" (linhas 1492-1609)
-   - Remover estados e funcoes relacionadas: `successPages`, `addSuccessPage`, `updateSuccessPage`, `deleteSuccessPage`, `saveSuccessPages`, `loadSuccessPages`
+### Parte 2: Melhorar Logging para Debug
 
-2. **Simplificar logica condicional nas perguntas**:
-   - Manter opcoes "Pagina Padrao" e "Pagina de Desqualificado"
-   - Remover opcao de selecionar paginas customizadas
+Adicionar logs mais detalhados para facilitar debug futuro:
 
-3. **Manter tabela no banco**: A tabela `success_pages` permanece para uso futuro se necessario, mas a UI de criacao e removida
+```javascript
+console.log("📥 Resposta do edge function:", responseData);
+```
+
+### Parte 3: Garantir Compatibilidade no Edge Function
+
+Verificar se o edge function esta parseando corretamente a resposta do CRM e extraindo o `whatsapp_link`:
+
+**Codigo atual (linha 121-125):**
+```javascript
+return jsonResponse({
+  success: true,
+  ok: crmResponseData.ok ?? true,
+  whatsapp_link: crmResponseData.whatsapp_link || null,
+  ...
+});
+```
+
+Este codigo esta correto, mas podemos adicionar logs para confirmar que o `whatsapp_link` esta sendo extraido:
+
+```javascript
+console.log("🔗 WhatsApp link do CRM:", crmResponseData.whatsapp_link);
+```
 
 ---
 
@@ -91,27 +93,67 @@ const message = interpolateText(
 
 | Arquivo | Alteracao |
 |---------|-----------|
-| `src/pages/Admin.tsx` | Adicionar Tabs para organizacao, remover secao de paginas condicionais |
-| `src/components/MultiStepFormDynamic.tsx` | Corrigir uso da mensagem de WhatsApp configurada |
+| `src/components/MultiStepFormDynamic.tsx` | Corrigir condicao de verificacao do whatsapp_link, adicionar logs de debug |
+| `supabase/functions/enviar-conversao/index.ts` | Adicionar log para confirmar extracao do whatsapp_link |
+| `supabase/functions/enviar-conversao-educa/index.ts` | Mesma alteracao |
+| `supabase/functions/enviar-conversao-autoprotecta/index.ts` | Mesma alteracao |
 
-## Visualizacao da Nova Estrutura
+---
 
-```text
-+---------------------------------------------------------------+
-|  Admin - Gerenciamento do Formulario                          |
-+---------------------------------------------------------------+
-|  [ Formulario ]  [ Aparencia ]  [ Pos-Conversao ]  [ WhatsApp Rotacao ]  [ Integracoes ]
-+---------------------------------------------------------------+
-|                                                                |
-|  (Conteudo da aba selecionada)                                 |
-|                                                                |
-+---------------------------------------------------------------+
+## Codigo Corrigido
+
+### MultiStepFormDynamic.tsx (linhas ~582-605)
+
+```typescript
+// Adicionar log da resposta
+console.log("📥 Resposta do edge function:", responseData);
+
+// === MODO EXCLUSIVO CRM: Se CRM retornou whatsapp_link, usar diretamente ===
+// Verifica apenas se whatsapp_link existe (nao depende de ok/success)
+if (responseData?.whatsapp_link) {
+  console.log("🔗 Abrindo WhatsApp do CRM:", responseData.whatsapp_link);
+  window.open(responseData.whatsapp_link, "_blank");
+  return; // Nao faz mais nada, CRM gerenciou tudo
+}
+
+// Se whatsapp_on_submit esta habilitado, abrir WhatsApp automaticamente
+if (settings?.whatsapp_on_submit && settings?.whatsapp_enabled) {
+  // Resto do codigo permanece igual...
+}
+```
+
+### Edge Functions (enviar-conversao, educa, autoprotecta)
+
+Adicionar log antes de retornar:
+
+```typescript
+console.log("🔗 WhatsApp link do CRM:", crmResponseData.whatsapp_link || "nao retornado");
+
+return jsonResponse({
+  success: true,
+  ok: crmResponseData.ok ?? true,
+  whatsapp_link: crmResponseData.whatsapp_link || null,
+  crm_status: "sent",
+  crm_response: crmResponseData,
+});
 ```
 
 ---
 
 ## Resultado Esperado
 
-1. **Admin organizado**: Navegacao por abas, interface limpa
-2. **Mensagem WhatsApp correta**: A mensagem personalizada sera usada mesmo com rotacao de numeros
-3. **Interface simplificada**: Remocao de funcionalidade desnecessaria (paginas condicionais customizadas)
+1. **Redirecionamento funcional**: Quando o CRM externo retornar `whatsapp_link`, o usuario sera redirecionado automaticamente
+2. **Logs para debug**: Logs claros para identificar problemas futuros
+3. **Compatibilidade**: Funciona independente de como o CRM externo estrutura sua resposta (com ou sem campo `ok`)
+
+---
+
+## Teste Recomendado
+
+Apos implementacao, testar o fluxo completo:
+
+1. Preencher formulario com CRM exclusivo ativo (ex: subdomain `acessotec`)
+2. Verificar logs do console do navegador
+3. Verificar logs do edge function
+4. Confirmar que WhatsApp abre automaticamente com o link retornado pelo CRM
+
