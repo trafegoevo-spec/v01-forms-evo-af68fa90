@@ -579,8 +579,12 @@ export const MultiStepFormDynamic = () => {
       setIsSuccess(true);
       setStep(totalSteps);
       
+      // Log completo da resposta para debug
+      console.log("📥 Resposta do edge function:", responseData);
+      
       // === MODO EXCLUSIVO CRM: Se CRM retornou whatsapp_link, usar diretamente ===
-      if (responseData?.ok && responseData?.whatsapp_link) {
+      // Verifica apenas se whatsapp_link existe (não depende de ok/success)
+      if (responseData?.whatsapp_link) {
         console.log("🔗 Abrindo WhatsApp do CRM:", responseData.whatsapp_link);
         window.open(responseData.whatsapp_link, "_blank");
         return; // Não faz mais nada, CRM gerenciou tudo
