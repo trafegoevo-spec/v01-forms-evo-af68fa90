@@ -74,6 +74,9 @@ export const MultiStepFormDynamic = () => {
     name: string;
   } | null>(null);
   const [isSkippedSubmit, setIsSkippedSubmit] = useState(false);
+  // Link do WhatsApp para fallback (caso redirecionamento automático falhe)
+  const [whatsappFallbackLink, setWhatsappFallbackLink] = useState<string | null>(null);
+  const [redirectAttempted, setRedirectAttempted] = useState(false);
   const {
     toast
   } = useToast();
@@ -582,30 +585,35 @@ export const MultiStepFormDynamic = () => {
       // Log completo da resposta para debug
       console.log("📥 Resposta do edge function:", responseData);
       
-      // === MODO EXCLUSIVO CRM: Se CRM retornou whatsapp_link, usar diretamente ===
-      // Verifica apenas se whatsapp_link existe (não depende de ok/success)
-      if (responseData?.whatsapp_link) {
-        console.log("🔗 Abrindo WhatsApp do CRM:", responseData.whatsapp_link);
-        window.open(responseData.whatsapp_link, "_blank");
-        return; // Não faz mais nada, CRM gerenciou tudo
-      }
+      // Monta o link do WhatsApp para usar no redirect e fallback
+      let whatsappLink: string | null = null;
       
-        // Se whatsapp_on_submit está habilitado, abrir WhatsApp automaticamente via Edge Function
-      if (settings?.whatsapp_on_submit && settings?.whatsapp_enabled) {
-        // Se tem número rotacionado da resposta, usa ele diretamente
+      // === MODO EXCLUSIVO CRM: Se CRM retornou whatsapp_link, usar diretamente ===
+      if (responseData?.whatsapp_link) {
+        console.log("🔗 WhatsApp link do CRM:", responseData.whatsapp_link);
+        whatsappLink = responseData.whatsapp_link;
+      } 
+      // Se whatsapp_on_submit está habilitado, montar link local
+      else if (settings?.whatsapp_on_submit && settings?.whatsapp_enabled) {
         if (responseData?.whatsapp_redirecionado) {
           const phoneNumber = responseData.whatsapp_redirecionado.replace(/\D/g, "");
-          // Usa a mensagem configurada em settings ao invés de texto fixo
           const configuredMessage = settings?.whatsapp_message || "Olá! Preenchi o formulário.";
           const interpolatedMessage = interpolateText(configuredMessage, data);
-          window.open(`https://wa.me/${phoneNumber}?text=${encodeURIComponent(interpolatedMessage)}`, "_blank");
+          whatsappLink = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(interpolatedMessage)}`;
         } else {
           // Usa Edge Function para obter link seguro
-          const whatsappUrl = await getWhatsAppLink(data);
-          if (whatsappUrl) {
-            window.open(whatsappUrl, "_blank");
-          }
+          whatsappLink = await getWhatsAppLink(data);
         }
+      }
+      
+      // Salva o link para fallback ANTES de tentar redirecionar
+      if (whatsappLink) {
+        setWhatsappFallbackLink(whatsappLink);
+        setRedirectAttempted(true);
+        
+        // Redireciona na mesma página (evita bloqueio de popup)
+        console.log("🔗 Redirecionando para WhatsApp na mesma aba:", whatsappLink);
+        window.location.href = whatsappLink;
       }
     } catch (error) {
       console.error("Erro ao enviar", error);
@@ -919,11 +927,37 @@ export const MultiStepFormDynamic = () => {
               </div>
             )}
             
-            {/* Mensagem quando WhatsApp já foi aberto automaticamente */}
-            {settings?.whatsapp_on_submit && settings?.whatsapp_enabled && (
+            {/* Botão de fallback quando redirecionamento foi tentado */}
+            {redirectAttempted && whatsappFallbackLink && (
+              <div className="mt-8 space-y-4">
+                <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+                  <p className="text-sm text-green-700 text-center mb-4">
+                    ✅ Estamos te redirecionando para o WhatsApp...
+                  </p>
+                  <p className="text-xs text-green-600 text-center">
+                    Se não foi redirecionado automaticamente, clique no botão abaixo:
+                  </p>
+                </div>
+                
+                <Button 
+                  type="button" 
+                  onClick={() => {
+                    trackWhatsAppClick();
+                    window.location.href = whatsappFallbackLink;
+                  }} 
+                  className="w-full h-14 bg-green-600 hover:bg-green-700 text-white text-base font-semibold rounded-2xl"
+                >
+                  <MessageCircle className="w-6 h-6 mr-2 text-white" />
+                  Ir para o WhatsApp
+                </Button>
+              </div>
+            )}
+            
+            {/* Mensagem quando WhatsApp foi configurado mas sem link de fallback */}
+            {settings?.whatsapp_on_submit && settings?.whatsapp_enabled && !whatsappFallbackLink && (
               <div className="mt-8 p-4 bg-green-50 rounded-lg border border-green-200">
                 <p className="text-sm text-green-700 text-center">
-                  ✅ O WhatsApp foi aberto automaticamente. Verifique sua aba ou pop-up.
+                  ✅ O WhatsApp foi aberto automaticamente. Verifique sua aba.
                 </p>
               </div>
             )}
