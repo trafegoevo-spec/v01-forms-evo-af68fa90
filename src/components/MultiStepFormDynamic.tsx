@@ -58,7 +58,13 @@ interface SuccessPage {
   whatsapp_number: string;
   whatsapp_message: string;
 }
-export const MultiStepFormDynamic = () => {
+interface MultiStepFormDynamicProps {
+  initialSettings?: any;
+  initialQuestions?: any[];
+  initialSuccessPages?: any[];
+}
+
+export const MultiStepFormDynamic = ({ initialSettings, initialQuestions, initialSuccessPages }: MultiStepFormDynamicProps = {}) => {
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [searchParams] = useSearchParams();
@@ -215,7 +221,24 @@ export const MultiStepFormDynamic = () => {
   };
 
   useEffect(() => {
-    loadPublicData();
+    if (initialQuestions && initialQuestions.length > 0) {
+      // Use data passed from parent - skip duplicate API call
+      const transformedQuestions = initialQuestions.map((item: any) => ({
+        ...item,
+        options: Array.isArray(item.options) ? item.options as string[] : [],
+        input_type: (["select", "text", "password", "buttons"].includes(item.input_type) 
+          ? item.input_type 
+          : "text") as "text" | "select" | "password" | "buttons",
+        required: item.required !== undefined ? item.required : true,
+        conditional_logic: item.conditional_logic as unknown as ConditionalLogic | null
+      }));
+      setQuestions(transformedQuestions);
+      setSettings(initialSettings || null);
+      setSuccessPages(initialSuccessPages || []);
+      setLoading(false);
+    } else {
+      loadPublicData();
+    }
   }, []);
   // Helper to get WhatsApp link securely via Edge Function
   const getWhatsAppLink = async (data: any, successPageKey?: string): Promise<string | null> => {
