@@ -99,6 +99,7 @@ export type Database = {
         Row: {
           bearer_token: string | null
           campanha: string | null
+          client_slug: string | null
           created_at: string | null
           crm_name: string | null
           exclusive_mode: boolean | null
@@ -117,6 +118,7 @@ export type Database = {
         Insert: {
           bearer_token?: string | null
           campanha?: string | null
+          client_slug?: string | null
           created_at?: string | null
           crm_name?: string | null
           exclusive_mode?: boolean | null
@@ -135,6 +137,7 @@ export type Database = {
         Update: {
           bearer_token?: string | null
           campanha?: string | null
+          client_slug?: string | null
           created_at?: string | null
           crm_name?: string | null
           exclusive_mode?: boolean | null

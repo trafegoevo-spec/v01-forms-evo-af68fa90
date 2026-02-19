@@ -56,7 +56,7 @@ serve(async (req) => {
       // Monta payload para o CRM
       const crmPayload: Record<string, any> = {
         // Campos obrigatórios
-        manager_id: crmConfig.manager_id || "",
+        client_slug: crmConfig.client_slug || "",
         slug: crmConfig.slug || "",
         nome: nome || "",
         telefone: String(telefoneRaw).replace(/\D/g, "") || "",
@@ -281,7 +281,7 @@ serve(async (req) => {
         console.log("📤 Enviando para CRM (modo paralelo):", crmConfig.crm_name);
 
         const crmPayload: Record<string, any> = {
-          manager_id: crmConfig.manager_id || "",
+          client_slug: crmConfig.client_slug || "",
           slug: crmConfig.slug || "",
           nome: nome || "",
           telefone: String(telefoneRaw).replace(/\D/g, "") || "",

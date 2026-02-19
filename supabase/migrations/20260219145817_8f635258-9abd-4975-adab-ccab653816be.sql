@@ -1,0 +1,1 @@
+ALTER TABLE crm_integrations ADD COLUMN client_slug text;
