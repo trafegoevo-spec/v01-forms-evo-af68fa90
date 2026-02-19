@@ -17,7 +17,6 @@ interface CrmIntegration {
   crm_name: string;
   webhook_url: string;
   bearer_token: string | null;
-  client_slug: string | null;
   slug: string | null;
   is_active: boolean;
   include_dynamic_fields: boolean;
@@ -71,7 +70,6 @@ const CrmIntegrationPage = () => {
           crm_name: "CRM",
           webhook_url: "",
           bearer_token: null,
-          client_slug: null,
           slug: null,
           is_active: false,
           include_dynamic_fields: true,
@@ -111,7 +109,6 @@ const CrmIntegrationPage = () => {
             crm_name: crmIntegration.crm_name,
             webhook_url: crmIntegration.webhook_url,
             bearer_token: crmIntegration.bearer_token,
-            client_slug: crmIntegration.client_slug,
             slug: crmIntegration.slug,
             is_active: crmIntegration.is_active,
             include_dynamic_fields: crmIntegration.include_dynamic_fields,
@@ -132,7 +129,6 @@ const CrmIntegrationPage = () => {
             crm_name: crmIntegration.crm_name,
             webhook_url: crmIntegration.webhook_url,
             bearer_token: crmIntegration.bearer_token,
-            client_slug: crmIntegration.client_slug,
             slug: crmIntegration.slug,
             is_active: crmIntegration.is_active,
             include_dynamic_fields: crmIntegration.include_dynamic_fields,
@@ -172,7 +168,6 @@ const CrmIntegrationPage = () => {
     setTestingCrm(true);
     try {
       const testPayload: Record<string, any> = {
-        client_slug: crmIntegration.client_slug || "",
         slug: crmIntegration.slug || "",
         nome: "Maria Santos",
         telefone: "31999887766",
@@ -315,10 +310,10 @@ const CrmIntegrationPage = () => {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label>Client Slug</Label>
+                  <Label>Slug</Label>
                   <Input
-                    value={crmIntegration.client_slug ?? ""}
-                    onChange={(e) => updateCrmIntegration({ client_slug: e.target.value })}
+                    value={crmIntegration.slug ?? ""}
+                    onChange={(e) => updateCrmIntegration({ slug: e.target.value })}
                     placeholder="identificador-do-cliente"
                   />
                   <p className="text-sm text-muted-foreground mt-1">Identificador único do cliente no CRM</p>
@@ -408,7 +403,7 @@ const CrmIntegrationPage = () => {
                 <pre className="text-xs overflow-x-auto whitespace-pre-wrap">
                   {`{
   // Campos Obrigatórios
-  "client_slug": "${crmIntegration.client_slug || "identificador-do-cliente"}",
+  "slug": "${crmIntegration.slug || "identificador-do-cliente"}",
   "slug": "${crmIntegration.slug || "slug-do-time"}",
   "nome": "Maria Santos",
   "telefone": "31999887766",
