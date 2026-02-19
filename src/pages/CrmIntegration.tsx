@@ -17,7 +17,7 @@ interface CrmIntegration {
   crm_name: string;
   webhook_url: string;
   bearer_token: string | null;
-  manager_id: string | null;
+  client_slug: string | null;
   slug: string | null;
   is_active: boolean;
   include_dynamic_fields: boolean;
@@ -61,7 +61,7 @@ const CrmIntegrationPage = () => {
         .maybeSingle();
 
       if (error) throw error;
-      
+
       if (data) {
         setCrmIntegration(data as CrmIntegration);
       } else {
@@ -71,7 +71,7 @@ const CrmIntegrationPage = () => {
           crm_name: "CRM",
           webhook_url: "",
           bearer_token: null,
-          manager_id: null,
+          client_slug: null,
           slug: null,
           is_active: false,
           include_dynamic_fields: true,
@@ -79,7 +79,7 @@ const CrmIntegrationPage = () => {
           origem: "formulario-lovable",
           campanha: null,
           include_utm_params: true,
-          produto: null
+          produto: null,
         });
       }
     } catch (error: any) {
@@ -87,7 +87,7 @@ const CrmIntegrationPage = () => {
       toast({
         title: "Erro ao carregar configuração",
         description: error.message,
-        variant: "destructive"
+        variant: "destructive",
       });
     } finally {
       setLoading(false);
@@ -102,7 +102,7 @@ const CrmIntegrationPage = () => {
 
   const saveCrmIntegration = async () => {
     if (!crmIntegration) return;
-    
+
     try {
       if (crmIntegration.id) {
         const { error } = await supabase
@@ -111,7 +111,7 @@ const CrmIntegrationPage = () => {
             crm_name: crmIntegration.crm_name,
             webhook_url: crmIntegration.webhook_url,
             bearer_token: crmIntegration.bearer_token,
-            manager_id: crmIntegration.manager_id,
+            client_slug: crmIntegration.client_slug,
             slug: crmIntegration.slug,
             is_active: crmIntegration.is_active,
             include_dynamic_fields: crmIntegration.include_dynamic_fields,
@@ -119,10 +119,10 @@ const CrmIntegrationPage = () => {
             origem: crmIntegration.origem,
             campanha: crmIntegration.campanha,
             include_utm_params: crmIntegration.include_utm_params,
-            produto: crmIntegration.produto
+            produto: crmIntegration.produto,
           })
           .eq("id", crmIntegration.id);
-        
+
         if (error) throw error;
       } else {
         const { data, error } = await supabase
@@ -132,7 +132,7 @@ const CrmIntegrationPage = () => {
             crm_name: crmIntegration.crm_name,
             webhook_url: crmIntegration.webhook_url,
             bearer_token: crmIntegration.bearer_token,
-            manager_id: crmIntegration.manager_id,
+            client_slug: crmIntegration.client_slug,
             slug: crmIntegration.slug,
             is_active: crmIntegration.is_active,
             include_dynamic_fields: crmIntegration.include_dynamic_fields,
@@ -140,22 +140,22 @@ const CrmIntegrationPage = () => {
             origem: crmIntegration.origem,
             campanha: crmIntegration.campanha,
             include_utm_params: crmIntegration.include_utm_params,
-            produto: crmIntegration.produto
+            produto: crmIntegration.produto,
           })
           .select()
           .single();
-        
+
         if (error) throw error;
         setCrmIntegration(data as CrmIntegration);
       }
-      
+
       toast({ title: "Integração CRM salva!" });
       setCrmChanged(false);
     } catch (error: any) {
       toast({
         title: "Erro ao salvar integração CRM",
         description: error.message,
-        variant: "destructive"
+        variant: "destructive",
       });
     }
   };
@@ -164,7 +164,7 @@ const CrmIntegrationPage = () => {
     if (!crmIntegration?.webhook_url) {
       toast({
         title: "Configure a URL do webhook",
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
@@ -172,7 +172,7 @@ const CrmIntegrationPage = () => {
     setTestingCrm(true);
     try {
       const testPayload: Record<string, any> = {
-        manager_id: crmIntegration.manager_id || "",
+        client_slug: crmIntegration.client_slug || "",
         slug: crmIntegration.slug || "",
         nome: "Maria Santos",
         telefone: "31999887766",
@@ -180,9 +180,9 @@ const CrmIntegrationPage = () => {
         origem: crmIntegration.origem || "formulario-lovable",
         produto: crmIntegration.produto || "",
         _teste: true,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
-      
+
       if (crmIntegration.include_dynamic_fields) {
         testPayload.mensagem = "Gostaria de saber mais sobre o plano empresarial";
         testPayload.produto = "Plano Enterprise";
@@ -191,7 +191,7 @@ const CrmIntegrationPage = () => {
         testPayload.tag_2 = "prioridade_alta";
         testPayload.tag_3 = "regiao_sudeste";
       }
-      
+
       if (crmIntegration.include_utm_params) {
         testPayload.utm_source = "google";
         testPayload.utm_medium = "cpc";
@@ -200,7 +200,7 @@ const CrmIntegrationPage = () => {
       }
 
       const headers: Record<string, string> = {
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
       };
 
       if (crmIntegration.bearer_token) {
@@ -210,26 +210,26 @@ const CrmIntegrationPage = () => {
       const response = await fetch(crmIntegration.webhook_url, {
         method: "POST",
         headers,
-        body: JSON.stringify(testPayload)
+        body: JSON.stringify(testPayload),
       });
 
       if (response.ok) {
         toast({
           title: "Teste enviado com sucesso!",
-          description: "O webhook recebeu os dados de teste."
+          description: "O webhook recebeu os dados de teste.",
         });
       } else {
         toast({
           title: "Erro no webhook",
           description: `Status: ${response.status}`,
-          variant: "destructive"
+          variant: "destructive",
         });
       }
     } catch (error: any) {
       toast({
         title: "Erro ao testar webhook",
         description: error.message,
-        variant: "destructive"
+        variant: "destructive",
       });
     } finally {
       setTestingCrm(false);
@@ -247,7 +247,7 @@ const CrmIntegrationPage = () => {
   return (
     <div className="min-h-screen bg-background">
       <AuthDialog open={showAuthDialog} onOpenChange={setShowAuthDialog} />
-      
+
       <div className="container mx-auto p-6 max-w-4xl">
         <div className="flex items-center gap-4 mb-8">
           <Button variant="ghost" size="icon" onClick={() => navigate("/admin")}>
@@ -255,9 +255,7 @@ const CrmIntegrationPage = () => {
           </Button>
           <div>
             <h1 className="text-3xl font-bold">Integração CRM</h1>
-            <p className="text-muted-foreground">
-              Configure o envio de leads para seu CRM via webhook
-            </p>
+            <p className="text-muted-foreground">Configure o envio de leads para seu CRM via webhook</p>
           </div>
         </div>
 
@@ -276,9 +274,7 @@ const CrmIntegrationPage = () => {
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <Label htmlFor="crm-active">Integração Ativa</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Ative para enviar leads para o CRM
-                  </p>
+                  <p className="text-sm text-muted-foreground">Ative para enviar leads para o CRM</p>
                 </div>
                 <Switch
                   id="crm-active"
@@ -314,19 +310,18 @@ const CrmIntegrationPage = () => {
                   placeholder="seu_token_secreto"
                   type="password"
                 />
-                <p className="text-sm text-muted-foreground mt-1">
-                  Será enviado no header Authorization: Bearer TOKEN
-                </p>
+                <p className="text-sm text-muted-foreground mt-1">Será enviado no header Authorization: Bearer TOKEN</p>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label>Manager ID</Label>
+                  <Label>Client Slug</Label>
                   <Input
-                    value={crmIntegration.manager_id ?? ""}
-                    onChange={(e) => updateCrmIntegration({ manager_id: e.target.value })}
-                    placeholder="ID do gerente no CRM"
+                    value={crmIntegration.client_slug ?? ""}
+                    onChange={(e) => updateCrmIntegration({ client_slug: e.target.value })}
+                    placeholder="identificador-do-cliente"
                   />
+                  <p className="text-sm text-muted-foreground mt-1">Identificador único do cliente no CRM</p>
                 </div>
                 <div>
                   <Label>Slug (Time/Campanha)</Label>
@@ -337,7 +332,7 @@ const CrmIntegrationPage = () => {
                   />
                 </div>
               </div>
-              
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label>Origem</Label>
@@ -346,9 +341,7 @@ const CrmIntegrationPage = () => {
                     onChange={(e) => updateCrmIntegration({ origem: e.target.value })}
                     placeholder="LP Black Friday"
                   />
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Identificador de origem do lead
-                  </p>
+                  <p className="text-sm text-muted-foreground mt-1">Identificador de origem do lead</p>
                 </div>
                 <div>
                   <Label>Produto</Label>
@@ -357,18 +350,17 @@ const CrmIntegrationPage = () => {
                     onChange={(e) => updateCrmIntegration({ produto: e.target.value })}
                     placeholder="Plano Enterprise"
                   />
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Produto/serviço padrão do lead
-                  </p>
+                  <p className="text-sm text-muted-foreground mt-1">Produto/serviço padrão do lead</p>
                 </div>
               </div>
-              
+
               <div className="border-t pt-4 space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
                     <Label className="text-base font-medium">Modo Exclusivo</Label>
                     <p className="text-sm text-muted-foreground">
-                      O CRM cuida de tudo: salvar lead, rotacionar vendedor e retornar link WhatsApp. Não salva dados localmente.
+                      O CRM cuida de tudo: salvar lead, rotacionar vendedor e retornar link WhatsApp. Não salva dados
+                      localmente.
                     </p>
                   </div>
                   <Switch
@@ -376,11 +368,12 @@ const CrmIntegrationPage = () => {
                     onCheckedChange={(checked) => updateCrmIntegration({ exclusive_mode: checked })}
                   />
                 </div>
-                
+
                 {!crmIntegration.exclusive_mode && (
                   <div className="bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded-lg border border-yellow-200 dark:border-yellow-800">
                     <p className="text-sm text-yellow-800 dark:text-yellow-200">
-                      ⚠️ Modo paralelo: Os dados serão salvos localmente E enviados para o CRM. O redirecionamento WhatsApp será gerenciado localmente.
+                      ⚠️ Modo paralelo: Os dados serão salvos localmente E enviados para o CRM. O redirecionamento
+                      WhatsApp será gerenciado localmente.
                     </p>
                   </div>
                 )}
@@ -397,13 +390,11 @@ const CrmIntegrationPage = () => {
                     onCheckedChange={(checked) => updateCrmIntegration({ include_dynamic_fields: checked })}
                   />
                 </div>
-                
+
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
                     <Label>Incluir parâmetros UTM</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Enviar utm_source, utm_medium, utm_campaign, gclid
-                    </p>
+                    <p className="text-sm text-muted-foreground">Enviar utm_source, utm_medium, utm_campaign, gclid</p>
                   </div>
                   <Switch
                     checked={crmIntegration.include_utm_params}
@@ -415,9 +406,9 @@ const CrmIntegrationPage = () => {
               <div className="bg-muted p-3 rounded-lg">
                 <p className="text-xs font-medium mb-2">Payload de exemplo:</p>
                 <pre className="text-xs overflow-x-auto whitespace-pre-wrap">
-{`{
+                  {`{
   // Campos Obrigatórios
-  "manager_id": "${crmIntegration.manager_id || "c17bb632-627a-..."}",
+  "client_slug": "${crmIntegration.client_slug || "identificador-do-cliente"}",
   "slug": "${crmIntegration.slug || "slug-do-time"}",
   "nome": "Maria Santos",
   "telefone": "31999887766",
@@ -425,7 +416,9 @@ const CrmIntegrationPage = () => {
   
   // Origem e Produto
   "origem": "${crmIntegration.origem || "formulario-lovable"}",
-  "produto": "${crmIntegration.produto || ""}"${crmIntegration.include_dynamic_fields ? `,
+  "produto": "${crmIntegration.produto || ""}"${
+    crmIntegration.include_dynamic_fields
+      ? `,
   
   // Campos Dinâmicos (opcionais)
   "mensagem": "Gostaria de saber mais...",
@@ -433,31 +426,29 @@ const CrmIntegrationPage = () => {
   "valor_estimado": 15000,
   "tag_1": "empresa_grande",
   "tag_2": "prioridade_alta",
-  "tag_3": "regiao_sudeste"` : ""}${crmIntegration.include_utm_params ? `,
+  "tag_3": "regiao_sudeste"`
+      : ""
+  }${
+    crmIntegration.include_utm_params
+      ? `,
   
   // UTMs (via URL)
   "utm_source": "google",
   "utm_medium": "cpc",
   "utm_campaign": "black_friday_2025",
-  "gclid": "EAIaIQobChMI..."` : ""}
+  "gclid": "EAIaIQobChMI..."`
+      : ""
+  }
 }`}
                 </pre>
               </div>
 
               <div className="flex gap-3">
-                <Button
-                  onClick={testCrmWebhook}
-                  variant="outline"
-                  disabled={testingCrm || !crmIntegration.webhook_url}
-                >
+                <Button onClick={testCrmWebhook} variant="outline" disabled={testingCrm || !crmIntegration.webhook_url}>
                   <Send className="mr-2 h-4 w-4" />
                   {testingCrm ? "Testando..." : "Testar Webhook"}
                 </Button>
-                <Button
-                  onClick={saveCrmIntegration}
-                  disabled={!crmChanged}
-                  className="flex-1"
-                >
+                <Button onClick={saveCrmIntegration} disabled={!crmChanged} className="flex-1">
                   {crmChanged ? "Salvar Integração CRM" : "Integração Salva"}
                 </Button>
               </div>
