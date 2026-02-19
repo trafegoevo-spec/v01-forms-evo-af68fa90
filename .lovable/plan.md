@@ -1,148 +1,70 @@
+# Substituir `manager_id` por `client_slug` na Integracao CRM
 
-# Plano: Otimizar Velocidade de Carregamento e Redirecionamento do Formulario
+## Contexto
 
-## Problemas Encontrados
+O codigo de integracao enviado mostra que o CRM agora espera `client_slug` em vez de `manager_id`. Atualmente, as 3 edge functions enviam `manager_id` no payload do CRM. Precisamos alinhar o sistema com esse novo padrao.
 
-### 1. Chamada Duplicada ao Backend (maior impacto)
-A pagina `Index.tsx` chama `get-public-settings` para carregar configuracoes de capa. Quando o formulario aparece, `MultiStepFormDynamic.tsx` chama **a mesma API novamente** para carregar perguntas e configuracoes. Sao **2 chamadas identicas** ao backend, dobrando o tempo de carregamento.
+## Mudancas Necessarias
 
-### 2. Verificacao de Autenticacao Desnecessaria
-O `useAuth` roda `getSession()` e `checkRole()` para todos os visitantes, incluindo usuarios anonimos do formulario publico. Isso adiciona ~200-500ms antes de qualquer coisa aparecer na tela.
+### 1. Banco de Dados
 
-### 3. Carregamento Sequencial (nao paralelo)
-O fluxo atual e:
+Adicionar coluna `client_slug` na tabela `crm_integrations` para substituir `manager_id`:
+
 ```text
-useAuth (getSession + checkRole)
-         |
-         v (espera terminar)
-Index.tsx chama get-public-settings
-         |
-         v (espera terminar)
-Mostra "Carregando..."
-         |
-         v (usuario clica "Comecar")
-MultiStepFormDynamic monta
-         |
-         v
-Chama get-public-settings DE NOVO
-         |
-         v (espera terminar)
-Mostra primeiro passo do formulario
+ALTER TABLE crm_integrations ADD COLUMN client_slug text;
 ```
 
-### 4. Redirecionamento Lento Apos Submit
-Apos envio, o sistema faz operacoes sequenciais antes de redirecionar:
-- Chama edge function (enviar-conversao)
-- Insere em form_analytics (espera resposta)
-- Chama get-whatsapp-link (outra chamada ao backend)
-- So entao redireciona
+A coluna `manager_id` sera mantida temporariamente para nao quebrar dados existentes.
 
----
+### 2. Edge Functions (3 arquivos)
 
-## Solucao
+Substituir `manager_id` por `client_slug` no payload enviado ao CRM em:
 
-### Parte 1: Eliminar Chamada Duplicada
-Carregar dados publicos UMA VEZ no `Index.tsx` e passar para o formulario via props.
+- `supabase/functions/enviar-conversao/index.ts`
+- `supabase/functions/enviar-conversao-autoprotecta/index.ts`
+- `supabase/functions/enviar-conversao-educa/index.ts`
 
-**Index.tsx**: Ja faz a chamada a `get-public-settings` — basta passar `questions`, `settings` e `successPages` como props para `MultiStepFormDynamic`.
-
-**MultiStepFormDynamic.tsx**: Aceitar props opcionais `initialQuestions`, `initialSettings`, `initialSuccessPages`. Se recebidos, pular a chamada `loadPublicData()`.
-
-### Parte 2: Nao Bloquear Renderizacao com Auth
-Para a rota publica (`/`), nao esperar `useAuth` terminar antes de mostrar o conteudo. O auth so e necessario para o botao Admin.
-
-**Index.tsx**: Remover a dependencia de `loading` (auth) para mostrar o formulario. O estado de admin pode carregar em segundo plano.
-
-### Parte 3: Tornar Analytics Nao-Bloqueante no Submit
-A insercao em `form_analytics` e a chamada `getWhatsAppLink` nao devem bloquear o redirecionamento.
-
-**MultiStepFormDynamic.tsx (onSubmit)**:
-- Mover `form_analytics.insert` para um `.then()` sem `await` (fire-and-forget)
-- Se o edge function ja retornar `whatsapp_link` (CRM), redirecionar IMEDIATAMENTE sem chamar `getWhatsAppLink`
-- Se precisar chamar `getWhatsAppLink`, fazer isso em paralelo com analytics
-
-### Parte 4: Adicionar Skeleton/Loading Rapido
-Substituir "Carregando..." por um skeleton visual leve que aparece instantaneamente.
-
----
-
-## Arquivos a Modificar
-
-| Arquivo | Alteracao |
-|---------|-----------|
-| `src/pages/Index.tsx` | Carregar dados uma vez, passar via props, nao bloquear com auth |
-| `src/components/MultiStepFormDynamic.tsx` | Aceitar props iniciais, otimizar onSubmit |
-
----
-
-## Detalhes Tecnicos
-
-### Index.tsx - Mudancas
-
-1. Usar `usePublicSettings` (hook existente) ao inves de fetch manual duplicado
-2. Passar dados carregados para `MultiStepFormDynamic` via props
-3. Nao bloquear renderizacao enquanto auth carrega
+Em cada arquivo, as duas ocorrencias de:
 
 ```typescript
-// Antes: 2 fetches separados
-// Index.tsx -> get-public-settings (cover)
-// MultiStepFormDynamic -> get-public-settings (questions)
-
-// Depois: 1 fetch compartilhado
-const { settings, questions, successPages, loading } = usePublicSettings(formName);
-
-// Passa para o form
-<MultiStepFormDynamic 
-  initialSettings={settings}
-  initialQuestions={questions}
-  initialSuccessPages={successPages}
-/>
+manager_id: crmConfig.manager_id || "",
 ```
 
-### MultiStepFormDynamic.tsx - Mudancas
+serao substituidas por:
 
-1. Adicionar props opcionais:
 ```typescript
-interface MultiStepFormDynamicProps {
-  initialSettings?: any;
-  initialQuestions?: Question[];
-  initialSuccessPages?: SuccessPage[];
+client_slug: crmConfig.client_slug || "",
+```
+
+### 3. Pagina de Integracao CRM (`src/pages/CrmIntegration.tsx`)
+
+- Adicionar `client_slug` na interface `CrmIntegration`
+- Corrigir os dois campos "Slug" duplicados (bug atual) para serem `client_slug` e `slug` separadamente
+- Atualizar o payload de exemplo para mostrar `client_slug` em vez de `manager_id`
+- Atualizar os metodos de save/insert para incluir `client_slug`
+- Atualizar o payload de teste para enviar `client_slug`
+
+O formulario ficara com:
+
+
+| Campo           | Descricao                                              |
+| --------------- | ------------------------------------------------------ |
+| **Client Slug** | Identificador unico do cliente no CRM (ex: `educacao`) |
+| **Slug**        | Identificador do time/campanha (ex: `educacao-1`)      |
+
+
+### Resultado
+
+O payload enviado ao CRM passara a ser, mas pode ser editado nas configurações de integração
+
+```json
+{
+  "client_slug": "educacao",
+  "slug": "educacao-1",
+  "nome": "Maria Santos",
+  "telefone": "31999887766",
+  ...
 }
 ```
 
-2. Usar dados das props se disponiveeis, sem fazer nova chamada:
-```typescript
-useEffect(() => {
-  if (initialQuestions && initialQuestions.length > 0) {
-    setQuestions(initialQuestions);
-    setSettings(initialSettings);
-    setSuccessPages(initialSuccessPages || []);
-    setLoading(false);
-  } else {
-    loadPublicData();
-  }
-}, []);
-```
-
-3. Otimizar onSubmit - fire-and-forget para analytics:
-```typescript
-// ANTES (bloqueante):
-await supabase.from("form_analytics").insert({...});
-
-// DEPOIS (nao bloqueante):
-supabase.from("form_analytics").insert({...})
-  .then(({ error }) => { if (error) console.error(error); });
-
-// Redirecionar IMEDIATAMENTE apos receber whatsapp_link
-```
-
----
-
-## Resultado Esperado
-
-| Metrica | Antes | Depois |
-|---------|-------|--------|
-| Chamadas ao backend no carregamento | 2 | 1 |
-| Tempo ate formulario aparecer | ~2-4s | ~1-2s |
-| Tempo entre submit e redirect | ~2-3s | ~0.5-1s |
-| Bloqueio por auth (usuarios anonimos) | Sim | Nao |
+Alinhado com o script de integracao fornecido.
