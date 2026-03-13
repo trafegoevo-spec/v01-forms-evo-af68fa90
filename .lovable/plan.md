@@ -1,70 +1,98 @@
-# Substituir `manager_id` por `client_slug` na Integracao CRM
+# Notificações de Novos Leads: Email (SMTP), WhatsApp (Evolution API) e Slack
 
-## Contexto
+## Resumo
 
-O codigo de integracao enviado mostra que o CRM agora espera `client_slug` em vez de `manager_id`. Atualmente, as 3 edge functions enviam `manager_id` no payload do CRM. Precisamos alinhar o sistema com esse novo padrao.
+Criar um sistema de notificações multi-canal que dispara automaticamente a cada novo lead, com configuração de destinatários no painel admin. Os 3 canais: email via SMTP genérico, WhatsApp via Evolution API, e Slack via webhook.
 
-## Mudancas Necessarias
+## 1. Banco de Dados
 
-### 1. Banco de Dados
+Nova tabela `notification_settings` para armazenar configurações por subdomain:
 
-Adicionar coluna `client_slug` na tabela `crm_integrations` para substituir `manager_id`:
+```sql
+CREATE TABLE notification_settings (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  subdomain text NOT NULL UNIQUE,
+  
+  -- Email SMTP
+  email_enabled boolean DEFAULT false,
+  smtp_host text,
+  smtp_port integer DEFAULT 587,
+  smtp_user text,
+  smtp_pass text,
+  smtp_from text,
+  email_recipients text, -- emails separados por vírgula
+  
+  -- WhatsApp Evolution API
+  whatsapp_notify_enabled boolean DEFAULT false,
+  evolution_api_url text,
+  evolution_api_key text,
+  evolution_instance text,
+  whatsapp_notify_numbers text, -- números separados por vírgula
+  
+  -- Slack
+  slack_enabled boolean DEFAULT false,
+  slack_webhook_url text,
+  
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now()
+);
 
-```text
-ALTER TABLE crm_integrations ADD COLUMN client_slug text;
+-- RLS: apenas admins
+ALTER TABLE notification_settings ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Admins can manage notification_settings" ON notification_settings FOR ALL USING (has_role(auth.uid(), 'admin'));
 ```
 
-A coluna `manager_id` sera mantida temporariamente para nao quebrar dados existentes.
+## 2. Edge Function: `notificar-lead`
 
-### 2. Edge Functions (3 arquivos)
+Nova edge function chamada pelas funções de conversão existentes após salvar o lead. Recebe os dados do lead e o subdomain, busca as configurações de notificação e dispara nos canais ativos:
 
-Substituir `manager_id` por `client_slug` no payload enviado ao CRM em:
+**Email (SMTP)**: Conexão SMTP direta via Deno `smtp` library. Envia email formatado com dados do lead (nome, telefone, email, curso, etc).
 
-- `supabase/functions/enviar-conversao/index.ts`
-- `supabase/functions/enviar-conversao-autoprotecta/index.ts`
-- `supabase/functions/enviar-conversao-educa/index.ts`
+**WhatsApp (Evolution API)**: POST para `{evolution_api_url}/message/sendText/{instance}` com apikey no header. Mensagem formatada com dados do lead.
 
-Em cada arquivo, as duas ocorrencias de:
+**Slack (Webhook)**: POST para o Slack Incoming Webhook URL com payload de blocks formatados (nome, telefone, email do lead).
+
+## 3. Integração nas Edge Functions Existentes
+
+Nas 3 funções de conversão (`enviar-conversao`, `enviar-conversao-autoprotecta`, `enviar-conversao-educa`), após o salvamento bem-sucedido do lead, adicionar chamada assíncrona (fire-and-forget) para `notificar-lead`:
 
 ```typescript
-manager_id: crmConfig.manager_id || "",
+// Após salvar o lead com sucesso
+fetch(`${supabaseUrl}/functions/v1/notificar-lead`, {
+  method: "POST",
+  headers: { "Content-Type": "application/json", "Authorization": `Bearer ${supabaseServiceKey}` },
+  body: JSON.stringify({ subdomain, lead: flattened }),
+}).catch(err => console.error("Erro notificação:", err));
 ```
 
-serao substituidas por:
+Isso garante que falhas de notificação não bloqueiam o fluxo principal.
 
-```typescript
-client_slug: crmConfig.client_slug || "",
-```
+## 4. Painel Admin: Aba "Notificações"
 
-### 3. Pagina de Integracao CRM (`src/pages/CrmIntegration.tsx`)
+Novo componente `AdminNotifications.tsx` com 3 seções expansíveis (accordion):
 
-- Adicionar `client_slug` na interface `CrmIntegration`
-- Corrigir os dois campos "Slug" duplicados (bug atual) para serem `client_slug` e `slug` separadamente
-- Atualizar o payload de exemplo para mostrar `client_slug` em vez de `manager_id`
-- Atualizar os metodos de save/insert para incluir `client_slug`
-- Atualizar o payload de teste para enviar `client_slug`
+**Email SMTP**: Campos para host, porta, usuário, senha, remetente e destinatários. Toggle de ativação. Botão "Enviar teste".
 
-O formulario ficara com:
+**WhatsApp Evolution API**: Campos para URL da API, API Key, nome da instância e números de destino. Toggle de ativação. Botão "Enviar teste".
 
+**Slack**: Campo para Webhook URL. Toggle de ativação. Botão "Enviar teste".
 
-| Campo           | Descricao                                              |
-| --------------- | ------------------------------------------------------ |
-| **Client Slug** | Identificador unico do cliente no CRM (ex: `educacao`) |
-| **Slug**        | Identificador do time/campanha (ex: `educacao-1`)      |
+Nova aba "Notificações" adicionada ao `Admin.tsx` junto às abas existentes.
+
+## 5. Secrets Necessários
+
+Nenhum secret global necessário — todas as credenciais ficam na tabela `notification_settings` por subdomain, configuráveis pelo admin. Isso permite que diferentes formulários usem diferentes configurações.
+
+## 6. Arquivos a Criar/Modificar
 
 
-### Resultado
-
-O payload enviado ao CRM passara a ser, mas pode ser editado nas configurações de integração
-
-```json
-{
-  "client_slug": "educacao",
-  "slug": "educacao-1",
-  "nome": "Maria Santos",
-  "telefone": "31999887766",
-  ...
-}
-```
-
-Alinhado com o script de integracao fornecido.
+| Arquivo                                              | Ação                                   |
+| ---------------------------------------------------- | -------------------------------------- |
+| `supabase/migrations/xxx.sql`                        | Criar tabela `notification_settings`   |
+| `supabase/functions/notificar-lead/index.ts`         | Nova edge function                     |
+| `supabase/config.toml`                               | Adicionar `[functions.notificar-lead]` |
+| `src/components/admin/AdminNotifications.tsx`        | Novo componente admin                  |
+| `src/pages/Admin.tsx`                                | Adicionar aba "Notificações"           |
+| `supabase/functions/enviar-conversao/index.ts`       | Chamar notificar-lead                  |
+| &nbsp;                                               | &nbsp;                                 |
+| `supabase/functions/enviar-conversao-educa/index.ts` | Chamar notificar-lead                  |
