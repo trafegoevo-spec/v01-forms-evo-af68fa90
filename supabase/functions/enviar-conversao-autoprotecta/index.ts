@@ -339,6 +339,13 @@ serve(async (req) => {
       }
     }
 
+    // === NOTIFICAÇÃO DE NOVO LEAD (fire-and-forget) ===
+    fetch(`${supabaseUrl}/functions/v1/notificar-lead`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${supabaseServiceKey}` },
+      body: JSON.stringify({ subdomain, lead: flattened }),
+    }).catch(err => console.error("❌ Erro notificação:", err));
+
     return jsonResponse({
       success: true,
       message: "Dados salvos e enviados",
