@@ -498,6 +498,69 @@ export type Database = {
         }
         Relationships: []
       }
+      notification_settings: {
+        Row: {
+          created_at: string | null
+          email_enabled: boolean | null
+          email_recipients: string | null
+          evolution_api_key: string | null
+          evolution_api_url: string | null
+          evolution_instance: string | null
+          id: string
+          slack_enabled: boolean | null
+          slack_webhook_url: string | null
+          smtp_from: string | null
+          smtp_host: string | null
+          smtp_pass: string | null
+          smtp_port: number | null
+          smtp_user: string | null
+          subdomain: string
+          updated_at: string | null
+          whatsapp_notify_enabled: boolean | null
+          whatsapp_notify_numbers: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email_enabled?: boolean | null
+          email_recipients?: string | null
+          evolution_api_key?: string | null
+          evolution_api_url?: string | null
+          evolution_instance?: string | null
+          id?: string
+          slack_enabled?: boolean | null
+          slack_webhook_url?: string | null
+          smtp_from?: string | null
+          smtp_host?: string | null
+          smtp_pass?: string | null
+          smtp_port?: number | null
+          smtp_user?: string | null
+          subdomain: string
+          updated_at?: string | null
+          whatsapp_notify_enabled?: boolean | null
+          whatsapp_notify_numbers?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email_enabled?: boolean | null
+          email_recipients?: string | null
+          evolution_api_key?: string | null
+          evolution_api_url?: string | null
+          evolution_instance?: string | null
+          id?: string
+          slack_enabled?: boolean | null
+          slack_webhook_url?: string | null
+          smtp_from?: string | null
+          smtp_host?: string | null
+          smtp_pass?: string | null
+          smtp_port?: number | null
+          smtp_user?: string | null
+          subdomain?: string
+          updated_at?: string | null
+          whatsapp_notify_enabled?: boolean | null
+          whatsapp_notify_numbers?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
