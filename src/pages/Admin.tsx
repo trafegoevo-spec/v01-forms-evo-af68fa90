@@ -622,12 +622,13 @@ const Admin = () => {
         <h1 className="text-2xl font-bold mb-6">Gerenciamento do Formulário</h1>
 
         <Tabs defaultValue="formulario" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="formulario">Formulário</TabsTrigger>
             <TabsTrigger value="aparencia">Aparência</TabsTrigger>
             <TabsTrigger value="pos-conversao">Pós-Conversão</TabsTrigger>
             <TabsTrigger value="whatsapp-rotacao">WhatsApp Rotação</TabsTrigger>
             <TabsTrigger value="integracoes">Integrações</TabsTrigger>
+            <TabsTrigger value="notificacoes">Notificações</TabsTrigger>
           </TabsList>
 
           <TabsContent value="formulario">
