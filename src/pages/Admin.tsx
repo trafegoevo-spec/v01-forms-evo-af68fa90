@@ -12,6 +12,7 @@ import { AdminAppearance } from "@/components/admin/AdminAppearance";
 import { AdminPostConversion } from "@/components/admin/AdminPostConversion";
 import { AdminWhatsAppQueue } from "@/components/admin/AdminWhatsAppQueue";
 import { AdminIntegrations } from "@/components/admin/AdminIntegrations";
+import { AdminNotifications } from "@/components/admin/AdminNotifications";
 
 interface WhatsAppQueueItem {
   id: string;
