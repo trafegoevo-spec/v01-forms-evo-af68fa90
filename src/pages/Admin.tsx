@@ -682,6 +682,10 @@ const Admin = () => {
           <TabsContent value="integracoes">
             <AdminIntegrations formName={formName} gtmId={gtmId} />
           </TabsContent>
+
+          <TabsContent value="notificacoes">
+            <AdminNotifications formName={formName} />
+          </TabsContent>
         </Tabs>
       </div>
     </div>

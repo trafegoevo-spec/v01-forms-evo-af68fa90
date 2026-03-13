@@ -119,6 +119,13 @@ serve(async (req) => {
           console.log("🔗 WhatsApp link do CRM:", crmResponseData.whatsapp_link || "não retornado");
           
           // Retorna resposta do CRM incluindo whatsapp_link se existir
+          // Notificação fire-and-forget no modo exclusivo
+          fetch(`${supabaseUrl}/functions/v1/notificar-lead`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "Authorization": `Bearer ${supabaseServiceKey}` },
+            body: JSON.stringify({ subdomain, lead: flattened }),
+          }).catch(err => console.error("❌ Erro notificação:", err));
+
           return jsonResponse({
             success: true,
             ok: crmResponseData.ok ?? true,
